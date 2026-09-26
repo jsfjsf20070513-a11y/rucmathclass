@@ -10,6 +10,7 @@ import {
   buildMatchExercise,
   gradeExercise,
 } from './exerciseGenerator'
+import { frenchVocabulary } from '../data/frenchVocabulary'
 
 const R0 = () => 0 // deterministic rng for reproducible shuffles
 
@@ -81,6 +82,14 @@ describe('supportedTypes', () => {
 })
 
 describe('buildExercise', () => {
+  it('does not ask an ambiguous Chinese-only spelling question for real synonyms', () => {
+    const word = frenchVocabulary.find((entry) => entry.french === 'quoique')
+    const other = frenchVocabulary.find((entry) => entry.french === 'bien que')
+    expect(word.chinese).toBe(other.chinese)
+    const exercise = buildExercise(word, frenchVocabulary, { type: 'spelling', rng: R0 })
+    expect(exercise.type).toBe('recognition')
+    expect(gradeExercise(exercise, word.chinese)).toBe(true)
+  })
   it('recognition: french prompt, options contain the chinese answer + distractors', () => {
     const ex = buildExercise(DECK[0], DECK, { type: 'recognition', rng: R0 })
     expect(ex.type).toBe('recognition')

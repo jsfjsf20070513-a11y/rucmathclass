@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import katex from 'katex'
 import { useAuth } from '../context/useAuth'
-import { clearMessages, fetchMessages, saveMessage } from '../lib/aiAssistantBackend'
+import { useAssistantConversation } from '../hooks/useAssistantConversation'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 
 // 把助手回复里的 $...$ / $$...$$ 渲染成 KaTeX 公式,**粗体** 转 <strong>,其余
@@ -47,9 +47,7 @@ function renderRich(text) {
 // 答疑 Assistant — 2026-08 编排版「Correspondance 书信体」(宪法 §5.4):
 // 空状态(刊头 + 起手问题细字链)与对话态是两个停顿;Q./R. 小型悬挂眉头,
 // 答句挂发丝左线(自上而下画出),等待指示是一根呼吸发丝线;拍题照片
-// 渲染为「Figure n」编号图框。Worker、限流、云端历史、图片压缩逻辑零改动。
-const AI_ENDPOINT = 'https://rucmathclass.com/api/chat'
-const MAX_HISTORY = 20
+// 渲染为「Figure n」编号图框。会话与网络生命周期由 useAssistantConversation 管理。
 
 const STARTERS = [
   '用中文解释一下中值定理的直觉',
@@ -96,15 +94,15 @@ function getFrDateLabel() {
 export default function Assistant() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [messages, setMessages] = useState([]) // {role:'user'|'model', content}
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { messages, busy, loading, error: conversationError, notice, send: sendMessage, clear: handleClear } = useAssistantConversation(user?.id)
   const [error, setError] = useState('')
   const [image, setImage] = useState(null) // { mimeType, data, preview }
   const [arrive] = useState(() => wasFlipNav())
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const fileRef = useRef(null)
+  const imageGeneration = useRef(0)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -112,74 +110,28 @@ export default function Assistant() {
 
   // 背词答错跳转带来的上下文(?term=&answer=):预填一条解释请求,不自动发送。
   useEffect(() => {
+    imageGeneration.current += 1
+    setImage(null)
+    setError('')
     const params = new URLSearchParams(window.location.search)
     const term = params.get('term')
-    if (!term) return
+    if (!term) { setInput(''); return }
     const answer = params.get('answer')
     setInput(`请解释法语词 « ${term} »${answer ? `,并分析我刚才的答案「${answer}」为什么不对` : ''}。`)
-  }, [])
+  }, [user?.id])
 
-  // 登录后从云端加载已保存的对话(跨设备)。表未建(compat)时返回空,静默降级为
-  // 仅本次会话内存。
-  useEffect(() => {
-    if (!user) return undefined
-    let alive = true
-    fetchMessages(user.id)
-      .then(({ messages: loaded }) => {
-        if (alive && loaded.length) setMessages(loaded)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [user])
-
-  const send = useCallback(
-    async (text) => {
-      const typed = `${text}`.trim()
-      if ((!typed && !image) || loading) return
-      setError('')
-      const content = typed || '请看图,用中文一步步解释这道题并给出答案。'
-      const sentImage = image
-      const userMsg = { role: 'user', content, image: sentImage?.preview }
-      const next = [...messages, userMsg].slice(-MAX_HISTORY)
-      setMessages(next)
+  const send = useCallback(async (text) => {
+    imageGeneration.current += 1
+    setError('')
+    if (await sendMessage(`${text}`, image)) {
       setInput('')
       setImage(null)
-      setLoading(true)
-      if (user) saveMessage(user.id, 'user', content).catch(() => {})
-      try {
-        // 只把 {role, content} 发给模型(不回传缩略图);当前这轮的图走 body.image。
-        const body = { messages: next.map((m) => ({ role: m.role, content: m.content })) }
-        if (sentImage) body.image = { mimeType: sentImage.mimeType, data: sentImage.data }
-        const res = await fetch(AI_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-        if (!res.ok) {
-          let detail = ''
-          try {
-            detail = (await res.json())?.error || ''
-          } catch { /* 非 JSON 响应 */ }
-          throw new Error(detail || `服务返回 ${res.status}`)
-        }
-        const data = await res.json()
-        const reply = `${data?.text || ''}`.trim()
-        if (!reply) throw new Error('空回复')
-        setMessages((m) => [...m, { role: 'model', content: reply }])
-        if (user) saveMessage(user.id, 'model', reply).catch(() => {})
-      } catch (err) {
-        setError(err?.message || '请求失败,请稍后再试。')
-      } finally {
-        setLoading(false)
-        inputRef.current?.focus()
-      }
-    },
-    [messages, loading, user, image],
-  )
+      inputRef.current?.focus()
+    }
+  }, [sendMessage, image])
 
   const onPickImage = useCallback(async (event) => {
+    const generation = ++imageGeneration.current
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
@@ -193,17 +145,12 @@ export default function Assistant() {
     }
     try {
       setError('')
-      setImage(await compressImage(file))
+      const compressed = await compressImage(file)
+      if (generation === imageGeneration.current) setImage(compressed)
     } catch {
-      setError('图片处理失败,换一张试试。')
+      if (generation === imageGeneration.current) setError('图片处理失败,换一张试试。')
     }
   }, [])
-
-  const handleClear = useCallback(() => {
-    setMessages([])
-    setError('')
-    if (user) clearMessages(user.id).catch(() => {})
-  }, [user])
 
   const goHome = useCallback(() => {
     markFlipNav('/assistant')
@@ -218,9 +165,9 @@ export default function Assistant() {
       <button type="button" className="vpl-nav-back" onClick={goHome} lang="fr">← Accueil</button>
       <span className="vpl-nav-title" lang="fr">Correspondance</span>
       {messages.length ? (
-        <button type="button" className="vpl-nav-back cor-effacer" onClick={handleClear} lang="fr">Effacer · 清空</button>
+        <button type="button" className="vpl-nav-back cor-effacer" onClick={handleClear} disabled={busy} lang="fr">Effacer · 清空</button>
       ) : (
-        <span className="vpl-nav-side">{user ? 'Historique · 云端' : '未登录'}</span>
+        <span className="vpl-nav-side">{user ? (busy ? 'Chargement…' : 'Historique · 对话') : '未登录'}</span>
       )}
     </nav>
   )
@@ -256,6 +203,7 @@ export default function Assistant() {
                 className="cor-starter"
                 style={{ animationDelay: `${0.35 + k * 0.12}s` }}
                 onClick={() => send(s)}
+                disabled={busy}
                 lang={/[a-zA-Zéèàçù]/.test(s[0]) ? 'fr' : undefined}
               >
                 {s}
@@ -281,7 +229,7 @@ export default function Assistant() {
                     <div className="cor-q-body">
                       {m.image ? (
                         <figure className="cor-figure">
-                          <figcaption lang="fr">{`Figure ${fig} · 拍题照片`}</figcaption>
+                          <figcaption lang="fr">{`Figure ${fig} · 拍题照片（仅本次页面保留）`}</figcaption>
                           <img src={m.image} alt={`Figure ${fig}`} />
                         </figure>
                       ) : null}
@@ -311,7 +259,8 @@ export default function Assistant() {
         </div>
       )}
 
-      {error ? <p className="cor-error">{error}</p> : null}
+      {error || conversationError ? <p className="cor-error" role="alert">{error || conversationError}</p> : null}
+      {notice ? <p className="cor-error" role="status">{notice}</p> : null}
 
       {image ? (
         <div className="cor-attach">
@@ -319,7 +268,7 @@ export default function Assistant() {
             <figcaption lang="fr">Figure à joindre · 待发送</figcaption>
             <img src={image.preview} alt="待发送的图片" />
           </figure>
-          <button type="button" className="cor-attach-remove" onClick={() => setImage(null)} aria-label="移除图片">×</button>
+          <button type="button" className="cor-attach-remove" onClick={() => setImage(null)} disabled={busy} aria-label="移除图片">×</button>
         </div>
       ) : null}
 
@@ -334,7 +283,7 @@ export default function Assistant() {
           type="button"
           className="cor-joindre"
           onClick={() => fileRef.current?.click()}
-          disabled={loading}
+          disabled={busy}
           lang="fr"
         >
           <span className="cor-joindre-long">Joindre une figure</span>
@@ -354,10 +303,10 @@ export default function Assistant() {
           }}
           placeholder={typeof window !== 'undefined' && window.innerWidth < 640 ? 'Poser une question…' : 'Poser une question… · 中法双语均可'}
           rows={1}
-          disabled={loading}
+          disabled={busy}
           aria-label="向 AI 助手提问"
         />
-        <button type="submit" className="cor-envoyer" disabled={loading || (!input.trim() && !image)} lang="fr">
+        <button type="submit" className="cor-envoyer" disabled={busy || (!input.trim() && !image)} lang="fr">
           Envoyer
         </button>
       </form>

@@ -9,6 +9,7 @@
 // setup_ai_history.sql and must keep the self-scope guards.
 
 import { isSupabaseConfigured, supabase } from './supabase'
+import { withRequestDeadline } from './requestDeadline'
 
 export const AI_MESSAGES_TABLE = 'ai_messages'
 
@@ -24,30 +25,39 @@ export async function fetchMessages(userId, limit = 200) {
   if (!isSupabaseConfigured || !supabase) return { mode: 'disabled', messages: [] }
   if (!userId) return { mode: 'official', messages: [] }
 
-  const { data, error } = await supabase
+  const { data, error } = await withRequestDeadline((signal) => supabase
     .from(AI_MESSAGES_TABLE)
     .select('role, content, created_at')
     .eq('user_id', userId)
-    .order('created_at', { ascending: true })
-    .limit(limit)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit).abortSignal(signal))
 
   if (error) {
     if (isMissingTableError(error)) return { mode: 'compat', messages: [] }
     throw error
   }
-  return { mode: 'official', messages: (data || []).map((r) => ({ role: r.role, content: r.content })) }
+  return { mode: 'official', messages: [...(data || [])].reverse().map((r) => ({ role: r.role, content: r.content })) }
 }
 
 /**
- * Append one message (role 'user' | 'model'). Best-effort: callers fire-and-forget.
+ * Persist a complete turn in one insert. Images stay in page memory; their
+ * absence after reload is stated in the persisted user message.
  */
-export async function saveMessage(userId, role, content) {
+export async function saveTurn(userId, userMessage, reply) {
   if (!isSupabaseConfigured || !supabase) return { mode: 'disabled' }
-  if (!userId || !content) return { mode: 'official' }
+  if (!userId) throw new Error('saveTurn: userId is required.')
 
-  const { error } = await supabase
+  const createdAt = Date.now()
+  const rows = [userMessage, reply].map((message, index) => ({
+    user_id: userId, role: index === 0 ? 'user' : 'model',
+    content: `${message.content}${message.imageData ? '\n[此问题附有图片；图片仅在发送时的页面内可用，继续问图请重新上传。]' : ''}`.slice(0, 20000),
+    created_at: new Date(createdAt + index).toISOString(),
+  }))
+
+  const { error } = await withRequestDeadline((signal) => supabase
     .from(AI_MESSAGES_TABLE)
-    .insert({ user_id: userId, role: role === 'model' ? 'model' : 'user', content: `${content}`.slice(0, 20000) })
+    .insert(rows).abortSignal(signal))
 
   if (error) {
     if (isMissingTableError(error)) return { mode: 'compat' }
@@ -63,7 +73,17 @@ export async function clearMessages(userId) {
   if (!isSupabaseConfigured || !supabase) return { mode: 'disabled' }
   if (!userId) return { mode: 'official' }
 
-  const { error } = await supabase.from(AI_MESSAGES_TABLE).delete().eq('user_id', userId)
+  // Freeze a cutoff before deleting so a delayed DELETE can never remove
+  // messages created after this clear operation began (including other tabs).
+  const { data: latest, error: readError } = await withRequestDeadline((signal) => supabase.from(AI_MESSAGES_TABLE)
+    .select('id').eq('user_id', userId).order('id', { ascending: false }).limit(1).abortSignal(signal).maybeSingle())
+  if (readError) {
+    if (isMissingTableError(readError)) return { mode: 'compat' }
+    throw readError
+  }
+  if (!latest) return { mode: 'official' }
+  const { error } = await withRequestDeadline((signal) => supabase.from(AI_MESSAGES_TABLE).delete()
+    .eq('user_id', userId).lte('id', latest.id).abortSignal(signal))
   if (error) {
     if (isMissingTableError(error)) return { mode: 'compat' }
     throw error
