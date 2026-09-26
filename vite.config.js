@@ -11,6 +11,6 @@ export default defineConfig({
   // env → isSupabaseConfigured is false → no client).
   test: {
     environment: 'node',
-    include: ['src/**/*.test.js', 'worker/src/**/*.test.js'],
+    include: ['src/**/*.test.js', 'worker/src/**/*.test.js', 'scripts/**/*.test.js'],
   },
 })
