@@ -5,7 +5,8 @@ import { signIn, authErrorMessage } from '../lib/authBackend'
 import AuthStatus from '../components/AuthStatus'
 import { dailyTheoremNotes } from '../data/dailyTheoremNotes.generated'
 import { paroles } from '../data/siteContent'
-import { portraits, portraitSrc } from '../data/portraits'
+import PortraitWall from '../components/PortraitWall'
+import { prefetchPage } from '../routes/pageLoaders'
 import { resourceCategories } from '../data/resourceCatalog'
 import { usePageFlip } from '../hooks/usePageFlip'
 import { weatherInkFor } from '../lib/weatherCanvas'
@@ -171,20 +172,7 @@ export default function Home() {
       {/* ── 01 封面:肖像长墙 ── */}
       <section ref={setPageEl(0)} className="mag-page mag-cover" style={{ zIndex: 10 }} aria-label="封面">
         <canvas ref={canvasRef} className="mag-weather" />
-        <div className="mag-wall" aria-hidden="true">
-          {portraits.map((p) => (
-            <div key={p.slug} className="mag-wall-cell">
-              <img
-                src={portraitSrc(p.slug)}
-                alt=""
-                loading="eager"
-                decoding="async"
-                draggable={false}
-                onError={(e) => { e.currentTarget.style.visibility = 'hidden' }}
-              />
-            </div>
-          ))}
-        </div>
+        <PortraitWall active={page === 0} />
         <div className="mag-fade mag-fade-top" aria-hidden="true" />
         <div className="mag-fade mag-fade-bottom" aria-hidden="true" />
         <nav className="mag-cover-nav" aria-label="封面导航">
@@ -217,6 +205,8 @@ export default function Home() {
               type="button"
               className="mag-enter"
               lang="fr"
+              onPointerEnter={() => prefetchPage('/vocabulary')}
+              onFocus={() => prefetchPage('/vocabulary')}
               onClick={() => flipNavigate('/vocabulary')}
             >
               Entrer&nbsp;&nbsp;→
@@ -251,6 +241,8 @@ export default function Home() {
                 key={category.label}
                 type="button"
                 className="mag-biblio-row"
+                onPointerEnter={() => prefetchPage('/resources')}
+                onFocus={() => prefetchPage('/resources')}
                 onClick={() => flipNavigate(`/resources#shelf-${index + 1}`)}
               >
                 <span className="mag-biblio-roman">{ROMAN[index]}</span>
@@ -283,7 +275,7 @@ export default function Home() {
             <div className="mag-rule" data-animate="" />
             <h2 className="mag-giant" lang="fr" data-animate="">Correspondance</h2>
             <div className="mag-vocab-foot" data-animate="">
-              <button type="button" className="mag-enter" lang="fr" onClick={() => flipNavigate('/assistant')}>
+              <button type="button" className="mag-enter" lang="fr" onPointerEnter={() => prefetchPage('/assistant')} onFocus={() => prefetchPage('/assistant')} onClick={() => flipNavigate('/assistant')}>
                 Entrer&nbsp;&nbsp;→
               </button>
               <p className="mag-vocab-quote" lang="fr">Pose une question de maths ou de français — en chinois ou en français.</p>
