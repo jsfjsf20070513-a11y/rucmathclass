@@ -21,7 +21,7 @@
 
 - React 18 + React Router 7 + Vite 5 **静态 SPA** + Supabase(anon key + RLS)+ KaTeX。保持此形态,别回退服务端单体,前端不引入需 service-role 的写法。
 - 🔴 **Supabase 与归档仓共享同一项目**,RLS 是唯一且共享的安全边界;本线依赖 7 张表(comments/profiles/review_states/ai_messages/albums/album_photos/resources,全 RLS on)。**恢复任何公开读策略前必须先核列级授权**(comments.user_email 列级 REVOKE 已于 08-13 落地,别退)。
-- 🔴 **共享 Cloudflare Worker(mathclass-ai)正本在本线**(2026-08-21 拍板):改 `worker/` 在本目录部署;改 `/api` 契约(现为 `{messages→text}`)前确认站内 2 处硬编码调用同步(`Vocabulary.jsx` 的 SPEAK_ENDPOINT、`Assistant.jsx` 的 AI_ENDPOINT)。Raccord 首发时会把 raccord 路由/CORS 合并进本线配置(见 raccord-deploy skill),届时别当成异物删掉。
+- 🔴 **共享 Cloudflare Worker(mathclass-ai)正本在本线**(2026-08-21 拍板):改 `worker/` 在本目录部署;改 `/api` 契约前核对 `src/lib/assistantClient.js` 与 `src/hooks/useVocabularyAudio.js`。聊天实现位于 `worker/src/chat.js`,保留 `{messages→text}` 和旧 `body.image`,新增 `messages[].image` 支持当页图片追问;发布此改动时先更新 Worker 再更新前端。Raccord 首发时会把 raccord 路由/CORS 合并进本线配置(见 raccord-deploy skill),届时别当成异物删掉。
 - 🔴 **视觉最高裁定 = `docs/design-constitution.md`(宪法)+ `docs/aesthetic-profile.md`(审美档案)**,改任何页面先读;验证必须在真实渲染页上量,禁止注入 DOM 截图验证。
 
 ## 命令与质量闸

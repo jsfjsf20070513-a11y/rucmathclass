@@ -133,10 +133,26 @@ export function supportedTypes(word) {
  * requested `type` isn't supported by the word, falls back to recognition.
  * Returns a plain object the UI renders; `answer` is what gradeExercise checks.
  */
-export function buildExercise(word, deck = [], { type, rng = Math.random } = {}) {
+export function findAmbiguousSpellingPrompts(deck) {
+  const answers = new Map()
+  for (const word of deck) {
+    const prompt = `${word.chinese}`.trim()
+    if (!answers.has(prompt)) answers.set(prompt, new Set())
+    answers.get(prompt).add(normalizeSpelling(word.french))
+  }
+  return new Set([...answers].filter(([, words]) => words.size > 1).map(([prompt]) => prompt))
+}
+
+export function buildExercise(word, deck = [], { type, rng = Math.random, ambiguousSpellingPrompts } = {}) {
   const supported = supportedTypes(word)
-  const chosen = supported.includes(type) ? type : (supported[0] || EXERCISE_TYPES.recognition)
+  let chosen = supported.includes(type) ? type : (supported[0] || EXERCISE_TYPES.recognition)
   const others = deck.filter((w) => w?.id !== word?.id)
+  // A Chinese-only cue cannot distinguish two headwords with the same gloss.
+  // Test recognition of this word instead of falsely marking a synonym wrong.
+  if (chosen === EXERCISE_TYPES.spelling
+    && (ambiguousSpellingPrompts || findAmbiguousSpellingPrompts(deck)).has(`${word.chinese}`.trim())) {
+    chosen = EXERCISE_TYPES.recognition
+  }
 
   if (chosen === EXERCISE_TYPES.recognition) {
     const answer = `${word.chinese}`.trim()

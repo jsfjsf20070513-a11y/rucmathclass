@@ -1,74 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
-import { frenchVocabulary } from '../data/frenchVocabulary'
-import {
-  REVIEW_RESULT,
-  buildStudyQueue,
-  cleanFrenchDeck,
-  computeDeckStats,
-  computeStudyStreak,
-  gradeReviewState,
-} from '../lib/srsScheduler'
-import {
-  EXERCISE_TYPES,
-  buildExercise,
-  buildMatchExercise,
-  gradeExercise,
-} from '../lib/exerciseGenerator'
-import { fetchReviewStateMap, saveReviewState } from '../lib/vocabularyBackend'
+import { EXERCISE_TYPES } from '../lib/exerciseGenerator'
+import { VALID_DECK } from '../lib/vocabularySession'
+import { useVocabularyTrainer } from '../hooks/useVocabularyTrainer'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 
-// 背词 Vocabulary — 2026-08 编排版「一叠卡片」(宪法 §5.2):
-// 扉页(筛选/配额/COMMENCER)→ 预习卡 → 题版卡(每题一停,轻翻换卡,
-// 判定原页揭示)→ 结算屏。底部发丝进度线是唯一常驻计数;筛选器只住扉页与结算屏。
-// SRS 队列、六题型、云端进度、导入导出、错词重练、键盘捷径:逻辑零改动。
+// 卡片与排版留在页面；题目构建、快照、评分和条件写入各有独立模块。
 
-const MAX_NEW = 8
-const MAX_REVIEW = 40
-// Rotate exercise formats across the session so a word is met different ways.
-const TYPE_ROTATION = [
-  EXERCISE_TYPES.recognition,
-  EXERCISE_TYPES.build,
-  EXERCISE_TYPES.cloze,
-  EXERCISE_TYPES.listen,
-  EXERCISE_TYPES.spelling,
-]
-// 法语发音:USE_WORKER_VOICE 为 true 时优先走同域 Worker(真人音 + 边缘缓存),
-// 失败回退浏览器 TTS。当前 ElevenLabs 免费层无法用法语库声音(George 是英音),
-// 故暂时直接用浏览器法语 TTS;接好真人法语音后把开关置 true 即可切回 Worker 路径。
-const SPEAK_ENDPOINT = 'https://rucmathclass.com/api/speak'
-const USE_WORKER_VOICE = false
-
-const VALID_DECK = cleanFrenchDeck(frenchVocabulary).valid
-const DECK_BY_ID = new Map(VALID_DECK.map((w) => [w.id, w]))
-// 会话快照:手机切屏/刷新会清掉 React 状态,SRS 评分虽已逐题入云,
-// 但"这一轮做到第几题"会丢——存 localStorage,当日同账号自动原地续。
-const SESSION_KEY = 'mcw_vocab_session_v1'
-
-function shanghaiDayStamp() {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).format(new Date())
-}
-
-function readSessionSnapshot(userId) {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(SESSION_KEY) || 'null')
-    if (!saved || saved.v !== 1 || saved.userId !== userId) return null
-    if (saved.day !== shanghaiDayStamp()) return null
-    if (saved.status !== 'study' && saved.status !== 'ready') return null
-    if (!Array.isArray(saved.queue) || !saved.queue.length) return null
-    if (!saved.queue.every((q) => q && DECK_BY_ID.has(q.id))) return null
-    return saved
-  } catch {
-    return null
-  }
-}
-
-function clearSessionSnapshot() {
-  try { window.localStorage.removeItem(SESSION_KEY) } catch { /* ignore */ }
-}
 // CEFR ladder A1→C2; only the levels actually present in the deck are offered.
 const LEVEL_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
 const DECK_LEVELS = ['all', ...LEVEL_ORDER.filter((l) => VALID_DECK.some((w) => w.level === l))]
@@ -83,11 +22,6 @@ const TYPE_KICKER = {
   [EXERCISE_TYPES.listen]: ['Dictée', '听写'],
   [EXERCISE_TYPES.spelling]: ['Orthographe', '拼写'],
   [EXERCISE_TYPES.build]: ['Traduction', '拼句'],
-}
-
-// 学习者唯一的筛选轴:CEFR 级别(主题筛选与乱序已按 2026-08-20 用户裁定移除)。
-function selectDeck(level) {
-  return VALID_DECK.filter((w) => level === 'all' || w.level === level)
 }
 
 // Short grammatical label for the prompt line, e.g. « n.f. » / « v. » / « adj. ».
@@ -109,436 +43,48 @@ function posLong(word) {
   return ''
 }
 
-// Turn the SRS study queue into a list of exercise steps. A match warm-up leads
-// when there are ≥4 cards; the rest rotate through the formats. Non-match steps
-// carry the word + SRS state so grading can persist.
-function buildSession(queue, deck) {
-  const steps = []
-  if (queue.length >= 4) {
-    const four = queue.slice(0, 4)
-    steps.push({ kind: 'match', exercise: buildMatchExercise(four.map((q) => q.word)) })
-  }
-  queue.forEach((item, idx) => {
-    let type = TYPE_ROTATION[idx % TYPE_ROTATION.length]
-    // 「词块拼句」要求把例句译成法语,必须有例句中文(exampleZh)做题干;没有就
-    // 换成拼写题,绝不出"考拼句却不给中文"的残题。
-    if (type === EXERCISE_TYPES.build && !item.word.exampleZh) {
-      type = EXERCISE_TYPES.spelling
-    }
-    steps.push({ kind: 'card', word: item.word, state: item.state, exercise: buildExercise(item.word, deck, { type }) })
-  })
-  return steps
-}
-
 export default function Vocabulary() {
   const { user } = useAuth()
+  const userId = user?.id
   const navigate = useNavigate()
-  // idle = 扉页(宪法 §5.2 的开始屏);其余同旧:loading|study|ready|disabled|compat|empty|error|done
-  const [status, setStatus] = useState('loading')
-  const [studyList, setStudyList] = useState([]) // {word, state} — preview deck shown before the test
-  const [studyIdx, setStudyIdx] = useState(0)
-  const [steps, setSteps] = useState([])
-  const [i, setI] = useState(0)
-  const [phase, setPhase] = useState('answer') // answer|feedback
-  const [lastCorrect, setLastCorrect] = useState(null)
-  const [picked, setPicked] = useState(null)
-  const [input, setInput] = useState('')
-  const [chosen, setChosen] = useState([]) // build: ordered tile ids
-  const [match, setMatch] = useState({ sel: null, done: [], wrong: [] })
-  const [stats, setStats] = useState({ correct: 0, attempts: 0, combo: 0, maxCombo: 0 })
-  const [wrong, setWrong] = useState([]) // {word, state} missed this session — feeds the review list + 只练错词
-  const [deckStats, setDeckStats] = useState(null)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [level, setLevel] = useState('all')
   const [arrive] = useState(() => wasFlipNav())
-  const inputRef = useRef(null)
-  const audioRef = useRef(null)
-  const sessionQueueRef = useRef([])
-  const voiceRef = useRef(null)
-  const spokenRef = useRef(-1)
-
-  const current = steps[i]
-
-  // ── audio: WebAudio verdict cue + speechSynthesis for the listen format ──
-  const tone = useCallback((ok) => {
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext
-      if (!Ctx) return
-      const ac = audioRef.current || (audioRef.current = new Ctx())
-      if (ac.state === 'suspended') ac.resume()
-      const t = ac.currentTime
-      const notes = ok ? [587.33, 880] : [392, 261.63]
-      notes.forEach((f, k) => {
-        const osc = ac.createOscillator()
-        const gain = ac.createGain()
-        osc.type = 'sine'
-        osc.frequency.value = f
-        const st = t + k * 0.1
-        gain.gain.setValueAtTime(0.0001, st)
-        gain.gain.exponentialRampToValueAtTime(0.09, st + 0.02)
-        gain.gain.exponentialRampToValueAtTime(0.0001, st + 0.22)
-        osc.connect(gain)
-        gain.connect(ac.destination)
-        osc.start(st)
-        osc.stop(st + 0.24)
-      })
-    } catch {
-      // audio is a nicety; never let it break the study flow
-    }
-  }, [])
-
-  const browserTTS = useCallback((text) => {
-    try {
-      const synth = window.speechSynthesis
-      if (!synth || !text) return
-      synth.cancel()
-      let done = false
-      // Speak with a FRENCH voice. getVoices() is often empty on first call until
-      // the engine loads — wait once for `voiceschanged`, with a timed safety. The
-      // `done` flag guarantees exactly one utterance (never English + French double).
-      const speakWith = () => {
-        if (done) return
-        done = true
-        const u = new SpeechSynthesisUtterance(text)
-        u.lang = 'fr-FR'
-        u.rate = 0.9
-        const fr = (synth.getVoices() || []).find((v) => /fr/i.test(v.lang))
-        if (fr) u.voice = fr
-        synth.speak(u)
-      }
-      if ((synth.getVoices() || []).length) {
-        speakWith()
-      } else {
-        synth.addEventListener('voiceschanged', speakWith, { once: true })
-        setTimeout(speakWith, 300)
-      }
-    } catch {
-      // speech is optional
-    }
-  }, [])
-
-  // Prefer the real voice via the Worker; fall back to browser TTS if the audio
-  // can't load. `fallbackOnce` guards so the fallback fires AT MOST ONCE — both
-  // `onerror` and the play() rejection used to fire it, causing a double voice.
-  const speak = useCallback((text) => {
-    if (!text) return
-    try { window.speechSynthesis && window.speechSynthesis.cancel() } catch { /* ignore */ }
-    // 暂走浏览器法语 TTS(见 USE_WORKER_VOICE 注释)。
-    if (!USE_WORKER_VOICE) {
-      browserTTS(text)
-      return
-    }
-    let usedFallback = false
-    const fallbackOnce = () => {
-      if (usedFallback) return
-      usedFallback = true
-      browserTTS(text)
-    }
-    try {
-      const a = voiceRef.current || (voiceRef.current = new Audio())
-      a.onerror = fallbackOnce
-      a.src = `${SPEAK_ENDPOINT}?text=${encodeURIComponent(text.slice(0, 160))}`
-      const p = a.play()
-      if (p && typeof p.catch === 'function') p.catch(fallbackOnce)
-    } catch {
-      fallbackOnce()
-    }
-  }, [browserTTS])
-
-  const load = useCallback(async () => {
-    if (!user) return
-    setStatus('loading')
-    setErrorMessage('')
-    try {
-      const { mode, states } = await fetchReviewStateMap(user.id)
-      if (mode === 'disabled') return setStatus('disabled')
-      if (mode === 'compat') return setStatus('compat')
-      const now = new Date().toISOString()
-
-      // ── 恢复当日未完的会话(切屏/刷新回来原地续) ──
-      const saved = readSessionSnapshot(user.id)
-      if (saved) {
-        const lvl = saved.level || 'all'
-        const savedDeck = selectDeck(lvl)
-        const queue = saved.queue.map((q) => ({ word: DECK_BY_ID.get(q.id), state: q.state, isNew: !!q.isNew }))
-        const built = buildSession(queue, savedDeck)
-        const idx = Math.min(Math.max(saved.i || 0, 0), built.length)
-        if (idx < built.length) {
-          if (lvl !== level) setLevel(lvl) // 触发的二次 load 走同一恢复路径,幂等
-          sessionQueueRef.current = queue
-          setDeckStats({
-            ...computeDeckStats({ deck: savedDeck, stateMap: states, now }),
-            streak: computeStudyStreak(Object.values(states), now),
-          })
-          setSteps(built)
-          setStudyList(queue.map((q) => ({ word: q.word, state: q.state, isNew: q.isNew })))
-          setStudyIdx(Math.min(saved.studyIdx || 0, queue.length - 1))
-          setI(idx)
-          setPhase('answer')
-          setPicked(null)
-          setInput('')
-          setChosen([])
-          setMatch({ sel: null, done: [], wrong: [] })
-          setStats(saved.stats || { correct: 0, attempts: 0, combo: 0, maxCombo: 0 })
-          setWrong((saved.wrongIds || [])
-            .map((id) => ({ word: DECK_BY_ID.get(id), state: null }))
-            .filter((x) => x.word))
-          spokenRef.current = -1
-          setStatus(saved.status)
-          return undefined
-        }
-        clearSessionSnapshot() // 快照已答完/失效:清掉走全新
-      }
-
-      const deck = selectDeck(level)
-      setDeckStats({
-        ...computeDeckStats({ deck, stateMap: states, now }),
-        streak: computeStudyStreak(Object.values(states), now),
-      })
-      const queue = buildStudyQueue({ deck, stateMap: states, now, maxNew: MAX_NEW, maxReview: MAX_REVIEW })
-      const built = buildSession(queue, deck)
-      sessionQueueRef.current = queue
-      setSteps(built)
-      setStudyList(queue.map((q) => ({ word: q.word, state: q.state, isNew: q.isNew })))
-      setStudyIdx(0)
-      setI(0)
-      setPhase('answer')
-      setPicked(null)
-      setInput('')
-      setChosen([])
-      setMatch({ sel: null, done: [], wrong: [] })
-      setStats({ correct: 0, attempts: 0, combo: 0, maxCombo: 0 })
-      setWrong([])
-      spokenRef.current = -1
-      // 编排版:先停在扉页(idle),COMMENCER 后进预习/测试。
-      setStatus(built.length ? 'idle' : 'empty')
-    } catch (error) {
-      setErrorMessage(error?.message || '加载背词数据失败。')
-      setStatus('error')
-    }
-    return undefined
-  }, [user, level])
-
-  useEffect(() => {
-    if (user) load()
-  }, [user, load])
-
-  // 扉页 → 预习(有队列)或直接测试。
-  const commencer = useCallback(() => {
-    if (status !== 'idle') return
-    setStatus(studyList.length ? 'study' : 'ready')
-  }, [status, studyList.length])
-
-  // record verdict (combo/score) and persist the SRS state for card steps
-  const record = useCallback(
-    (ok, step) => {
-      tone(ok)
-      setLastCorrect(ok)
-      setStats((s) => {
-        const combo = ok ? s.combo + 1 : 0
-        return {
-          correct: s.correct + (ok ? 1 : 0),
-          attempts: s.attempts + 1,
-          combo,
-          maxCombo: Math.max(s.maxCombo, combo),
-        }
-      })
-      if (!ok && step?.kind === 'card' && step.word) {
-        setWrong((w) => (w.some((x) => x.word.id === step.word.id) ? w : [...w, { word: step.word, state: step.state }]))
-      }
-      if (step?.kind === 'card' && user) {
-        const now = new Date().toISOString()
-        const next = gradeReviewState(
-          { ...step.state, user_id: user.id, word_id: step.word.id },
-          ok ? REVIEW_RESULT.correct : REVIEW_RESULT.wrong,
-          now,
-        )
-        saveReviewState(next).catch(() => {})
-      }
-    },
-    [tone, user],
-  )
-
-  const choose = useCallback(
-    (opt) => {
-      if (phase !== 'answer' || !current) return
-      setPicked(opt)
-      setPhase('feedback')
-      record(gradeExercise(current.exercise, opt), current)
-    },
-    [phase, current, record],
-  )
-
-  const submitSpelling = useCallback(() => {
-    if (phase !== 'answer' || !current) return
-    setPhase('feedback')
-    record(gradeExercise(current.exercise, input), current)
-  }, [phase, current, input, record])
-
-  const submitBuild = useCallback(() => {
-    if (phase !== 'answer' || !current) return
-    const map = Object.fromEntries(current.exercise.bank.map((t) => [t.id, t.w]))
-    const words = chosen.map((id) => map[id])
-    setPhase('feedback')
-    record(gradeExercise(current.exercise, words), current)
-  }, [phase, current, chosen, record])
-
-  const tapTile = useCallback((id) => {
-    setChosen((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]))
-  }, [])
-
-  const tapMatch = useCallback(
-    (side, id) => {
-      if (phase !== 'answer' || !current) return
-      const m = match
-      if (m.done.includes(id)) return
-      if (!m.sel) { setMatch({ ...m, sel: { side, id }, wrong: [] }); return }
-      if (m.sel.side === side) { setMatch({ ...m, sel: { side, id } }); return }
-      if (m.sel.id === id) {
-        // correct pair — keep side effects OUT of the state updater
-        const done = [...m.done, id]
-        setMatch({ sel: null, done, wrong: [] })
-        if (done.length >= current.exercise.cards.length) {
-          setPhase('feedback')
-          record(true, current)
-        }
-        return
-      }
-      // mismatch — flash both, then clear
-      setMatch({ ...m, sel: null, wrong: [`${m.sel.side}${m.sel.id}`, `${side}${id}`] })
-      setTimeout(() => setMatch((mm) => ({ ...mm, wrong: [] })), 380)
-    },
-    [phase, current, match, record],
-  )
-
-  const next = useCallback(() => {
-    const ni = i + 1
-    try { window.speechSynthesis && window.speechSynthesis.cancel() } catch { /* ignore */ }
-    if (ni >= steps.length) {
-      setStatus('done')
-      return
-    }
-    setI(ni)
-    setPhase('answer')
-    setPicked(null)
-    setInput('')
-    setChosen([])
-    setMatch({ sel: null, done: [], wrong: [] })
-  }, [i, steps.length])
-
-  // Re-drill only the words missed this session (design: « 只练错词 »).
-  const retryWrong = useCallback(() => {
-    if (!wrong.length) return
-    const deck = selectDeck(level)
-    const retryQueue = wrong.map((x) => ({ word: x.word, state: x.state }))
-    const built = buildSession(retryQueue, deck)
-    sessionQueueRef.current = retryQueue
-    setSteps(built)
-    setI(0)
-    setPhase('answer')
-    setPicked(null)
-    setInput('')
-    setChosen([])
-    setMatch({ sel: null, done: [], wrong: [] })
-    setStats({ correct: 0, attempts: 0, combo: 0, maxCombo: 0 })
-    setWrong([])
-    spokenRef.current = -1
-    setStatus('ready')
-  }, [wrong, level])
-
-  // Study (preview) navigation: step through the deck, then begin the test.
-  const studyNext = useCallback(() => {
-    setStudyIdx((idx) => {
-      if (idx + 1 >= studyList.length) { setStatus('ready'); return idx }
-      return idx + 1
-    })
-  }, [studyList.length])
-  const skipStudy = useCallback(() => setStatus('ready'), [])
-
-  // 会话快照:答题/预习期间每步落盘;i 记"下一道未答题"
-  // (feedback 阶段该题已评分入云,恢复时直接跳下一道,避免重复计分)。
-  useEffect(() => {
-    if (!user || (status !== 'study' && status !== 'ready')) return
-    const queue = sessionQueueRef.current
-    if (!queue.length) return
-    const answeredThrough = phase === 'feedback' ? i + 1 : i
-    try {
-      window.localStorage.setItem(SESSION_KEY, JSON.stringify({
-        v: 1,
-        userId: user.id,
-        day: shanghaiDayStamp(),
-        level,
-        status,
-        i: answeredThrough,
-        studyIdx,
-        stats,
-        wrongIds: wrong.map((x) => x.word.id),
-        queue: queue.map((q) => ({ id: q.word.id, state: q.state, isNew: !!q.isNew })),
-      }))
-    } catch { /* storage 不可用时静默 */ }
-  }, [user, status, i, phase, studyIdx, stats, wrong, level])
-
-  useEffect(() => {
-    if (status === 'done') clearSessionSnapshot()
-  }, [status])
-
-  // speak the listen prompt when its step appears; autofocus the spelling input
-  useEffect(() => {
-    if (status !== 'ready' || !current) return
-    if (current.exercise?.type === EXERCISE_TYPES.listen && phase === 'answer' && spokenRef.current !== i) {
-      spokenRef.current = i
-      speak(current.exercise.audioText)
-    }
-    if (current.exercise?.type === EXERCISE_TYPES.spelling && phase === 'answer') {
-      inputRef.current?.focus()
-    }
-  }, [status, current, phase, i, speak])
-
-  // keyboard: 1–4 pick options, Enter submits/advances
-  useEffect(() => {
-    if (status !== 'ready') return undefined
-    const onKey = (event) => {
-      const tagName = event.target?.tagName
-      const inField = tagName === 'INPUT' || tagName === 'TEXTAREA'
-      if (phase === 'feedback') {
-        if (event.key === 'Enter' || event.code === 'Space') {
-          if (inField && event.key !== 'Enter') return
-          event.preventDefault()
-          next()
-        }
-        return
-      }
-      const ex = current?.exercise
-      if (!ex) return
-      if ((ex.type === EXERCISE_TYPES.recognition || ex.type === EXERCISE_TYPES.cloze || ex.type === EXERCISE_TYPES.listen) && !inField) {
-        const n = Number(event.key)
-        if (n >= 1 && n <= ex.options.length) {
-          event.preventDefault()
-          choose(ex.options[n - 1])
-        }
-      } else if (ex.type === EXERCISE_TYPES.spelling && event.key === 'Enter') {
-        event.preventDefault()
-        submitSpelling()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [status, phase, current, choose, submitSpelling, next])
-
-  // study preview: Enter / Space advances; idle: Enter begins
-  useEffect(() => {
-    if (status !== 'study' && status !== 'idle') return undefined
-    const onKey = (event) => {
-      if (event.key === 'Enter' || event.code === 'Space') {
-        if (event.target?.tagName === 'INPUT' || event.target?.tagName === 'TEXTAREA' || event.target?.tagName === 'BUTTON') return
-        event.preventDefault()
-        if (status === 'idle') commencer()
-        else studyNext()
-      }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [status, studyNext, commencer])
+  const {
+    status,
+    studyList,
+    studyIdx,
+    steps,
+    i,
+    phase,
+    lastCorrect,
+    picked,
+    input,
+    setInput,
+    chosen,
+    match,
+    stats,
+    wrong,
+    deckStats,
+    errorMessage,
+    saveStatus,
+    sessionOwnerId,
+    level,
+    inputRef,
+    current,
+    speak,
+    load,
+    commencer,
+    persistAnswer,
+    choose,
+    submitSpelling,
+    submitBuild,
+    tapTile,
+    tapMatch,
+    next,
+    retryWrong,
+    studyNext,
+    skipStudy,
+    changeLevel
+  } = useVocabularyTrainer(userId)
 
   const goHome = useCallback(() => {
     markFlipNav('/vocabulary')
@@ -570,7 +116,7 @@ export default function Vocabulary() {
               <button
                 key={l}
                 type="button"
-                onClick={() => setLevel(l)}
+                onClick={() => changeLevel(l)}
                 aria-pressed={level === l}
                 className={`vpl-chip${level === l ? ' is-on' : ''}`}
               >
@@ -628,8 +174,12 @@ export default function Vocabulary() {
           <p className="vpl-fb-answer"><span lang="fr">{correct}</span>{gloss ? <span className="vpl-fb-gloss"> · {gloss}</span> : null}</p>
         ) : null}
         {!isMatch && current.word?.note ? <p className="vpl-fb-note">N.B. {current.word.note}</p> : null}
+        {saveStatus === 'saving' ? <p className="vpl-fb-note" role="status">正在保存本题进度…</p> : null}
+        {errorMessage ? <p className="vpl-fb-note" role="alert">{errorMessage}</p> : null}
         <div className="vpl-fb-actions">
-          <button type="button" className="mag-enter" onClick={next}>
+          {saveStatus === 'error' ? <button type="button" className="mag-enter" onClick={() => persistAnswer(current)}>重试保存 →</button> : null}
+          {saveStatus === 'conflict' ? <button type="button" className="mag-enter" onClick={() => load()}>重新加载进度 →</button> : null}
+          <button type="button" className="mag-enter" onClick={next} disabled={saveStatus !== 'saved'}>
             {i + 1 >= steps.length ? 'Terminer  →' : 'Continuer  →'}
           </button>
           {/* AI 退到具体对象之后:只在答错的这一刻,给一个带上下文的解释入口。 */}
@@ -774,19 +324,19 @@ export default function Vocabulary() {
         <Link className="mag-enter" to="/login">Connexion&nbsp;&nbsp;→</Link>
       </>,
     )
-  } else if (status === 'loading') {
+  } else if (status === 'loading' || (sessionOwnerId !== userId && !['disabled', 'compat', 'error'].includes(status))) {
     body = notice(<p className="vpl-notice-text">正在加载你的背词进度…</p>)
   } else if (status === 'disabled') {
     body = notice(<p className="vpl-notice-text">站点尚未配置 Supabase,背词功能暂不可用。</p>)
   } else if (status === 'compat') {
     body = notice(
-      <p className="vpl-notice-text">背词数据表还没建立。请在 Supabase 执行 <code>setup_vocabulary.sql</code> 后再来。</p>,
+      <p className="vpl-notice-text">背词进度服务暂不可用，请稍后再来。</p>,
     )
   } else if (status === 'error') {
     body = notice(
       <>
         <p className="vpl-notice-text">出错了:{errorMessage}</p>
-        <button type="button" className="mag-enter" onClick={load}>Réessayer&nbsp;&nbsp;→</button>
+        <button type="button" className="mag-enter" onClick={() => load()}>Réessayer&nbsp;&nbsp;→</button>
       </>,
     )
   } else if (status === 'empty') {
@@ -866,7 +416,7 @@ export default function Vocabulary() {
         )}
         <div className="vpl-done-actions">
           {wrong.length ? <button type="button" className="mag-enter" onClick={retryWrong}>只练错词&nbsp;&nbsp;→</button> : null}
-          <button type="button" className="mag-enter" onClick={load} lang="fr">Encore&nbsp;&nbsp;→</button>
+          <button type="button" className="mag-enter" onClick={() => load()} lang="fr">Encore&nbsp;&nbsp;→</button>
         </div>
         {renderFilters()}
       </div>
