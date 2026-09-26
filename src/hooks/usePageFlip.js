@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// 共用翻页物理(宪法 §4)——Home 与内页同一套参数,不许各页自造。
+// 首页与内页共用翻页参数。
 // 页面栈:绝对定位互叠,zIndex = 10 + i;已到页 translate(0),未到页停在各自入场侧。
 // 交互:← → 键、滚轮(|deltaY|>24 防抖 950ms)、触摸横滑 >56px。
 // 页内滚动优先:当前页内 [data-flip-scroll] 未滚到边缘时,滚轮不翻页。

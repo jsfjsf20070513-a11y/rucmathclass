@@ -20,7 +20,7 @@ zone_name = "rucmathclass.com"
 pattern = "rucmathclass.com/api/speak*"
 zone_name = "rucmathclass.com"
 
-# 限流绑定:每 IP 每 60s 最多 30 次(防刷爆 Gemini/ElevenLabs 配额)。
+# 限流绑定:每 IP 每 60s 最多 30 次。
 # namespace_id 是自取的整数标识。代码里 env.RATE_LIMITER 缺失会自动跳过。
 [[unsafe.bindings]]
 name = "RATE_LIMITER"
@@ -30,4 +30,3 @@ simple = { limit = 30, period = 60 }
 
 # ⚠️ API key 绝不写进本文件。它们是 secret:
 #   wrangler secret put GEMINI_API_KEY
-#   wrangler secret put ELEVENLABS_API_KEY

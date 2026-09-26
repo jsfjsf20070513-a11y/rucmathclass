@@ -1,4 +1,4 @@
-// 站内翻页衔接标记(宪法 §4)。离开页在 navigate 前 markFlipNav(fromPath),
+// 站内翻页衔接标记。离开页在 navigate 前 markFlipNav(fromPath),
 // 到达页在挂载时读取:
 // - 到达页播放翻入动画(正向从右、返回从左),读作同一个翻页动作;
 // - Home 用 flipNavFrom() 按来路落页(/vocabulary→02、/resources→04、/login→05)。

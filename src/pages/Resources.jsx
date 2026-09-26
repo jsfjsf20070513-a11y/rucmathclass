@@ -8,7 +8,7 @@ import { getResourceLead } from '../lib/resourceText'
 import { usePageFlip } from '../hooks/usePageFlip'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 
-// 书目 Resources — 2026-08 编排版「一册图录」(宪法 §5.3,2026-08-20 修订):
+// 书目 Resources — 按书架横向翻页:
 // 索引住在 Home 第 4 页(同一份索引不出现两次),本页直接一架一页(Ⅰ–Ⅷ)轻翻,
 // 翻入时条目逐条错开淡入;架内容超一屏走页内滚动优先;#shelf-N 直达对应架。
 // 条目 = 标题外链 + 酒红小标签 + 中文简介一行;数据源 resourceCatalog 不动。

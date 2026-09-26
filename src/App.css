@@ -3659,7 +3659,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   2026-08 杂志刊(宪法 docs/design-constitution.md)
+   杂志页面，结构说明见 docs/design-constitution.md
    .mag-* = 扉页五页翻页刊 + Connexion。翻页物理在 usePageFlip,此处只管纸面。
    ══════════════════════════════════════════════════════════════════ */
 
@@ -4262,7 +4262,7 @@
   }
 }
 
-/* ══ /vocabulary 「一叠卡片」(宪法 §5.2) ══ */
+/* ══ /vocabulary 「一叠卡片」 ══ */
 
 @keyframes magArrive {
   from { transform: translateX(105%) rotate(2.2deg); }
@@ -4438,7 +4438,7 @@
 .vpl-cue-lg { font-size: clamp(21px, 2.2vw, 26px); line-height: 1.6; color: var(--mag-ink); }
 .vpl-cue-pos { color: var(--mag-muted); font-style: italic; font-size: 0.8em; }
 
-/* 选项:罗马数字发丝线行;反馈时正确项反白墨块、错选划线(宪法 §5.2) */
+/* 选项:罗马数字发丝线行;反馈时正确项反白墨块、错选划线 */
 .vpl-options { display: flex; flex-direction: column; }
 .vpl-option {
   display: flex;
@@ -4699,7 +4699,7 @@
   .vpl-interzone { justify-content: flex-start; }
 }
 
-/* ══ /resources 「一册图录」(宪法 §5.3) ══ */
+/* ══ /resources 「一册图录」 ══ */
 
 .bib {
   height: 100vh;
@@ -4825,7 +4825,7 @@
   .bib-index-grid { max-width: none; }
 }
 
-/* ══ /assistant 「Correspondance 书信体」(宪法 §5.4) ══ */
+/* ══ /assistant 「Correspondance 书信体」 ══ */
 
 @keyframes corRule {
   from { transform: scaleY(0); }
@@ -5140,7 +5140,7 @@
   background: rgba(34, 29, 24, 0.22);
 }
 
-/* ══ /login Connexion 视觉(宪法 §5.5;逻辑与流程全保留) ══ */
+/* ══ /login Connexion 视觉 ══ */
 
 /* /login /reset-password 已脱离 Layout,自成杂志第 06 屏同款纸面:
    根容器铺满视口(封面同纸色),内容按 Connexion 屏收进居中窄列。 */

@@ -13,7 +13,7 @@ export default function Layout() {
   const { user, signOut, isAuthEnabled, signingOut, signOutError } = useAuth()
   const displayName = user?.user_metadata?.nickname || user?.user_metadata?.real_name || user?.email || ''
 
-  // 杂志刊页面自带角落导航/细导航条,不渲染站点页眉页脚(宪法 §5)。
+  // 杂志刊页面自带角落导航/细导航条,不渲染通用页眉页脚。
   // `/` 是 100svh 翻页刊;内页与登录页同属一本书(Connexion 即杂志第 06 屏)。
   const isMagazinePage = location.pathname === '/'
     || location.pathname === '/vocabulary'
@@ -69,8 +69,7 @@ export default function Layout() {
 
       <footer className="site-footer">
         <p className="site-footer-secondary">Pour la classe.</p>
-        {/* Bibliothèque / Connexion 链接已被杂志第 4/5 页吸收(宪法 §8);
-            此页脚只在 /login、/reset-password 等非杂志页出现,保留登录状态小字。 */}
+        {/* 资源推荐和 404 等通用布局页面显示账号状态。 */}
         <p className="site-footer-auth">
           {user ? (
             <>

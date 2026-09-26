@@ -1,81 +1,43 @@
-# Carnet de classe
+# Carnet de classe · 班级网站
 
-> 每天一条定理,每天一句话。中文和法语是这个网站的灵魂。
+这是一个中法双语的班级网站。首页用横向翻页呈现定理、引语和各页入口；资源页供所有人阅读，背词进度和 AI 对话历史按账号保存。
 
-[![Live Site](https://img.shields.io/badge/live-rucmathclass.com-8b0000?style=flat-square)](https://rucmathclass.com/)
-[![CI](https://github.com/jsfjsf20070513-a11y/rucmathclass/actions/workflows/ci.yml/badge.svg?branch=mathclass%2Fmain)](https://github.com/jsfjsf20070513-a11y/rucmathclass/actions)
-[![License: MIT](https://img.shields.io/badge/license-MIT-1a1a1a?style=flat-square)](LICENSE)
+本文和下列说明依据当前代码、配置和测试重写。它们帮助找代码，不代替代码；也不能证明线上已经部署了哪个版本、数据库实际用了哪些权限。
 
-中国人民大学中法学院数学班的班级手册站。产品身份做过一次彻底的减法,只留两件事:**读**与**练**。
-2026-08-20 起,整站是一本**横翻的杂志刊**——每页占满一屏、一页一主角,自带细导航,不设传统页眉页脚。
+## 本地运行
 
-## 页面
-
-| 页 | 路由 | 内容 |
-|---|---|---|
-| 扉页 | `/` | 每日定理(48 条,对齐大二上四门课,中法双语证明,构建期 KaTeX 预渲染)+ Parole du jour(38 条真实引语) |
-| 资源书架 | `/resources` | 静态目录 + Supabase `resources` 增补;外链一律先消毒再渲染 |
-| 背词 | `/vocabulary` | 3652 条法语词汇,A1–C2 分级,艾宾浩斯 SRS 复习阶梯(纯核心 [`src/lib/srsScheduler.js`](src/lib/srsScheduler.js),已单测);进度存 `review_states`,per-user RLS |
-| AI 助手 | `/assistant` | 登录后使用;经 Cloudflare Worker `/api/chat` 调 Gemini(模型降级链每小时动态发现),云端历史存 `ai_messages` |
-
-## 技术形态
-
-React 18 + React Router 7 + Vite 5 **静态 SPA**;Supabase(仅 anon key,RLS 强制)承担认证与数据;KaTeX 数学渲染在构建期完成。AI 与语音的密钥只存在于 Cloudflare Worker(`worker/`)的 secrets 里,永不进入浏览器产物。
-
-```mermaid
-flowchart LR
-    Browser["React 18 + Vite 静态 SPA"] --> Edge["Cloudflare"]
-    Edge --> Nginx["VPS Nginx · dist/"]
-    Browser -->|"anon key + RLS"| Supabase["Supabase Auth + Postgres"]
-    Browser -->|"/api/chat · /api/speak"| Worker["Cloudflare Worker(mathclass-ai)"]
-    Worker --> Gemini["Gemini"]
-```
-
-## 本地开发
-
-要求 Node.js 版本见 [`.nvmrc`](.nvmrc)。
+使用 `.nvmrc` 指定的 Node 版本，然后运行：
 
 ```bash
-npm install
-npm run dev        # predev 自动跑 render-theorems + generate-health
+npm ci
+npm run dev
 ```
 
-质量闸(与 CI 一致):
+封面的 60 张肖像和统一清单已经随 Git 入库。开发和构建会先离线检查素材，正常启动不需要临时下载图片。
 
-```bash
-npm run lint && npm test && npm run build
-```
+需要登录时，把 `.env.example` 复制成 `.env.local`，填写 Supabase URL 和公开的 anon key。不要填 service-role key。没有这两个配置时，公开页面仍能打开，账号功能不可用。
 
-`public/health.json` 是构建落痕(带时间戳),按惯例提交前 `git restore public/health.json`。
+AI 默认请求班级站的 `/api/chat`。本地调试可用 `VITE_AI_ENDPOINT` 指向自己的模拟服务；开发模式并不自动隔离真实外部请求。
 
-## 数据
+## 现在有哪些页面
 
-- **每日定理**:源在 `src/data/siteContent.js` 与 `src/data/theoremExplanations.js`,构建期预渲为 `*.generated.js`。
-- **词库**:真相源是 [`scripts/vocab-source.json`](scripts/vocab-source.json),经 `npm run vocab:import` 生成 `src/data/frenchVocabulary.js`;已有词条 `id` 对应用户的 `review_states.word_id`,不可随意更改。
-- **Supabase**:按需执行 `setup_vocabulary.sql` / `setup_ai_history.sql` 等建表脚本;全项目权威 RLS 状态是 [`harden_rls.sql`](harden_rls.sql)。
+| 地址 | 实际功能 |
+| --- | --- |
+| `/` | 肖像封面、背词入口、每日定理、书架入口、引语；登录后增加 AI 入口 |
+| `/resources` | 静态书目与 Supabase 增补资源合并展示；云端失败时保留静态书目 |
+| `/vocabulary` | 登录后背词，保存复习进度，恢复本机未完成的一轮 |
+| `/assistant` | 登录后提问，可附图片，文字对话存入个人历史 |
+| `/login`、`/reset-password` | 登录、注册、邮箱验证码和密码重置 |
+| `/resources/curate` | 登录后提交资源推荐；当前没有站内审核页面 |
 
-## 安全边界
+路由以 [App.jsx](src/App.jsx) 为准。相册、协作台、Web3 等旧地址只做兼容跳转，不表示这些功能还在运行。
 
-- 前端只持有 Supabase anon key;RLS 是唯一安全边界。
-- `comments.user_email` 对 anon 做了列级 REVOKE;查询必须显式列名。
-- 角色提升只经过 `public.is_super_admin()` 的 security-definer 边界。
-- 仓库内没有任何真实班级照片(相册数据走 Supabase `albums` / `album_photos`)。
+## 维护入口
 
-## 仓库拓扑(2026-08-25 起)
+- [代码怎么分工](docs/architecture.md)：改哪里会影响哪里，数据和外部接口在哪。
+- [开发与验证](docs/development.md)：命令、生成文件、测试范围、部署脚本实际做什么。
+- [现有界面](docs/design-constitution.md)：从 JSX 和 CSS 整理出的页面结构与样式位置。
+- [还没解决的问题](docs/remaining-work.md)：没有清完的旧代码、状态耦合与验证缺口。
+- [Worker 接口](worker/README.md)：聊天和语音请求、配置以及当前限制。
 
-- 本仓 = **班级网站线**,默认分支 `mathclass/main`,线上 `rucmathclass.com` 的构建来源。
-- 姊妹站 **Raccord**(作者数字作品,未首发)已拆至独立仓 [`raccord`](https://github.com/jsfjsf20070513-a11y/raccord);本仓的旧 `main` 分支只是拆仓前的只读引用(tag `backup/pre-split-2026-08-25`),不在其上开发。
-- 更早的原始班级站存档在 [`mathclass-archive`](https://github.com/jsfjsf20070513-a11y/mathclass-archive)(GitHub 只读归档)。
-
-## 部署
-
-`deploy.sh` 只读环境变量,不含任何主机名或密钥;构建后 rsync `dist/` 到服务器。私有照片注入链路已退役并从脚本中移除。部署后以 `https://rucmathclass.com/health.json` 的 `buildTime` 为准做前后对照。
-
-## 诚实说明
-
-- 语音朗读当前使用 preview 模型,无稳定性承诺。
-- `/resources/curate` 的推荐提交会进入待审队列,站内审核界面暂时下线,处理会有延迟。
-
-## License
-
-[MIT](LICENSE) — 覆盖源代码;班级具体内容(照片等)不在本仓,亦不在授权范围内。
+提交前运行 `npm run lint && npm test && npm run build`。通过这些检查不等于线上已经更新，也不等于所有页面交互都验证过。

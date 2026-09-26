@@ -1,11 +1,7 @@
 name: CI
 
-# Lint + unit tests + production build on every push/PR to mathclass/main
-# (this repo's only active line since the 2026-08-25 repo split; the Raccord
-# line now lives in the separate `raccord` repo). Tests cover the
-# persistence workflows, public resource boundaries, and asset checks. Build
-# checks the committed portrait manifest and JPEGs offline, then renders theorems
-# and health metadata; no private assets or download step is needed.
+# 对 mathclass/main 的推送和 PR 执行 lint、单测、构建。
+# 这些检查不连接生产数据库，也不执行部署。
 
 on:
   push:

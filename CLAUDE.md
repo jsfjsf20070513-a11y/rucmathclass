@@ -1,54 +1,32 @@
-# CLAUDE.md — 班级网站线(Carnet de classe)
+# 在这个仓库工作
 
-> 本文件 2026-08-21 重写,2026-08-25 随拆仓更新拓扑表述,2026-09-02 AI 协作债清理(Web3 残留、黑客松文档、照片注入链路全部删除)。旧版"双语链上版 / web3+AI 叠加层"身份已随 2026-08-13 线重启作废。
-> 你在仓 **`rucmathclass`** 的分支 **`mathclass/main`**(目录 `line_math/班级网站`,独立主 clone)——这是**班级网站线**,
-> 线上 `rucmathclass.com` 现役构建就来自本分支,GitHub 默认分支也是它(2026-08-25 起)。
-> Raccord 作者作品站(未首发)已于 2026-08-25 拆到**独立仓 `raccord`**(目录 `line_math/Raccord`);本仓旧 `main`
-> 分支只是拆仓前的只读引用(tag `backup/pre-split-2026-08-25`),**不要在上面动手**。
-> 两线关系与部署互斥见线级 `line_math/CLAUDE.md`(正本);08-21 摸底现场记录已归档在本仓 `docs/archive/math线摸底_2026-08-21.md`。
+这是班级网站的代码仓。先从 `package.json`、`src/App.jsx` 和相关调用链确认现状，再改代码。MD 是索引，不是证据；代码与说明不一致时，指出差异并修正说明，不按旧计划补功能。
 
-## 这是什么
+## 这次工作的范围
 
-**Carnet de classe**——中法数学班的班级手册站,产品身份是**减法**后的两件事:**读 + 练**。
-「中文和法语是这个网站的灵魂」(作者原话,2026-08-13)。2026-08-20 起整站为**杂志刊形态**(5 页横翻扉页)。
+继续整理现有功能和架构，尽量保持页面设计。不因旧文档、旧路由或旧 SQL 的存在，恢复相册、Web3、作品站或管理后台。需要新增功能时先确认方向。
 
-- **扉页 /**:每日定理(48 条,对齐大二上四门课,双语证明,KaTeX 构建期预渲)+ Parole du jour(38 条真实引语)
-- **资源书架 /resources**:静态目录 + Supabase `resources` 增补,外链全部经 sanitizeStoredUrl 消毒
-- **SRS 背词 /vocabulary**:3652 词艾宾浩斯(纯核心 `src/lib/srsScheduler.js` 已单测),进度存 `review_states`(per-user RLS)。词库真相源是 `scripts/vocab-source.json`(`npm run vocab:import` 生成 `frenchVocabulary.js`,不手改生成物);词条 `id` 绑用户复习进度,不可改动
-- **AI 助手 /assistant(杂志第 05 页,登录后)**:经 Worker `/api/chat` 调 Gemini(降级链动态发现),云端历史 `ai_messages`
+## 从哪里找
 
-## 技术栈与红线
+- [README](README.md)：页面和本地运行。
+- [架构](docs/architecture.md)：模块、数据流和 Raccord 边界。
+- [开发](docs/development.md)：生成文件、检查命令和运维文件。
+- [界面](docs/design-constitution.md)：现有 JSX/CSS 对应关系。
+- [剩余问题](docs/remaining-work.md)：已知但还没完成的工作。
+- [Worker](worker/README.md)：服务接口。
 
-- React 18 + React Router 7 + Vite 5 **静态 SPA** + Supabase(anon key + RLS)+ KaTeX。保持此形态,别回退服务端单体,前端不引入需 service-role 的写法。
-- 🔴 **Supabase 与归档仓共享同一项目**,RLS 是唯一且共享的安全边界;本线依赖 7 张表(comments/profiles/review_states/ai_messages/albums/album_photos/resources,全 RLS on)。**恢复任何公开读策略前必须先核列级授权**(comments.user_email 列级 REVOKE 已于 08-13 落地,别退)。
-- 🔴 **共享 Cloudflare Worker(mathclass-ai)正本在本线**(2026-08-21 拍板):改 `worker/` 在本目录部署;改 `/api` 契约前核对 `src/lib/assistantClient.js` 与 `src/hooks/useVocabularyAudio.js`。聊天实现位于 `worker/src/chat.js`,保留 `{messages→text}` 和旧 `body.image`,新增 `messages[].image` 支持当页图片追问;发布此改动时先更新 Worker 再更新前端。Raccord 首发时会把 raccord 路由/CORS 合并进本线配置(见 raccord-deploy skill),届时别当成异物删掉。
-- 🔴 **视觉最高裁定 = `docs/design-constitution.md`(宪法)+ `docs/aesthetic-profile.md`(审美档案)**,改任何页面先读;验证必须在真实渲染页上量,禁止注入 DOM 截图验证。
+## 改动时守住的边界
 
-## 命令与质量闸
+页面和组件不要直接导入 Supabase；通过业务 hook 或 backend 调用。`lib` 和 `data` 不要反过来导入 React、页面、组件或 hook。这两条的静态 import/export 由 ESLint 检查；动态 import() 和运行时行为暂未覆盖。
 
-```bash
-npm install
-npm run dev      # predev 自动跑 render-theorems + generate-health
-npm run lint && npm test && npm run build   # 三连绿再继续(镜像 CI;CI 已含 mathclass/main 触发)
-```
+词条 ID 关联 `review_states.word_id`，不要为了整理词库改 ID。排程结果只有经保存确认后才能推进；账号切换后，旧请求不能覆盖新账号状态。相关代码和测试见架构说明。
 
-- 每个 commit 独立可构建;`public/health.json` 是构建落痕,**提交前 `git restore public/health.json`**。
-- 分支工作流、commit 规范见 mathclass-dev-workflow skill。
+不要把仓库里的 SQL 当作可以全部顺序执行的安装脚本。它们仍混有相册、存储和角色管理。也不要仅根据本仓推断 Raccord 的数据库、部署目录或线上配置。
 
-## 部署
+## 完成一轮工作
 
-走 **mathclass-deploy skill**(2026-08-21 按真实路径重写):发布源=本目录(`班级网站`),
-不设 `MATHCLASS_DEPLOY_DIR`(默认即线上目录),部署前记 buildTime、部署后对照。需用户原文点名授权。
-私有照片注入链路已退役(相册走 Supabase);deploy.sh 的注入段与 prepare/cleanup-private-assets 两脚本已于 09-02 删除,`MATHCLASS_PRIVATE_REPO` 不再被读取。
+在工作分支修改，提交前运行 `npm run lint && npm test && npm run build`。构建会改写 `public/health.json`；若它只是本次验证产生的时间戳，在提交前还原。涉及交互或布局时还要看真实页面，不能只看测试数。
 
-## 关键文档
+提交说明写清改了什么、怎么验证、哪里仍未验证。同一工作目录只保留一位写入者。合并 PR 和部署需要用户明确授权；“继续”不自动表示授权合并或上线。
 
-- `docs/mathclass-line-restart-2026-08-13.md` —— 线重启底稿:五维盘点、风险清单、roadmap(阶段1✅;阶段2 诚实性刷新原定 9 月前,**已到期、三件事未逐项核验**;阶段3 等作者点方向)
-- `docs/design-constitution.md` + `docs/aesthetic-profile.md` —— 视觉宪法(08-20 立宪)
-- `docs/INDEX.md` —— 文档导航
-
-## 已知债(重启盘点遗留,动相关模块前看一眼)
-
-- 资源推荐闭环断裂:`/resources/curate` 提交入 ops 队列但站内审核 UI 已下线,提交安静堆积
-- Web3 已整线退役:寄语墙 08-13 拆除(`17e9fd9`),Anchor 程序与 wallet 代码 09-02 删除,历史在 git。`comments` 表仍由 `src/lib/opsQueue.js` 使用,不是寄语墙残留
-- Worker TTS 用 preview 模型(无稳定性承诺)
+`AGENTS.md` 指向本文件，其他代理入口只链接这里，不另写一套项目事实。不要把会话过程、猜测和未完成计划不断追加进来。

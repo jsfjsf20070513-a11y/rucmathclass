@@ -11,7 +11,7 @@ const selectDeck = (level) => VALID_DECK.filter((word) => level === 'all' || wor
 // Owns one account's current lesson. Persistence contracts stay in lib/;
 // the page consumes this state without performing database requests.
 export function useVocabularyTrainer(userId) {
-  // idle = 扉页(宪法 §5.2 的开始屏);其余同旧:loading|study|ready|disabled|compat|empty|error|done
+  // idle = 开始屏；其余状态:loading|study|ready|disabled|compat|empty|error|done
   const [status, setStatus] = useState('loading')
   const [studyList, setStudyList] = useState([]) // {word, state} — preview deck shown before the test
   const [studyIdx, setStudyIdx] = useState(0)

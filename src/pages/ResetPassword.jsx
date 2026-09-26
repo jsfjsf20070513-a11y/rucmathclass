@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
-import { SUPABASE_MISSING_MESSAGE } from '../lib/supabase'
 import AuthStatus from '../components/AuthStatus'
 import { usePasswordReset } from '../hooks/usePasswordReset'
 
@@ -35,7 +34,7 @@ export default function ResetPassword() {
         <Masthead
           summary={pageState === 'invalid'
             ? '链接已失效或账号发生了变化。请回到登录页重新申请重置邮件。'
-            : SUPABASE_MISSING_MESSAGE}
+            : '登录服务尚未配置，暂时无法修改密码。'}
         />
         <div className="reset-state">
           <p><Link to="/login" className="mag-enter">重新申请 · 找回密码 →</Link></p>
