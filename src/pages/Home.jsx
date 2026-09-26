@@ -8,7 +8,10 @@ import { paroles } from '../data/siteContent'
 import { portraits, portraitSrc } from '../data/portraits'
 import { resourceCategories } from '../data/resourceCatalog'
 import { usePageFlip } from '../hooks/usePageFlip'
-import { startWeatherCanvas, weatherInkFor } from '../lib/weatherCanvas'
+import { weatherInkFor } from '../lib/weatherCanvas'
+import { useHomeWeather } from '../hooks/useHomeWeather'
+import { useCoverAtmosphere } from '../hooks/useCoverAtmosphere'
+import { useConnexionTransition } from '../hooks/useConnexionTransition'
 import { flipNavFrom, markFlipNav } from '../lib/flipNav'
 
 // 扉页：全屏横翻，各页样式在 App.css 的 .mag 下。
@@ -18,8 +21,6 @@ import { flipNavFrom, markFlipNav } from '../lib/flipNav'
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 const THEOREM_ROTATION_START_DAY = Math.floor(Date.UTC(2025, 8, 1) / DAY_IN_MS)
-const WEATHER_CACHE_KEY = 'mcw_weather_cache'
-const WEATHER_CACHE_MS = 3 * 3600 * 1000
 // 未登录 5 页;登录后插入 05 Correspondance(AI 答疑之门),Parole 顺延为 06 压卷。
 const SIDES_BASE = ['none', 'right', 'left', 'top', 'bottom']
 const SIDES_FULL = ['none', 'right', 'left', 'top', 'left', 'bottom']
@@ -65,29 +66,16 @@ function getEditionDateLabel() {
   }).format(new Date())
 }
 
-function readCachedWeather() {
-  try {
-    const raw = window.localStorage.getItem(WEATHER_CACHE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    if (parsed && Date.now() - parsed.at < WEATHER_CACHE_MS) return parsed.w
-  } catch {
-    // storage unavailable
-  }
-  return null
-}
-
 export default function Home() {
   const navigate = useNavigate()
   const { user, signOut, isAuthEnabled, loading: sessionLoading, error: sessionError, signingOut, signOutError } = useAuth()
-  const [weather, setWeather] = useState(() => readCachedWeather())
+  const weather = useHomeWeather()
   const hasAssistant = Boolean(user)
   // 站内返回:按来路直落对应页,整册从左侧翻入(反向对称)。
   const [entry] = useState(() => {
     const from = flipNavFrom()
     return { back: Boolean(from), from, page: from ? returnPageFor(from, Boolean(user)) : 0 }
   })
-  const [connexionOpen, setConnexionOpen] = useState(false)
 
   // Connexion 屏(原地渲染,对接 Supabase auth)
   const [email, setEmail] = useState('')
@@ -110,8 +98,7 @@ export default function Home() {
   const coverContentRef = useRef(null)
   const paroleRef = useRef(null)
   const loginRef = useRef(null)
-  const entranceStartedRef = useRef(false)
-  const splittingRef = useRef(false)
+  const { connexionOpen, splitParole } = useConnexionTransition({ paroleRef, loginRef, userId: user?.id })
 
   const corIdx = 4
   const paroleIdx = hasAssistant ? 5 : 4
@@ -144,59 +131,7 @@ export default function Home() {
   const coverInk = weatherInkFor(weather)
   const displayName = user?.user_metadata?.nickname || user?.user_metadata?.real_name || user?.email || ''
 
-  // 入场契约:文字与天气一起淡入(1.1s);API 超 1.2s 兜底直显。
-  const startEntrance = useCallback(() => {
-    if (entranceStartedRef.current) return
-    entranceStartedRef.current = true
-    const cc = coverContentRef.current
-    if (!cc) return
-    cc.style.transition = 'opacity 1.1s ease'
-    requestAnimationFrame(() => requestAnimationFrame(() => { cc.style.opacity = '1' }))
-    window.setTimeout(() => { cc.style.transition = 'none' }, 1300)
-  }, [])
-
-  useEffect(() => {
-    if (weather) startEntrance()
-    const fallback = window.setTimeout(startEntrance, 1200)
-    const controller = new AbortController()
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=31.30&longitude=120.62&current=temperature_2m,weather_code,is_day&timezone=Asia/Shanghai', { signal: controller.signal })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data?.current) return
-        const fresh = {
-          temp: Math.round(data.current.temperature_2m),
-          code: data.current.weather_code,
-          isDay: data.current.is_day,
-        }
-        try {
-          window.localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ at: Date.now(), w: fresh }))
-        } catch {
-          // ignore
-        }
-        setWeather((prevW) => {
-          if (prevW && prevW.temp === fresh.temp && prevW.code === fresh.code && prevW.isDay === fresh.isDay) {
-            return prevW
-          }
-          return fresh
-        })
-        startEntrance()
-      })
-      .catch(() => {})
-    return () => {
-      window.clearTimeout(fallback)
-      controller.abort()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startEntrance])
-
-  // 天气粒子:weather 就绪后启动;移动端粒子数减半;
-  // 只在封面页跑 rAF——翻进内页时封面已隐藏,继续画就是白烧 GPU。
-  useEffect(() => {
-    if (!weather || !canvasRef.current || page !== 0) return undefined
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
-    const particleScale = window.innerWidth < 720 ? 0.5 : 1
-    return startWeatherCanvas(canvasRef.current, weather, { particleScale })
-  }, [weather, page])
+  useCoverAtmosphere({ weather, page, canvasRef, contentRef: coverContentRef })
 
   // 站内衔接:立即跳转,由目标页翻入盖上来——不翻出当前页,
   // 否则会先露出底下的肖像墙再切换(用户:不利落)。
@@ -204,58 +139,6 @@ export default function Home() {
     markFlipNav('/')
     navigate(to)
   }, [navigate])
-
-  // Connexion 撕开转场:克隆 Parole 两半,双半外翻露出底下的登录屏;Retour 反向合拢。
-  const splitParole = useCallback((open) => {
-    const parole5 = paroleRef.current
-    const login = loginRef.current
-    if (!parole5 || !login || splittingRef.current) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      login.style.visibility = open ? 'visible' : 'hidden'
-      setConnexionOpen(open)
-      return
-    }
-    splittingRef.current = true
-    const parent = parole5.parentElement
-    const OUT_L = 'translateX(-58%) rotate(-1.6deg)'
-    const OUT_R = 'translateX(58%) rotate(1.6deg)'
-    const mk = (clipRight) => {
-      const c = parole5.cloneNode(true)
-      c.style.zIndex = '60'
-      c.style.transition = 'none'
-      c.style.transform = open ? 'none' : (clipRight ? OUT_R : OUT_L)
-      c.style.clipPath = clipRight ? 'inset(0 0 0 50%)' : 'inset(0 50% 0 0)'
-      c.style.pointerEvents = 'none'
-      c.style.willChange = 'transform'
-      c.style.opacity = '1'
-      parent.appendChild(c)
-      return c
-    }
-    const l = mk(false)
-    const r = mk(true)
-    if (open) login.style.visibility = 'visible'
-    requestAnimationFrame(() => {
-      l.getBoundingClientRect()
-      const tr = `transform 0.62s cubic-bezier(0.45, 0, 0.12, 1)`
-      l.style.transition = tr
-      r.style.transition = tr
-      l.style.transform = open ? OUT_L : 'translateX(0) rotate(0deg)'
-      r.style.transform = open ? OUT_R : 'translateX(0) rotate(0deg)'
-    })
-    window.setTimeout(() => {
-      if (!open) login.style.visibility = 'hidden'
-      l.remove()
-      r.remove()
-      splittingRef.current = false
-      setConnexionOpen(open)
-    }, 650)
-  }, [])
-
-  useEffect(() => {
-    if (!user || !connexionOpen) return undefined
-    const timer = window.setTimeout(() => splitParole(false), 500)
-    return () => window.clearTimeout(timer)
-  }, [user, connexionOpen, splitParole])
 
   const handleConnexion = useCallback(async (event) => {
     event.preventDefault()
@@ -460,6 +343,7 @@ export default function Home() {
             <>
               <input
                 type="email"
+                aria-label="邮箱"
                 disabled={authLoading}
                 className="mag-connexion-input"
                 placeholder="Adresse e-mail"
@@ -470,6 +354,7 @@ export default function Home() {
               />
               <input
                 type="password"
+                aria-label="密码"
                 disabled={authLoading}
                 className="mag-connexion-input"
                 placeholder="Mot de passe"
@@ -503,8 +388,8 @@ export default function Home() {
       {/* ── folio 与翻页钮(不翻的常驻层) ── */}
       <div className="mag-folio" aria-hidden="true">{folio}</div>
       <div className="mag-controls">
-        <button type="button" onClick={prev} aria-label="上一页" className="mag-arrow" disabled={page === 0}>‹</button>
-        <button type="button" onClick={next} aria-label="下一页" className="mag-arrow is-next" disabled={page === pageCount - 1}>›</button>
+        <button type="button" onClick={prev} aria-label="上一页" className="mag-arrow" disabled={connexionOpen || page === 0}>‹</button>
+        <button type="button" onClick={next} aria-label="下一页" className="mag-arrow is-next" disabled={connexionOpen || page === pageCount - 1}>›</button>
       </div>
     </div>
   )

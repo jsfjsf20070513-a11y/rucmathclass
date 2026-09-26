@@ -1,3 +1,5 @@
+import { createAnimationTasks } from './animationTasks'
+
 // 封面天气 canvas，负责天气对应的粒子和墨色。
 // 四模式:雨(尾迹雨丝+底缘涟漪+溅珠)、雷(双闪节奏+锯齿闪电)、
 // 晴昼(暖金呼吸光晕)、晴夜(深蓝暮色+月光池)。全部 dt 驱动,帧率无关。
@@ -39,18 +41,21 @@ export function startWeatherCanvas(canvas, weather, { override = 'auto', particl
   const ctx = canvas.getContext('2d')
   if (!ctx) return () => {}
 
+  const tasks = createAnimationTasks()
+
   // 柔和登场:氛围呼吸着进来,不弹跳。
   canvas.style.opacity = '0'
   canvas.style.transition = 'opacity 1.4s ease'
-  requestAnimationFrame(() => requestAnimationFrame(() => { canvas.style.opacity = '1' }))
-  const fadeTimer = window.setTimeout(() => { canvas.style.transition = 'none' }, 1600)
+  tasks.frame(() => tasks.frame(() => { canvas.style.opacity = '1' }))
+  tasks.timeout(() => { canvas.style.transition = 'none' }, 1600)
 
   const { type, isDay } = resolveWeatherType(weather, override)
 
-  const dpr = window.devicePixelRatio || 1
+  let dpr = 1
   let cw = 0
   let ch = 0
   const resize = () => {
+    dpr = Math.min(window.devicePixelRatio || 1, 2)
     const rect = canvas.parentElement.getBoundingClientRect()
     cw = rect.width
     ch = rect.height
@@ -98,7 +103,6 @@ export function startWeatherCanvas(canvas, weather, { override = 'auto', particl
   // 雷电状态机:idle → flash1 → gap → flash2 → idle
   const flash = { t: 0, phase: 'idle', next: 3000 + Math.random() * 6000, boltX: 0 }
 
-  let raf = 0
   let last = performance.now()
   const draw = (nowT) => {
     const dt = Math.min(nowT - last, 50) // 切标签页夹住
@@ -261,13 +265,12 @@ export function startWeatherCanvas(canvas, weather, { override = 'auto', particl
       }
     }
 
-    raf = requestAnimationFrame(draw)
+    tasks.frame(draw)
   }
-  raf = requestAnimationFrame(draw)
+  tasks.frame(draw)
 
   return () => {
-    cancelAnimationFrame(raf)
-    window.clearTimeout(fadeTimer)
+    tasks.cancel()
     window.removeEventListener('resize', resize)
   }
 }
