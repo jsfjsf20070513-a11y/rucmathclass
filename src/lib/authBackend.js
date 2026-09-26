@@ -23,7 +23,7 @@ export const verifyEmailCode = (email, token) => callAuth('verifyOtp', { email: 
 export const requestPasswordReset = (email, origin) => callAuth('resetPasswordForEmail', email.trim(), { redirectTo: `${origin}/reset-password` })
 
 function unconfirmedPasswordError() {
-  return Object.assign(new Error('密码更新结果尚未确认，请用新密码核对登录状态，勿连续提交。'), { code: 'AUTH_WRITE_UNCONFIRMED' })
+  return Object.assign(new Error('密码更新结果尚未确认，请先退出当前账号，再用新密码核对登录，勿连续提交。'), { code: 'AUTH_WRITE_UNCONFIRMED' })
 }
 
 export async function updatePassword(expectedUserId, password) {

@@ -50,7 +50,7 @@ export default function ResetPassword() {
         <Masthead summary="密码已更新，当前账号仍保持登录。" />
         <div className="reset-state">
           <p className="reset-ok">✓ 已更新</p>
-          <p><Link to="/login" className="mag-enter">前往登录 · Connexion →</Link></p>
+          <p><Link to="/" className="mag-enter">返回首页 · Accueil →</Link></p>
         </div>
       </article>
     )

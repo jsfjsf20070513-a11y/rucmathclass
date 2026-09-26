@@ -61,7 +61,7 @@ export default function Login() {
 }
 
 function LoginForm() {
-  const { user, loading: sessionLoading, error: sessionError, isAuthEnabled } = useAuth()
+  const { user, loading: sessionLoading, error: sessionError, isAuthEnabled, signOut, signingOut, signOutError } = useAuth()
   const requestRef = useRef(false)
   // aux=1:从杂志撕开屏(它本身就是登录)跳来,本页只承担登录做不了的三件事:
   // 注册 / 验证码 / 找回密码,默认落注册;直接访问 /login 仍是完整四页签。
@@ -217,6 +217,10 @@ function LoginForm() {
           <Link to="/vocabulary" className="mag-enter" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
           <Link to="/" className="mag-enter" lang="fr">Accueil&nbsp;&nbsp;→</Link>
         </div>
+        <p className="status-line">
+          <button type="button" className="text-button" onClick={signOut} disabled={signingOut}>{signingOut ? '退出中…' : '退出并重新登录'}</button>
+        </p>
+        {signOutError ? <p className="status-line is-error" role="status">{signOutError}</p> : null}
       </article>
     )
   }
