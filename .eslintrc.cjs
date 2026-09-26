@@ -9,6 +9,7 @@ module.exports = {
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs', 'src/**/*_backup.jsx', 'worker', 'docs/archive'],
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+  overrides: [{ files: ['scripts/**/*.mjs'], env: { node: true } }],
   settings: { react: { version: '18.2' } },
   plugins: ['react-refresh'],
   rules: {
