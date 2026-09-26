@@ -39,9 +39,3 @@
 页面要求登录，但 [Worker 入口](../worker/src/index.js) 没有验证 Supabase 会话。CORS 只限制浏览器跨域读取，不是接口身份认证；限流绑定失败时仍会继续处理请求。
 
 语音默认走浏览器，Worker 语音接口仍保留且上游请求没有显式超时。聊天模型列表查询失败时会使用写死的候选名称，代码不能证明这些模型当前一定可用。不要在说明里承诺“免费”“始终可用”或“只有登录用户能调接口”。
-
-## 7. 封面图片的可复现构建修复尚未并入当前分支
-
-当前 [下载脚本](../scripts/fetch-portraits.mjs) 读取 `scripts/portraits.json`，页面另读 `src/data/portraits.js`；仍有两份清单。当前 Git 跟踪的封面肖像为零，predev/prebuild 也没有检查缺图。因此构建成功仍可能得到缺图封面。
-
-这个问题已在独立的 [PR #34](https://github.com/jsfjsf20070513-a11y/rucmathclass/pull/34) 处理，但不在当前分支。合并时一并更新 README 和开发说明，移除此条，不要重复实现第二套素材流程。

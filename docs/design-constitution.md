@@ -8,6 +8,8 @@
 
 首页是全屏横翻：未登录时有封面、背词、定理、书架和引语五页；登录后在引语前插入 AI 入口。登录表单从引语页展开。布局、账号变化和页数之间的关系在 [Home.jsx](../src/pages/Home.jsx)，通用翻页在 [usePageFlip.js](../src/hooks/usePageFlip.js)。改内部结构时不要顺便改这些视觉和交互行为。
 
+封面肖像统一从 [portraits.json](../src/data/portraits.json) 读取，图片在 `public/portraits/`。开发和构建会先做离线素材检查；它检查文件标记，不代替真实图片解码和页面观感验证。
+
 ## 样式在哪里
 
 | 范围 | 代码入口 |

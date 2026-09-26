@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-当前分支的封面图片还没有随 Git 入库。首次启动若缺图，运行 `node scripts/fetch-portraits.mjs` 补齐；这会访问外部图片源。相关可复现构建修复在独立的 [PR #34](https://github.com/jsfjsf20070513-a11y/rucmathclass/pull/34)，合并该修复时应同步更新这段启动说明。
+封面的 60 张肖像和统一清单已经随 Git 入库。开发和构建会先离线检查素材，正常启动不需要临时下载图片。
 
 需要登录时，把 `.env.example` 复制成 `.env.local`，填写 Supabase URL 和公开的 anon key。不要填 service-role key。没有这两个配置时，公开页面仍能打开，账号功能不可用。
 

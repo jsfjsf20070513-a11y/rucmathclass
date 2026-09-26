@@ -12,6 +12,7 @@ module.exports = {
   settings: { react: { version: '18.2' } },
   plugins: ['react-refresh'],
   overrides: [
+    { files: ['scripts/**/*.mjs'], env: { node: true } },
     {
       files: ['src/pages/**/*.{js,jsx}', 'src/components/**/*.{js,jsx}'],
       rules: {

@@ -6,9 +6,9 @@
 
 | 命令 | 会做什么 |
 | --- | --- |
-| `npm run dev` | 先生成定理 HTML 和 health 文件，再启动 Vite |
-| `npm run lint` | 检查 JS/JSX 和前端导入边界；当前不检查 Worker 和 `.mjs` 脚本 |
-| `npm test` | 在 Node 环境运行 `src/`、`worker/src/` 下的 `*.test.js` |
+| `npm run dev` | 先离线检查肖像素材，再生成定理 HTML、health 文件并启动 Vite |
+| `npm run lint` | 检查 JS/JSX/MJS 和前端导入边界；当前不检查 Worker |
+| `npm test` | 在 Node 环境运行 `src/`、`worker/src/`、`scripts/` 下的 `*.test.js` |
 | `npm run build` | 运行同样的生成步骤，再生成 `dist/` |
 | `npm run preview` | 本地查看已有构建 |
 
@@ -22,7 +22,7 @@
 | 双语证明文本 | [theoremExplanations.js](../src/data/theoremExplanations.js) | 同上；生成脚本存在不表示每份产物都正被页面使用 |
 | 法语词库 | [vocab-source.json](../scripts/vocab-source.json) | 先检查导入报告，再明确指定输出 |
 | 静态书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取；外链经过 URL 校验 |
-| 封面肖像 | [portraits.js](../src/data/portraits.js)、[下载清单](../scripts/portraits.json) 与 `public/portraits/` | [fetch-portraits.mjs](../scripts/fetch-portraits.mjs) 可补齐缺失图片，会访问外部图片源 |
+| 封面肖像 | [统一清单](../src/data/portraits.json) 与已入库的 `public/portraits/` | `npm run portraits:check` 离线检查缺图、JPEG 文件标记和多余文件；显式执行 `npm run portraits:fetch` 才会联网补图 |
 
 词库命令需要传入文件，单独运行 `npm run vocab:import` 不会自动导入默认词库：
 
