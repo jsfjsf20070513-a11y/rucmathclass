@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 登录状态 | [AuthContext](../src/context/AuthContext.jsx)、[authSession](../src/lib/authSession.js)、[authBackend](../src/lib/authBackend.js) | React 订阅、会话事件、认证请求分别处理 |
 | 密码重置 | [usePasswordReset](../src/hooks/usePasswordReset.js) | 表单绑定最初确认的账号；更新请求使用该账号的已验证令牌 |
-| 背词 | [useVocabularyTrainer](../src/hooks/useVocabularyTrainer.js) | 页面展示在 `Vocabulary.jsx`；排程、出题、快照、保存另有模块，但操作顺序仍集中在这个 hook |
+| 背词 | [vocabularyTrainer](../src/lib/vocabularyTrainer.js)、[useVocabularyTrainer](../src/hooks/useVocabularyTrainer.js) | 控制器管理练习顺序和保存确认；hook 连接账号、键盘、焦点和音频；`Vocabulary.jsx` 展示页面 |
 | AI 对话 | [assistantConversation](../src/lib/assistantConversation.js) | 管理读取、发送、保存、清空的顺序；网络请求和历史存取由外部传入 |
 | 资源书架 | [useResourceCatalog](../src/hooks/useResourceCatalog.js)、[resourceBackend](../src/lib/resourceBackend.js) | 公开读取只依赖 `resources`；再与静态目录合并 |
 | 首页和翻页 | [Home](../src/pages/Home.jsx)、[usePageFlip](../src/hooks/usePageFlip.js) | 通用翻页已独立；天气、账号变化和登录展开动画仍在首页 |
@@ -25,11 +25,14 @@
 
 ## 背词进度
 
+- [vocabularyTrainer](../src/lib/vocabularyTrainer.js) 每个实例只管理一个账号。加载、预习、作答、保存确认、恢复和错词重练集中在这里；存储、请求和时间由外部传入，可以脱离 React 测试。
 - [srsScheduler](../src/lib/srsScheduler.js) 决定复习间隔和队列；[exerciseGenerator](../src/lib/exerciseGenerator.js) 生成题目。
 - [vocabularyBackend](../src/lib/vocabularyBackend.js) 按用户分页读取 `review_states`。更新已有行时比较先前的 `updated_at`，避免覆盖其他设备的新进度。
 - [reviewSubmission](../src/lib/reviewSubmission.js) 固定本次待保存结果；结果不明确时先核对，不能把重试当作又答对一次。
 - [vocabularySession](../src/lib/vocabularySession.js) 用带账号 ID 的 localStorage key 保存本机一轮题目。一般快照按上海日期过期，未确认写入会保留到核对结束。这不是跨设备同步的数据源。
 - 词条 `id` 对应数据库的 `word_id`。改排版或修释义不能顺便重排 ID。
+
+作答时先固定本次结果并保存待确认快照，再发云端请求；云端确认和本地游标保存都成功后，才计分并允许下一题。失败重试复用同一份结果，最后一题也按这个顺序恢复。卸载或开始新一轮加载后，旧请求不能再改状态和本机快照。配对热身只计本轮成绩，不改变单词复习间隔。
 
 ## AI 对话
 
