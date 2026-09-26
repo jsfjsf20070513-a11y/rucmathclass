@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import katex from 'katex'
 import { useAuth } from '../context/useAuth'
+import AuthStatus from '../components/AuthStatus'
 import { useAssistantConversation } from '../hooks/useAssistantConversation'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 
@@ -92,7 +93,7 @@ function getFrDateLabel() {
 }
 
 export default function Assistant() {
-  const { user } = useAuth()
+  const { user, loading: authLoading, error: authError } = useAuth()
   const navigate = useNavigate()
   const [input, setInput] = useState('')
   const { messages, busy, loading, error: conversationError, notice, send: sendMessage, clear: handleClear } = useAssistantConversation(user?.id)
@@ -167,11 +168,14 @@ export default function Assistant() {
       {messages.length ? (
         <button type="button" className="vpl-nav-back cor-effacer" onClick={handleClear} disabled={busy} lang="fr">Effacer · 清空</button>
       ) : (
-        <span className="vpl-nav-side">{user ? (busy ? 'Chargement…' : 'Historique · 对话') : '未登录'}</span>
+        <span className="vpl-nav-side">{authLoading || authError ? '登录状态待确认' : user ? (busy ? 'Chargement…' : 'Historique · 对话') : '未登录'}</span>
       )}
     </nav>
   )
 
+  if (authLoading || authError) {
+    return <main className={`cor${arrive ? ' mag-arrive' : ''}`}>{nav}<div className="cor-gate"><AuthStatus className="vpl-notice-text" /></div></main>
+  }
   if (!user) {
     return (
       <main className={`cor${arrive ? ' mag-arrive' : ''}`}>

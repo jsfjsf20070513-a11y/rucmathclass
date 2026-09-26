@@ -10,7 +10,7 @@ const navItems = [
 
 export default function Layout() {
   const location = useLocation()
-  const { user, signOut, isAuthEnabled } = useAuth()
+  const { user, signOut, isAuthEnabled, signingOut, signOutError } = useAuth()
   const displayName = user?.user_metadata?.nickname || user?.user_metadata?.real_name || user?.email || ''
 
   // 杂志刊页面自带角落导航/细导航条,不渲染站点页眉页脚(宪法 §5)。
@@ -75,12 +75,13 @@ export default function Layout() {
           {user ? (
             <>
               <span className="site-auth-note">已登录 · {displayName}</span>
-              <button type="button" className="site-auth-link" onClick={() => signOut()}>退出</button>
+              <button type="button" className="site-auth-link" onClick={signOut} disabled={signingOut}>{signingOut ? '退出中…' : '退出'}</button>
             </>
           ) : !isAuthEnabled ? (
             <span className="site-auth-note">登录未启用</span>
           ) : null}
         </p>
+        {signOutError ? <p className="status-line is-error" role="status">{signOutError}</p> : null}
       </footer>
     </div>
   )

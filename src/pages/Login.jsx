@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
-import { supabase, isSupabaseConfigured, SUPABASE_MISSING_MESSAGE } from '../lib/supabase'
+import { useAuth } from '../context/useAuth'
+import AuthStatus from '../components/AuthStatus'
+import { signIn, signUp, requestEmailCode, verifyEmailCode, requestPasswordReset, authErrorMessage } from '../lib/authBackend'
 import { markFlipNav } from '../lib/flipNav'
 
 const OTP_RESEND_SECONDS = 60
@@ -54,6 +56,13 @@ const ERRORS = {
 }
 
 export default function Login() {
+  const { user } = useAuth()
+  return <LoginForm key={user?.id || 'guest'} />
+}
+
+function LoginForm() {
+  const { user, loading: sessionLoading, error: sessionError, isAuthEnabled, signOut, signingOut, signOutError } = useAuth()
+  const requestRef = useRef(false)
   // aux=1:从杂志撕开屏(它本身就是登录)跳来,本页只承担登录做不了的三件事:
   // 注册 / 验证码 / 找回密码,默认落注册;直接访问 /login 仍是完整四页签。
   const [aux] = useState(() => new URLSearchParams(window.location.search).get('aux') === '1')
@@ -65,9 +74,6 @@ export default function Login() {
   const [realName, setRealName] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState(null)
-  // After a successful sign-in we don't auto-navigate; we offer a destination
-  // choice (背词 / 寄语墙) so the user lands where they meant to.
-  const [signedIn, setSignedIn] = useState(false)
   // OTP (email verification code) flow: otpSent gates the two steps
   // (request code → verify code); resendCountdown throttles re-requests.
   const [otpSent, setOtpSent] = useState(false)
@@ -89,6 +95,7 @@ export default function Login() {
   // Switch tab and clear transient OTP state so a half-finished code flow
   // never leaks into another mode.
   const switchMode = (next) => {
+    if (requestRef.current) return
     setMode(next)
     setMessage(null)
     setOtpSent(false)
@@ -100,19 +107,14 @@ export default function Login() {
     if (!email.trim()) {
       throw new Error(ERRORS.emailRequired)
     }
-    // shouldCreateUser:false — code sign-in is for existing accounts only;
-    // new accounts must go through signup (which collects real name / nickname).
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { shouldCreateUser: false },
-    })
-    if (error) throw error
+    await requestEmailCode(email)
   }
 
   const handleResendOtp = async () => {
-    if (resendCountdown > 0 || loading) {
+    if (resendCountdown > 0 || requestRef.current) {
       return
     }
+    requestRef.current = true
     setLoading(true)
     setMessage(null)
     try {
@@ -120,27 +122,25 @@ export default function Login() {
       setResendCountdown(OTP_RESEND_SECONDS)
       setMessage({ type: 'success', text: '验证码已重新发送。' })
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || ERRORS.generic })
+      setMessage({ type: 'error', text: authErrorMessage(error) })
     } finally {
+      requestRef.current = false
       setLoading(false)
     }
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!isSupabaseConfigured || !supabase) {
-      setMessage({ type: 'error', text: SUPABASE_MISSING_MESSAGE })
-      return
-    }
+    if (requestRef.current || sessionLoading || !isAuthEnabled) return
 
+    requestRef.current = true
     setLoading(true)
     setMessage(null)
 
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        if (error) throw error
-        setSignedIn(true)
+        await signIn(email, password)
+        setPassword('')
         return
       }
 
@@ -150,22 +150,10 @@ export default function Login() {
         if (password.length < 6) throw new Error(ERRORS.passwordTooShort)
         if (password !== confirmPassword) throw new Error(ERRORS.passwordMismatch)
 
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: {
-            data: {
-              nickname: nickname.trim(),
-              real_name: realName.trim(),
-            },
-          },
-        })
-
-        if (error) throw error
-        if (data.session) {
-          setSignedIn(true)
-          return
-        }
+        const data = await signUp(email, password, nickname, realName)
+        setPassword('')
+        setConfirmPassword('')
+        if (data.session) return
         setMessage({
           type: 'success',
           text: '注册完成。若启用了邮箱确认,请先前往邮箱验证。',
@@ -187,13 +175,8 @@ export default function Login() {
         if (!otpCode.trim()) {
           throw new Error(ERRORS.otpCodeRequired)
         }
-        const { error } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: otpCode.trim(),
-          type: 'email',
-        })
-        if (error) throw error
-        setSignedIn(true)
+        await verifyEmailCode(email, otpCode)
+        setOtpCode('')
         return
       }
 
@@ -202,17 +185,15 @@ export default function Login() {
         throw new Error(ERRORS.emailRequired)
       }
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      })
-      if (error) throw error
+      await requestPasswordReset(email, window.location.origin)
       setMessage({
         type: 'success',
         text: '重置链接已发送,请检查邮箱。',
       })
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || ERRORS.generic })
+      setMessage({ type: 'error', text: authErrorMessage(error) })
     } finally {
+      requestRef.current = false
       setLoading(false)
     }
   }
@@ -224,7 +205,7 @@ export default function Login() {
     : (loading ? copy.submitting : copy.submit)
 
   // ── after a successful sign-in: where to? ──
-  if (signedIn) {
+  if (user && !sessionLoading && !sessionError) {
     return (
       <article className="page-column login-page lgn">
         <header className="lgn-masthead">
@@ -236,6 +217,10 @@ export default function Login() {
           <Link to="/vocabulary" className="mag-enter" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
           <Link to="/" className="mag-enter" lang="fr">Accueil&nbsp;&nbsp;→</Link>
         </div>
+        <p className="status-line">
+          <button type="button" className="text-button" onClick={signOut} disabled={signingOut}>{signingOut ? '退出中…' : '退出并重新登录'}</button>
+        </p>
+        {signOutError ? <p className="status-line is-error" role="status">{signOutError}</p> : null}
       </article>
     )
   }
@@ -248,20 +233,23 @@ export default function Login() {
         <p className="lgn-summary">{copy.summary}</p>
       </header>
 
+      <AuthStatus />
+      {!isAuthEnabled ? <p className="status-line">登录服务尚未启用。</p> : null}
       <section className="login-section">
         <div className="editorial-actions tabs login-tabs">
           {!aux ? (
-            <button type="button" className={`text-button ${mode === 'login' ? 'active' : ''}`} onClick={() => switchMode('login')}>登录</button>
+            <button type="button" className={`text-button ${mode === 'login' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('login')}>登录</button>
           ) : null}
-          <button type="button" className={`text-button ${mode === 'signup' ? 'active' : ''}`} onClick={() => switchMode('signup')}>注册</button>
-          <button type="button" className={`text-button ${mode === 'otp' ? 'active' : ''}`} onClick={() => switchMode('otp')}>验证码</button>
-          <button type="button" className={`text-button ${mode === 'forgot' ? 'active' : ''}`} onClick={() => switchMode('forgot')}>找回密码</button>
+          <button type="button" className={`text-button ${mode === 'signup' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('signup')}>注册</button>
+          <button type="button" className={`text-button ${mode === 'otp' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('otp')}>验证码</button>
+          <button type="button" className={`text-button ${mode === 'forgot' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('forgot')}>找回密码</button>
         </div>
 
         <form className="editorial-form login-form" onSubmit={handleSubmit}>
           {mode === 'signup' ? (
             <>
               <input
+                disabled={loading}
                 value={realName}
                 onChange={(event) => setRealName(event.target.value)}
                 required
@@ -269,6 +257,7 @@ export default function Login() {
                 aria-label="真实姓名"
               />
               <input
+                disabled={loading}
                 value={nickname}
                 onChange={(event) => setNickname(event.target.value)}
                 required
@@ -283,7 +272,7 @@ export default function Login() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
-            disabled={mode === 'otp' && otpSent}
+            disabled={loading || (mode === 'otp' && otpSent)}
             autoComplete="email"
             placeholder="Adresse e-mail"
             aria-label="邮箱"
@@ -293,6 +282,7 @@ export default function Login() {
             <PasswordField
               label=""
               placeholder="Mot de passe"
+              disabled={loading}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -304,6 +294,7 @@ export default function Login() {
             <PasswordField
               label=""
               placeholder="确认密码 · Confirmer"
+              disabled={loading}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
               required
@@ -314,6 +305,7 @@ export default function Login() {
           {mode === 'otp' && otpSent ? (
             <>
               <input
+                disabled={loading}
                 value={otpCode}
                 onChange={(event) => setOtpCode(event.target.value)}
                 inputMode="numeric"
@@ -333,7 +325,7 @@ export default function Login() {
           ) : null}
 
           <div className="editorial-actions login-submit">
-            <button type="submit" className="mag-enter lgn-submit" disabled={loading}>
+            <button type="submit" className="mag-enter lgn-submit" disabled={loading || sessionLoading || !isAuthEnabled}>
               {submitLabel}
             </button>
           </div>

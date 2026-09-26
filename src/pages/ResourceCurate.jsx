@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import AuthStatus from '../components/AuthStatus'
 import { resourceCategories } from '../data/resourceCatalog'
 import { normalizeResourcePayload, submitOpsSubmission } from '../lib/opsQueue'
 
@@ -17,6 +18,11 @@ const EMPTY = { category: resourceCategories[0]?.label || '', title: '', url: ''
 
 export default function ResourceCurate() {
   const { user } = useAuth()
+  return <ResourceCurateForm key={user?.id || 'guest'} />
+}
+
+function ResourceCurateForm() {
+  const { user, loading: authLoading, error: authError } = useAuth()
   const [form, setForm] = useState(EMPTY)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -58,7 +64,7 @@ export default function ResourceCurate() {
         <p className="login-summary">推荐一条书目或课程链接,审阅后并入「资源」页的公开书架。</p>
       </header>
 
-      {done ? (
+      {authLoading || authError ? <AuthStatus /> : done ? (
         <div className="reset-state">
           <p className="reset-ok">✓ 已提交</p>
           <p>谢谢你的推荐 ——「{done.title}」已进入待审队列,通过后会并入资源页的书架。</p>

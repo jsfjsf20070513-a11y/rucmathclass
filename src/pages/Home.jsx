@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { signIn, authErrorMessage } from '../lib/authBackend'
+import AuthStatus from '../components/AuthStatus'
 import { dailyTheoremNotes } from '../data/dailyTheoremNotes.generated'
 import { paroles } from '../data/siteContent'
 import { portraits, portraitSrc } from '../data/portraits'
@@ -79,7 +80,7 @@ function readCachedWeather() {
 
 export default function Home() {
   const navigate = useNavigate()
-  const { user, signOut, isAuthEnabled } = useAuth()
+  const { user, signOut, isAuthEnabled, loading: sessionLoading, error: sessionError, signingOut, signOutError } = useAuth()
   const [weather, setWeather] = useState(() => readCachedWeather())
   const hasAssistant = Boolean(user)
   // 站内返回:按来路直落对应页,整册从左侧翻入(反向对称)。
@@ -94,6 +95,17 @@ export default function Home() {
   const [password, setPassword] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
   const [authError, setAuthError] = useState('')
+  const authAttempt = useRef(0)
+  const authPending = useRef(false)
+  useEffect(() => {
+    authAttempt.current += 1
+    authPending.current = false
+    setEmail('')
+    setPassword('')
+    setAuthError('')
+    setAuthLoading(false)
+    return () => { authAttempt.current += 1 }
+  }, [user?.id])
 
   const canvasRef = useRef(null)
   const coverContentRef = useRef(null)
@@ -240,29 +252,35 @@ export default function Home() {
     }, 650)
   }, [])
 
+  useEffect(() => {
+    if (!user || !connexionOpen) return undefined
+    const timer = window.setTimeout(() => splitParole(false), 500)
+    return () => window.clearTimeout(timer)
+  }, [user, connexionOpen, splitParole])
+
   const handleConnexion = useCallback(async (event) => {
     event.preventDefault()
-    if (!isSupabaseConfigured || !supabase) {
+    if (authPending.current || sessionLoading) return
+    if (!isAuthEnabled) {
       setAuthError('站点尚未配置登录服务。')
       return
     }
+    const attempt = ++authAttempt.current
+    authPending.current = true
     setAuthLoading(true)
     setAuthError('')
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
-      if (error) throw error
-      setPassword('')
-      // 成功后合拢回 Parole,页脚随 user 状态改写为已登录。
-      window.setTimeout(() => splitParole(false), 500)
+      await signIn(email, password)
+      if (attempt === authAttempt.current) setPassword('')
     } catch (error) {
-      setAuthError(error?.message || '登录失败,请稍后再试。')
+      if (attempt === authAttempt.current) setAuthError(authErrorMessage(error))
     } finally {
-      setAuthLoading(false)
+      if (attempt === authAttempt.current) {
+        authPending.current = false
+        setAuthLoading(false)
+      }
     }
-  }, [email, password, splitParole])
+  }, [email, password, sessionLoading, isAuthEnabled])
 
   const folio = `0${page + 1} — 0${pageCount}`
 
@@ -410,10 +428,10 @@ export default function Home() {
           </p>
         </aside>
         <footer className="mag-parole-foot">
-          {user ? (
+          {sessionLoading || sessionError ? <AuthStatus /> : user ? (
             <p>
               <span>已登录 · {displayName}</span>
-              <button type="button" className="mag-parole-link" onClick={() => signOut()}>退出</button>
+              <button type="button" className="mag-parole-link" onClick={signOut} disabled={signingOut}>{signingOut ? '退出中…' : '退出'}</button>
             </p>
           ) : isAuthEnabled ? (
             <p>
@@ -424,6 +442,7 @@ export default function Home() {
           ) : (
             <p><span>登录未启用</span></p>
           )}
+          {signOutError ? <p className="mag-connexion-error" role="status">{signOutError}</p> : null}
         </footer>
       </section>
 
@@ -442,6 +461,7 @@ export default function Home() {
             <>
               <input
                 type="email"
+                disabled={authLoading}
                 className="mag-connexion-input"
                 placeholder="Adresse e-mail"
                 value={email}
@@ -451,6 +471,7 @@ export default function Home() {
               />
               <input
                 type="password"
+                disabled={authLoading}
                 className="mag-connexion-input"
                 placeholder="Mot de passe"
                 value={password}
@@ -459,12 +480,13 @@ export default function Home() {
                 required
               />
               {authError ? <p className="mag-connexion-error">{authError}</p> : null}
-              <button type="submit" className="mag-enter mag-connexion-submit" disabled={authLoading} lang="fr">
+              <button type="submit" className="mag-enter mag-connexion-submit" disabled={authLoading || sessionLoading} lang="fr">
                 {authLoading ? 'Connexion…' : 'Entrer'}
               </button>
               <button
                 type="button"
                 className="mag-connexion-more"
+                disabled={authLoading}
                 onClick={() => flipNavigate('/login?aux=1')}
               >
                 注册 / 验证码 / 找回密码 →

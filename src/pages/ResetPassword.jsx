@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
-import { supabase, isSupabaseConfigured, SUPABASE_MISSING_MESSAGE } from '../lib/supabase'
+import { SUPABASE_MISSING_MESSAGE } from '../lib/supabase'
+import AuthStatus from '../components/AuthStatus'
+import { usePasswordReset } from '../hooks/usePasswordReset'
 
 // 重设密码 ResetPassword — design contract: centered « Réinitialisation »
 // masthead + a narrow underline-input form, with success / invalid states.
@@ -17,71 +18,13 @@ function Masthead({ summary }) {
 }
 
 export default function ResetPassword() {
-  const navigate = useNavigate()
-  const [pageState, setPageState] = useState('loading')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setPageState('unavailable')
-      return undefined
-    }
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setPageState('form')
-      }
-    })
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setPageState('form')
-      } else {
-        setTimeout(() => {
-          setPageState((current) => (current === 'loading' ? 'invalid' : current))
-        }, 2000)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-    if (!isSupabaseConfigured || !supabase) {
-      setMessage(SUPABASE_MISSING_MESSAGE)
-      return
-    }
-    if (password.length < 6) {
-      setMessage('密码至少需要 6 位字符。')
-      return
-    }
-    if (password !== confirmPassword) {
-      setMessage('两次输入的密码不一致。')
-      return
-    }
-
-    setSubmitting(true)
-    setMessage('')
-    try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) throw error
-      setPageState('success')
-      setTimeout(() => navigate('/'), 2000)
-    } catch (error) {
-      setMessage(error.message || '重置失败,请重新申请重置链接。')
-    } finally {
-      setSubmitting(false)
-    }
-  }
+  const { pageState, account, password, setPassword, confirmPassword, setConfirmPassword, submitting, uncertain, message, handleSubmit } = usePasswordReset()
 
   if (pageState === 'loading') {
     return (
       <article className="page-column login-page lgn">
-        <Masthead title="验证重置链接" summary="正在检查当前链接是否仍然有效…" />
+        <Masthead summary="正在确认当前账号…" />
+        <AuthStatus />
       </article>
     )
   }
@@ -90,9 +33,8 @@ export default function ResetPassword() {
     return (
       <article className="page-column login-page lgn">
         <Masthead
-          title={pageState === 'invalid' ? '链接已失效' : '功能暂不可用'}
           summary={pageState === 'invalid'
-            ? '这个重置链接已过期或已被使用。请回到登录页重新申请一封重置邮件。'
+            ? '链接已失效或账号发生了变化。请回到登录页重新申请重置邮件。'
             : SUPABASE_MISSING_MESSAGE}
         />
         <div className="reset-state">
@@ -105,10 +47,10 @@ export default function ResetPassword() {
   if (pageState === 'success') {
     return (
       <article className="page-column login-page lgn">
-        <Masthead title="密码已更新" summary="密码已写入账户,现在可以用新密码登录了。" />
+        <Masthead summary="密码已更新，当前账号仍保持登录。" />
         <div className="reset-state">
           <p className="reset-ok">✓ 已更新</p>
-          <p><Link to="/login" className="mag-enter">前往登录 · Connexion →</Link></p>
+          <p><Link to="/" className="mag-enter">返回首页 · Accueil →</Link></p>
         </div>
       </article>
     )
@@ -116,12 +58,13 @@ export default function ResetPassword() {
 
   return (
     <article className="page-column login-page lgn">
-      <Masthead title="设置新密码" summary="为账号设置一个新的登录密码。" />
+      <Masthead summary={`为当前账号 ${account.email || ''} 设置新的登录密码。`} />
 
       <section className="login-section">
         <form className="editorial-form login-form" onSubmit={handleSubmit}>
           <PasswordField
             label="新密码 · Nouveau mot de passe"
+            disabled={submitting || uncertain}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
@@ -129,17 +72,19 @@ export default function ResetPassword() {
           />
           <PasswordField
             label="确认新密码 · Confirmer"
+            disabled={submitting || uncertain}
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             required
             autoComplete="new-password"
           />
           <div className="editorial-actions login-submit">
-            <button type="submit" className="mag-enter" disabled={submitting}>
+            <button type="submit" className="mag-enter" disabled={submitting || uncertain}>
               {submitting ? '保存中…' : '保存新密码 · Enregistrer'}
             </button>
           </div>
-          {message ? <p className="status-line is-error">{message}</p> : null}
+          {message ? <p className="status-line is-error" role="status">{message}</p> : null}
+          {uncertain ? <Link to="/login" className="mag-enter">前往登录页核对 →</Link> : null}
         </form>
       </section>
     </article>

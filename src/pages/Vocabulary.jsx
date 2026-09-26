@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import AuthStatus from '../components/AuthStatus'
 import { EXERCISE_TYPES } from '../lib/exerciseGenerator'
 import { VALID_DECK } from '../lib/vocabularySession'
 import { useVocabularyTrainer } from '../hooks/useVocabularyTrainer'
@@ -44,7 +45,7 @@ function posLong(word) {
 }
 
 export default function Vocabulary() {
-  const { user } = useAuth()
+  const { user, loading: authLoading, error: authError } = useAuth()
   const userId = user?.id
   const navigate = useNavigate()
   const [arrive] = useState(() => wasFlipNav())
@@ -316,7 +317,9 @@ export default function Vocabulary() {
   }
 
   let body = null
-  if (!user) {
+  if (authLoading || authError) {
+    body = notice(<AuthStatus className="vpl-notice-text" />)
+  } else if (!user) {
     body = notice(
       <>
         <p className="vpl-kicker" lang="fr">Connexion requise</p>
@@ -428,7 +431,7 @@ export default function Vocabulary() {
       <nav className="vpl-nav" aria-label="页内导航">
         <button type="button" className="vpl-nav-back" onClick={goHome} lang="fr">← Accueil</button>
         <span className="vpl-nav-title" lang="fr">Vocabulaire</span>
-        <span className="vpl-nav-side">{user ? 'Connecté · 已登录' : '未登录'}</span>
+        <span className="vpl-nav-side">{authLoading || authError ? '登录状态待确认' : user ? 'Connecté · 已登录' : '未登录'}</span>
       </nav>
       <div className="vpl-stage">{body}</div>
       <footer className="vpl-foot" aria-hidden={!progress}>
