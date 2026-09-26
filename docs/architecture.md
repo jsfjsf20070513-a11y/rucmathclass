@@ -11,7 +11,7 @@
 | 背词 | [vocabularyTrainer](../src/lib/vocabularyTrainer.js)、[useVocabularyTrainer](../src/hooks/useVocabularyTrainer.js) | 控制器管理练习顺序和保存确认；hook 连接账号、键盘、焦点和音频；`Vocabulary.jsx` 展示页面 |
 | AI 对话 | [assistantConversation](../src/lib/assistantConversation.js) | 管理读取、发送、保存、清空的顺序；网络请求和历史存取由外部传入 |
 | 资源书架 | [useResourceCatalog](../src/hooks/useResourceCatalog.js)、[resourceBackend](../src/lib/resourceBackend.js) | 公开读取只依赖 `resources`；再与静态目录合并 |
-| 首页和翻页 | [Home](../src/pages/Home.jsx)、[usePageFlip](../src/hooks/usePageFlip.js) | 通用翻页已独立；天气、账号变化和登录展开动画仍在首页 |
+| 首页和翻页 | [useHomeWeather](../src/hooks/useHomeWeather.js)、[useConnexionTransition](../src/hooks/useConnexionTransition.js)、[usePageFlip](../src/hooks/usePageFlip.js) | 天气读取、封面绘制、登录展开和翻页各自管理生命周期；Home 保留页面与账号页序 |
 
 `.eslintrc.cjs` 阻止页面、组件直接导入 Supabase，也阻止 `lib`、`data` 反向依赖 React 或界面模块。它检查静态 import/export，不检查动态 import()、所有网络请求和状态顺序。`AuthContext` 连接认证客户端，`useResourceCatalog` 仍直接创建实时订阅，这些是当前的实际边界。
 
@@ -57,3 +57,9 @@ SQL 中有 RLS 和列授权定义，但文件存在不等于线上已执行。�
 `worker/wrangler.toml` 的路由只写了 `rucmathclass.com`，CORS 列表只有班级站域名和本地开发地址。不能把它描述成已经配置好的两站共享服务，也不能据此判断另一仓怎么调用它。
 
 代码仍留下旧审核函数、相册 SQL 和无页面使用的旧样式。Supabase 地址由环境变量决定，部署目录也能被环境变量覆盖，所以**代码入口独立不等于生产数据库与发布权限已经隔离**。本次没有核验另一仓和生产配置。
+
+## 首页动画
+
+天气是可选内容：有效缓存保留三小时，请求连同响应正文最多等待四秒；没有天气时封面仍会显示。封面绘制只在当前页且标签可见时运行，按窗口宽度减小粒子数量，并将画布像素倍率限制为 2。
+
+登录转场一开始就锁住翻页，临时克隆不接收焦点；账号变化会清掉旧克隆。`animationTasks` 管理定时器与动画帧，离开页面时统一取消。`pageFlipRenderer` 负责 DOM 绘制，`usePageFlip` 负责输入；同页数据更新保留正在等待的入场动画，换页才使旧任务失效。
