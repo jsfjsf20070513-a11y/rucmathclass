@@ -1,0 +1,27 @@
+.page-status {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: 48px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: #f4efe6;
+  color: var(--ink);
+}
+.page-status h1 { font-size: clamp(24px, 5vw, 36px); margin-bottom: 20px; }
+.page-status > p { margin: 0 0 16px; color: var(--muted); }
+.page-status > p[lang="fr"] { font-style: italic; }
+.page-status-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; }
+.page-status-actions button {
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
