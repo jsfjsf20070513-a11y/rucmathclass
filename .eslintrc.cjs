@@ -14,12 +14,12 @@ module.exports = {
   overrides: [
     { files: ['scripts/**/*.mjs'], env: { node: true } },
     {
-      files: ['src/pages/**/*.{js,jsx}', 'src/components/**/*.{js,jsx}'],
+      files: ['src/pages/**/*.{js,jsx}', 'src/components/**/*.{js,jsx}', 'src/hooks/**/*.{js,jsx}'],
       rules: {
         'no-restricted-imports': ['error', {
           patterns: [{
             group: ['**/supabase', '**/supabase.js', '@supabase/supabase-js', '@supabase/supabase-js/**'],
-            message: '页面和组件通过业务 hook 或 backend 调用服务，不直接操作 Supabase。',
+            message: '界面和 hook 通过 backend 调用服务，不直接操作 Supabase。',
           }],
         }],
       },

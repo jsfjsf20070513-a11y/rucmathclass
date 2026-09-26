@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/useAuth'
-import { recoveryCallbackFailed } from '../lib/supabase'
 import { updatePassword, authErrorMessage } from '../lib/authBackend'
 
 export function usePasswordReset() {
-  const { user, loading, error, isAuthEnabled } = useAuth()
+  const { user, loading, error, isAuthEnabled, recoveryCallbackFailed } = useAuth()
   const [account, setAccount] = useState(null)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

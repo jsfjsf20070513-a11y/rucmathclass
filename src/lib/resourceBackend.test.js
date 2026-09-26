@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeSupabase } from '../test/fakeSupabase'
 import { buildPublicResourceCatalog, staticResourceCatalog } from '../data/resourceCatalog'
-import { fetchPublishedResources } from './resourceBackend'
+import { fetchPublishedResources, subscribeToPublishedResources } from './resourceBackend'
 
 const harness = vi.hoisted(() => ({ configured: true, client: null }))
 vi.mock('./supabase', () => ({
@@ -15,6 +15,24 @@ beforeEach(() => {
 })
 
 describe('public resource repository', () => {
+  it('subscribes only to resources and suppresses late events after unmount', () => {
+    const change = vi.fn()
+    let notify
+    const channel = {
+      on: vi.fn((_type, _filter, callback) => { notify = callback; return channel }),
+      subscribe: vi.fn(() => channel),
+    }
+    const client = { channel: vi.fn(() => channel), removeChannel: vi.fn() }
+    const stop = subscribeToPublishedResources(change, client)
+    expect(channel.on.mock.calls[0][1]).toEqual({ event: '*', schema: 'public', table: 'resources' })
+    notify()
+    expect(change).toHaveBeenCalledTimes(1)
+    stop()
+    notify()
+    expect(change).toHaveBeenCalledTimes(1)
+    expect(client.removeChannel).toHaveBeenCalledWith(channel)
+    expect(() => subscribeToPublishedResources(change, null)()).not.toThrow()
+  })
   it('reads only resources, across server-limited pages, newest first with deterministic ties', async () => {
     harness.client = fakeSupabase([
       { id: 1, title: 'Old', created_at: '2026-08-01T00:00:00Z' },

@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
 import { resourceCategories } from '../data/resourceCatalog'
-import { normalizeResourcePayload, submitOpsSubmission } from '../lib/opsQueue'
+import { submitResourceRecommendation } from '../lib/resourceRecommendations'
 
 // 资源增补 ResourceCurate — design contract: centered « Curation de ressources »
 // masthead → a 4-field submit form (书架 / 标题 / 链接 / 理由) → 待审 confirmation.
@@ -26,25 +26,35 @@ function ResourceCurateForm() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(null)
+  const [unconfirmed, setUnconfirmed] = useState(false)
+  const pending = useRef(false)
+  const active = useRef(true)
+  useEffect(() => { active.current = true; return () => { active.current = false } }, [])
 
   const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
 
   const submit = async (event) => {
     event.preventDefault()
+    if (pending.current || unconfirmed || authLoading) return
     setError('')
     if (!user) {
       setError('推荐资源需要先登录。')
       return
     }
+    pending.current = true
     setSubmitting(true)
     try {
-      const next = await submitOpsSubmission('resource', normalizeResourcePayload(form), user)
-      setDone({ title: next?.payload?.title || form.title || '未命名资源' })
+      const next = await submitResourceRecommendation(form, user)
+      if (!active.current) return
+      setDone({ title: next.title })
       setForm(EMPTY)
     } catch (err) {
+      if (!active.current) return
+      setUnconfirmed(err?.code === 'SUBMISSION_UNCONFIRMED')
       setError(err?.message || '提交失败,请稍后重试。')
     } finally {
-      setSubmitting(false)
+      pending.current = false
+      if (active.current) setSubmitting(false)
     }
   }
 
@@ -60,13 +70,13 @@ function ResourceCurateForm() {
         <Link to="/resources" className="login-back">返回资源 · Bibliothèque</Link>
         <p className="login-eyebrow">Curation de ressources</p>
         <h1 className="login-title">推荐一条资源</h1>
-        <p className="login-summary">推荐一条书目或课程链接,审阅后并入「资源」页的公开书架。</p>
+        <p className="login-summary">推荐一条书目或课程链接。推荐会保存到待处理队列，不会自动公开。</p>
       </header>
 
       {authLoading || authError ? <AuthStatus /> : done ? (
         <div className="reset-state">
           <p className="reset-ok">✓ 已提交</p>
-          <p>谢谢你的推荐 ——「{done.title}」已进入待审队列,通过后会并入资源页的书架。</p>
+          <p>「{done.title}」已保存到待处理队列。本站暂不提供审核进度查询。</p>
           <div className="login-dest">
             <button type="button" className="vocab-verify" onClick={again}>再推荐一条</button>
             <Link to="/resources" className="vocab-verify">回到资源 →</Link>
@@ -82,27 +92,27 @@ function ResourceCurateForm() {
           <form className="editorial-form curate-form" onSubmit={submit}>
             <label>
               <span>归入书架 · Rayon</span>
-              <select value={form.category} onChange={set('category')}>
+              <select value={form.category} onChange={set('category')} disabled={submitting || unconfirmed}>
                 {SHELVES.map((shelf) => <option key={shelf.value} value={shelf.value}>{shelf.label}</option>)}
               </select>
             </label>
             <label>
               <span>标题 · Titre</span>
-              <input type="text" value={form.title} onChange={set('title')} placeholder="例:MIT OCW — Linear Algebra" required />
+              <input type="text" value={form.title} onChange={set('title')} disabled={submitting || unconfirmed} placeholder="例:MIT OCW — Linear Algebra" required />
             </label>
             <label>
               <span>链接 · Lien</span>
-              <input type="url" value={form.url} onChange={set('url')} placeholder="https://…" required />
+              <input type="url" value={form.url} onChange={set('url')} disabled={submitting || unconfirmed} placeholder="https://…" required />
             </label>
             <label>
               <span>推荐理由 · Pourquoi</span>
-              <textarea rows={3} value={form.description} onChange={set('description')} placeholder="一句话说明它好在哪、适合谁。" />
+              <textarea rows={3} value={form.description} onChange={set('description')} disabled={submitting || unconfirmed} placeholder="一句话说明它好在哪、适合谁。" />
             </label>
             <div className="editorial-actions curate-actions">
-              <button type="submit" className="vocab-verify" disabled={submitting}>{submitting ? '提交中…' : '提交待审 · Proposer'}</button>
+              <button type="submit" className="vocab-verify" disabled={submitting || unconfirmed}>{submitting ? '提交中…' : unconfirmed ? '结果待确认' : '提交推荐 · Proposer'}</button>
               <Link to="/resources">取消</Link>
             </div>
-            <p className="curate-note">提交后由管理员审阅;通过后会出现在资源页对应书架。</p>
+            <p className="curate-note">目前没有站内审核页面，无法承诺处理时间或收录结果。</p>
             {error ? <p className="status-line is-error">{error}</p> : null}
           </form>
         </section>

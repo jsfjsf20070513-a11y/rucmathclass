@@ -429,10 +429,6 @@
   text-transform: uppercase;
 }
 
-.album-page .page-header-kicker {
-  color: var(--muted);
-}
-
 .page-header h1 {
   font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
   font-size: 34px;
@@ -1067,10 +1063,6 @@
   scroll-margin-top: 108px;
 }
 
-.album-plates .entry-figure {
-  margin-top: 0;
-}
-
 .split-note {
   display: flex;
   align-items: flex-start;
@@ -1450,130 +1442,6 @@
   margin-bottom: 0;
 }
 
-.hackathon-page {
-  width: min(100% - 48px, 1060px);
-  margin: 0 auto;
-  padding: 76px 0 40px;
-}
-
-.hackathon-hero {
-  min-height: calc(100vh - 190px);
-  min-height: calc(100svh - 190px);
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
-  align-items: center;
-  gap: 48px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.hackathon-hero-copy {
-  max-width: 680px;
-}
-
-.hackathon-eyebrow,
-.hackathon-kicker {
-  margin: 0 0 10px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.hackathon-hero h1 {
-  font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
-  font-size: 52px;
-  letter-spacing: 0;
-}
-
-.hackathon-hero-summary {
-  max-width: 640px;
-  margin: 18px 0 0;
-  font-size: 24px;
-  line-height: 1.45;
-}
-
-.hackathon-hero-context {
-  max-width: 620px;
-  margin: 18px 0 0;
-  color: var(--muted);
-  font-size: 17px;
-}
-
-.hackathon-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 28px;
-}
-
-.hackathon-button,
-.hackathon-button:visited {
-  min-height: 42px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 9px 14px;
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  color: var(--ink);
-  background: rgba(255, 255, 255, 0.34);
-  font-size: 15px;
-  line-height: 1.2;
-}
-
-.hackathon-button.is-primary,
-.hackathon-button.is-primary:visited {
-  border-color: var(--ink);
-  color: var(--paper);
-  background: var(--ink);
-}
-
-.hackathon-button.is-disabled,
-.hackathon-button:disabled {
-  color: var(--muted);
-  cursor: default;
-}
-
-.hackathon-button:not(.is-disabled):not(:disabled):hover,
-.hackathon-button:not(.is-disabled):not(:disabled):focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: transparent;
-}
-
-.hackathon-button.is-primary:not(:disabled):hover,
-.hackathon-button.is-primary:not(:disabled):focus-visible {
-  border-color: var(--accent);
-  color: var(--paper);
-  background: var(--accent);
-}
-
-.hackathon-ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 18px 0 0;
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.hackathon-hero-panel {
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-}
-
-.hackathon-stat {
-  padding: 18px 0;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.08);
-}
-
-.hackathon-stat:last-child {
-  border-bottom: none;
-}
-
-.hackathon-stat span,
 .demo-link-row span,
 .contact-panel dt {
   display: block;
@@ -1584,81 +1452,16 @@
   text-transform: uppercase;
 }
 
-.hackathon-stat strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 20px;
-  font-weight: 500;
-}
-
-.hackathon-section {
-  margin-top: 82px;
-}
-
-.hackathon-section h2 {
-  max-width: 760px;
-  margin-bottom: 24px;
-  font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
-  font-size: 32px;
-  letter-spacing: 0;
-}
-
-.hackathon-section-lead {
-  max-width: 760px;
-  margin: -6px 0 24px;
-  color: var(--muted);
-  font-size: 17px;
-}
-
-.hackathon-grid,
-.hackathon-feature-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.hackathon-card {
-  min-width: 0;
-  padding: 20px;
-  border: 1px solid var(--rule);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.hackathon-card h3,
 .tech-stack-row h3 {
   margin-bottom: 8px;
   font-size: 20px;
 }
 
-.hackathon-card p,
 .tech-stack-row p {
   margin: 0;
   color: var(--muted);
   font-size: 16px;
   line-height: 1.65;
-}
-
-.hackathon-flow {
-  border-top: 1px solid var(--rule);
-}
-
-.hackathon-flow-step {
-  display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
-  gap: 18px;
-  padding: 18px 0;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.08);
-}
-
-.hackathon-flow-step span {
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 13px;
-}
-
-.hackathon-flow-step p {
-  margin: 0;
 }
 
 .feature-card-head {
@@ -1700,29 +1503,6 @@
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
-}
-
-.hackathon-two-column {
-  display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
-  gap: 36px;
-  align-items: start;
-}
-
-.hackathon-two-column p {
-  margin: 0;
-  font-size: 18px;
-}
-
-.hackathon-check-list,
-.hackathon-plain-list {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-
-.hackathon-check-list li,
-.hackathon-plain-list li {
-  margin-bottom: 8px;
 }
 
 .demo-link-list {
@@ -1987,51 +1767,6 @@
    technical sections. It mirrors the home daily-entry rhythm —
    centred narrow column, serif body, no card chrome — so a
    classmate landing here doesn't see a wall of feature cards. */
-.web3-class-letter {
-  max-width: 580px;
-  margin: 0 auto 56px;
-  padding: 0 4px;
-  text-align: left;
-  font-size: 16px;
-  line-height: 1.75;
-  color: var(--ink);
-}
-
-.web3-class-letter p {
-  margin: 0 0 16px;
-}
-
-.web3-class-letter p:last-child {
-  margin-bottom: 0;
-}
-
-.web3-class-letter-kicker {
-  margin: 0 0 14px;
-  color: var(--accent);
- 
-  font-size: 13px;
-  font-variant: small-caps;
-  letter-spacing: 0.08em;
-}
-
-.web3-class-letter-pull {
-  margin: 22px 0;
- 
-  font-size: 18px;
-  color: var(--accent);
-  text-align: center;
-}
-
-.web3-class-letter-rule {
-  margin: 26px 0;
-  text-align: center;
-  color: var(--muted);
-  letter-spacing: 0.6em;
-}
-
-.web3-class-letter [lang="zh"] {
-  line-height: 1.85;
-}
 
 .class-registry-panel {
   margin: 0 0 18px;
@@ -2202,22 +1937,6 @@
   .site-nav-secondary {
     justify-content: center;
   }
-
-  .hackathon-page {
-    width: 100%;
-  }
-
-  .hackathon-hero {
-    min-height: auto;
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 30px;
-    padding-bottom: 54px;
-  }
-
-  .hackathon-hero-copy {
-    max-width: none;
-  }
 }
 
 @media (max-width: 720px) {
@@ -2229,29 +1948,6 @@
     padding-top: 44px;
   }
 
-  .hackathon-page {
-    padding-top: 52px;
-  }
-
-  .hackathon-hero h1 {
-    font-size: 40px;
-  }
-
-  .hackathon-hero-summary {
-    font-size: 20px;
-  }
-
-  .hackathon-section {
-    margin-top: 58px;
-  }
-
-  .hackathon-section h2 {
-    font-size: 26px;
-  }
-
-  .hackathon-grid,
-  .hackathon-feature-grid,
-  .hackathon-two-column,
   .contact-panel dl {
     grid-template-columns: 1fr;
   }
@@ -2600,35 +2296,10 @@
     padding-top: 48px;
   }
 
-  .hackathon-page {
-    padding-top: 42px;
-  }
-
-  .hackathon-hero {
-    padding-bottom: 42px;
-  }
-
-  .hackathon-hero h1 {
-    font-size: 34px;
-  }
-
-  .hackathon-hero-summary,
-  .hackathon-two-column p,
   .contact-sentence {
     font-size: 17px;
   }
 
-  .hackathon-button,
-  .hackathon-button:visited {
-    width: 100%;
-  }
-
-  .hackathon-flow-step {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-
-  .hackathon-card,
   .contact-panel {
     padding: 16px;
   }

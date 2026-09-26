@@ -13,7 +13,7 @@
 | 资源书架 | [useResourceCatalog](../src/hooks/useResourceCatalog.js)、[resourceBackend](../src/lib/resourceBackend.js) | 公开读取只依赖 `resources`；再与静态目录合并 |
 | 首页和翻页 | [useHomeWeather](../src/hooks/useHomeWeather.js)、[useConnexionTransition](../src/hooks/useConnexionTransition.js)、[usePageFlip](../src/hooks/usePageFlip.js) | 天气读取、封面绘制、登录展开和翻页各自管理生命周期；Home 保留页面与账号页序 |
 
-`.eslintrc.cjs` 阻止页面、组件直接导入 Supabase，也阻止 `lib`、`data` 反向依赖 React 或界面模块。它检查静态 import/export，不检查动态 import()、所有网络请求和状态顺序。`AuthContext` 连接认证客户端，`useResourceCatalog` 仍直接创建实时订阅，这些是当前的实际边界。
+`.eslintrc.cjs` 阻止页面、组件和 hook 直接导入 Supabase，也阻止 `lib`、`data` 反向依赖 React 或界面模块。它检查静态 import/export，不检查动态 import()、所有网络请求和状态顺序。`AuthContext` 连接认证客户端；资源实时订阅由 `resourceBackend` 建立和清理。
 
 ## 账号与写入结果
 
@@ -44,7 +44,7 @@
 
 当前页面实际使用的表是：`review_states`（个人进度）、`ai_messages`（个人对话）、`resources`（公开增补书目）、`comments`（资源推荐队列）。认证使用 Supabase Auth，不是自建登录表。
 
-`ResourceCurate` 把推荐编码后写入 `comments`，其中 `album_id = 0` 是队列标记，不表示当前还有相册页面。读取列不包括邮箱。旧 `opsQueue` 审核函数还会查询 `profiles` 并调用 `contentBackend` 写相册或资源，但目前没有页面调用这些审核函数。
+`ResourceCurate` 把推荐编码后写入 `comments`，其中 `album_id = 0` 是队列标记，不表示当前还有相册页面。读取列不包括邮箱。写入模块是 [resourceRecommendations](../src/lib/resourceRecommendations.js)，只接受资源推荐；旧审核、相册写入和角色查询已从运行代码移除。提交结果不明时会锁住当前表单，避免直接重复写入；重新打开页面并不能确认此前是否已入库。
 
 **因此资源推荐只完成了入队，站内审核流程没有闭合。** 不要根据函数名或提交成功文案说它能自动发布。
 
@@ -56,7 +56,7 @@ SQL 中有 RLS 和列授权定义，但文件存在不等于线上已执行。�
 
 `worker/wrangler.toml` 的路由只写了 `rucmathclass.com`，CORS 列表只有班级站域名和本地开发地址。不能把它描述成已经配置好的两站共享服务，也不能据此判断另一仓怎么调用它。
 
-代码仍留下旧审核函数、相册 SQL 和无页面使用的旧样式。Supabase 地址由环境变量决定，部署目录也能被环境变量覆盖，所以**代码入口独立不等于生产数据库与发布权限已经隔离**。本次没有核验另一仓和生产配置。
+相册 SQL 仍作为历史运维文件保留。运行代码里的旧审核、相册写入和对应 Web3、黑客松样式已移除。Supabase 地址由环境变量决定，部署目录也能被环境变量覆盖，所以**代码入口独立不等于生产数据库与发布权限已经隔离**。本次没有核验另一仓和生产配置。
 
 ## 首页动画
 
