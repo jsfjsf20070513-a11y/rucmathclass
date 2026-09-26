@@ -1,19 +1,6 @@
--- setup_vocabulary.sql
--- Creates `public.review_states` for the bilingual French SRS vocabulary
--- trainer. Idempotent: safe to run repeatedly (every CREATE POLICY is paired
--- with a DROP POLICY IF EXISTS, DDL is guarded by IF NOT EXISTS). Does NOT drop
--- anything.
---
--- Run order: this can be run any time after the project has `auth.users`
--- (i.e. after setup_admin.sql). It is independent of the content tables.
---
--- ⚠ Shared-Supabase red line: this project shares one Supabase instance with the
--- original class site. review_states is per-user and self-scoped — a user may
--- only see and write THEIR OWN rows (auth.uid() = user_id). Keep these policies
--- aligned with the canonical posture in harden_rls.sql; do not relax the
--- self-scope guards.
+-- 背词进度表与按账号隔离的策略定义，供核对结构。
+-- 依赖 auth.users。执行前必须核对目标库已有表、授权和策略；不是安装顺序或线上状态证明。
 
--- 1) Table -------------------------------------------------------------------
 create table if not exists public.review_states (
   user_id           uuid        not null references auth.users (id) on delete cascade,
   word_id           text        not null,

@@ -1,25 +1,5 @@
--- =====================================================================
--- comments 表 RLS 策略（含审核伪造防御）
---
--- 这张表同时承载三类记录，靠 album_id 与 content 前缀区分：
---   (A) 普通相册留言:  album_id = 真实相册 id, content 是纯文本
---   (B) OPS 协作提交:  album_id = 0, content 以 '__mathclass_ops__::' 开头,
---                       kind 为 'gallery' | 'resource'
---   (C) 审核收据:      album_id = 0, content 以 '__mathclass_ops__::' 开头,
---                       kind 为 'moderation'
---
--- 风险：早期的 INSERT 策略只校验 auth.uid() = user_id，
--- 任何已登录用户都能直接写入 kind="moderation" 的伪造审核记录。
--- 虽然 SELECT 策略限制只能读到 targetUserId = 自己 的审核条目，
--- 攻击者只能"自欺欺人"，但前端审核中心会被脏数据污染，
--- 且面板对此类内容的信任假设是它"必由 admin 写入"。
---
--- 本脚本通过两步加固：
---   1) 提供 public.is_admin() 安全函数（SECURITY DEFINER + STABLE）
---      用于在 RLS 子句中判断当前会话是否管理员；
---   2) 在 INSERT / UPDATE 的 WITH CHECK 子句中区分三类记录，
---      moderation 类型只允许 admin 写入。
--- =====================================================================
+-- 历史 comments 与角色权限脚本，保留原 SQL 供追溯。
+-- 包含已退役相册、审核业务的权限，不能整段重跑来修复当前数据库。
 
 alter table "public"."comments" enable row level security;
 

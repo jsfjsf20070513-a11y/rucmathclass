@@ -2,11 +2,11 @@
 //
 // Mirrors the graceful-degradation contract used across this repo's backends:
 //   - mode 'disabled' : Supabase not configured (anon env missing)
-//   - mode 'compat'   : table not created yet (run setup_ai_history.sql)
+//   - mode 'compat'   : table unavailable (inspect the target schema before changing it)
 //   - mode 'official' : table present, data flows
 // ai_messages is per-user and RLS-guarded (a user may only read/insert/delete
 // their own rows). Shared-Supabase red line: the RLS policy lives in
-// setup_ai_history.sql and must keep the self-scope guards.
+// sql/schema/setup_ai_history.sql; keep the per-user scope and inspect deployed RLS separately.
 
 import { isSupabaseConfigured, supabase } from './supabase'
 import { withRequestDeadline } from './requestDeadline'

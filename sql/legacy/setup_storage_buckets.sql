@@ -1,42 +1,6 @@
--- =============================================================================
--- Supabase Storage bucket setup for gallery photos
--- =============================================================================
--- Purpose
---   Replace the long-term reliance on base64 image strings stored directly in
---   PostgreSQL text columns (e.g. `album_photos.src`) with object storage.
---   The browser still compresses on Canvas (max edge 1800px, JPEG 0.82) and
---   then uploads the compressed Blob to the `gallery-photos` bucket. The
---   public URL is what ends up in `album_photos.src` / `albums.cover`.
---
--- Backward compatibility
---   The `text` columns already in place (`albums.cover`, `album_photos.src`)
---   accept either format. Existing rows that contain `data:image/...;base64,...`
---   keep rendering — the contribution page now writes Storage URLs for new
---   uploads, while falling back to base64 when:
---     a) the user is not signed in,
---     b) the bucket is not configured / missing,
---     c) any upload error occurs.
---
--- How to run
---   Open Supabase Dashboard -> SQL Editor and execute this whole file once.
---   This script is idempotent: running it again is safe.
---
--- Prerequisites
---   - `setup_admin.sql` (or `setup_admin_v2.sql`) has been executed so the
---     `public.profiles` table exists. (Not strictly required by this script,
---     but the admin role logic elsewhere assumes it.)
--- =============================================================================
+-- 历史相册存储桶与权限脚本。当前页面没有相册上传入口。
+-- 保留供追溯，不是当前安装步骤；不要对未知生产策略整段重跑。
 
-
--- -----------------------------------------------------------------------------
--- 1. Create the bucket
--- -----------------------------------------------------------------------------
--- Bucket name : gallery-photos
--- Public read : YES  (so <img src="..."> works without an auth header)
--- Folder shape: {user_id}/{album_slug}/{random_uuid}.{ext}
--- Size limit  : 8 MiB per object (browser already compresses to ~1800px JPEG)
--- MIME allow  : image/jpeg, image/png, image/webp, image/gif
--- -----------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'gallery-photos',
@@ -130,7 +94,7 @@ using (
 -- 2e. Admins / super_admins can manage everything in the bucket ---------------
 -- This mirrors the `Admins can manage albums` pattern used in
 -- `setup_official_content.sql`. If `public.profiles` does not exist yet,
--- comment this block out and rerun once `setup_admin.sql` is in place.
+-- inspect the target database before changing these historical policies.
 drop policy if exists "Admins can manage gallery objects"
   on storage.objects;
 

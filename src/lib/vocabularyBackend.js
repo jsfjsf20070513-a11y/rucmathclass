@@ -2,11 +2,11 @@
 //
 // Mirrors the graceful-degradation contract used across this repo's backends:
 //   - mode 'disabled' : Supabase not configured (anon env missing)
-//   - mode 'compat'   : table not created yet (run setup_vocabulary.sql)
+//   - mode 'compat'   : table unavailable (inspect the target schema before changing it)
 //   - mode 'official' : table present, data flows
 // review_states is per-user and RLS-guarded (a user may only see/write their own
 // rows). The shared-Supabase red line applies: the RLS policy lives in
-// setup_vocabulary.sql and must stay aligned with harden_rls.sql.
+// sql/schema/setup_vocabulary.sql; the actual deployed RLS must be inspected separately.
 
 import { isSupabaseConfigured, supabase } from './supabase'
 import { withRequestDeadline } from './requestDeadline'

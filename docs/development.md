@@ -44,15 +44,21 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 CI 的实际触发范围见 [.github/workflows/ci.yml](../.github/workflows/ci.yml)：推送到 `mathclass/main`，或以它为目标的 PR。以开发分支为目标的堆叠 PR 不会触发这份流程；转向主分支后要等 CI 再核对。
 
-## 运维文件不是安装顺序
+## 数据库文件
 
-- [setup_vocabulary.sql](../setup_vocabulary.sql)、[setup_ai_history.sql](../setup_ai_history.sql) 定义进度和对话表及各自策略。
-- [setup_official_content.sql](../setup_official_content.sql)、[setup_storage_buckets.sql](../setup_storage_buckets.sql) 仍包含相册表和存储桶。
-- [harden_rls.sql](../harden_rls.sql)、[enable_rls.sql](../enable_rls.sql) 涉及角色、表权限和旧业务。不能全部重跑来“修一下权限”。
-- [rls-live-check-2026-09-03.sql](rls-live-check-2026-09-03.sql) 有只读核查语句；文件中的历史注释不代表现在的线上结果。
+SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是供核对的定义与历史记录，不是一套安装顺序，也不证明生产已应用。
 
-[deploy.sh](../deploy.sh) 只做构建、远端建目录和 `rsync --delete`。它要求 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER`、`MATHCLASS_DEPLOY_SSH_KEY`；`MATHCLASS_DEPLOY_DIR` 可覆盖默认目录 `/var/www/MathClassWebsite/dist`。
+- [schema/setup_vocabulary.sql](../sql/schema/setup_vocabulary.sql)、[schema/setup_ai_history.sql](../sql/schema/setup_ai_history.sql) 对应现役个人进度和对话表。
+- [legacy/setup_official_content.sql](../sql/legacy/setup_official_content.sql) 混合了现役 resources 和退役相册，不能当作完整的当前 schema。
+- `sql/legacy/` 其余文件保留旧存储桶、角色和综合授权 SQL；不要整段重跑来修权限。
+- [audit/comments_permissions.sql](../sql/audit/comments_permissions.sql) 只有三条 SELECT，查看执行时的列授权、表授权和行策略，不保存过去的生产结论。
 
-脚本不会替你运行 lint/test，也不检查仓库、分支或线上版本。因此发布前要明确核对这些条件和同步目标，获得用户的部署授权，并遵守部署流程。这里记录脚本行为，不是上线授权。
+## 发布前的本地检查
+
+`npm run deploy:check` 或 `bash deploy.sh` 默认只检查本地，不执行 SSH 或 rsync。入口从脚本路径确定仓库根，要求 origin 是班级站仓库、分支是 `mathclass/main`、工作区干净；目标固定为 `/var/www/MathClassWebsite/dist`，拒绝用环境变量改到其他目录。
+
+需要提供 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER` 和密钥的绝对路径 `MATHCLASS_DEPLOY_SSH_KEY`。检查依次运行 lint、测试、新构建，只还原生成的 `public/health.json`，再次检查工作区与提交未变，并核对新构建标记。它不会读取密钥内容、连接服务器或确认远端版本。
+
+只有用户明确授权部署后，才可按部署流程执行 `bash deploy.sh --publish`。这会重复相同检查，然后远端建目录并执行 `rsync --delete`；原先不带参数就发布的行为已经取消。发布前后的线上 health 与页面仍需另行核对，本地检查成功不是上线授权。
 
 [deployment/nginx/](../deployment/nginx/) 是仓库里的服务器配置，不能据此宣称已在生产生效。Worker 独立构建和部署，见它的 [接口说明](../worker/README.md)。
