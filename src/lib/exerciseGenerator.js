@@ -1,6 +1,5 @@
 // Pure exercise-generation + grading core for the multi-format vocabulary
-// trainer (original design: docs/archive/design-2026-06-21/Vocabulary.dc.html
-// + spec/Vocabulary.md · HANDOFF §3; archived, superseded by design-constitution.md).
+// trainer. Generation depends on vocabulary data, not on page markup.
 //
 // The SRS scheduler (srsScheduler.js) decides WHICH words are due; this module
 // turns a due word into one of several exercise formats and grades a response.
@@ -88,8 +87,7 @@ function shuffle(arr, rng = Math.random) {
 
 /**
  * Pick `n` distractor values, excluding the answer, preferring entries that
- * share the answer's part-of-speech and have a similar length (HANDOFF §3 —
- * better difficulty than random). `candidates` is an array of word objects;
+ * share the answer's part-of-speech and have a similar length. `candidates` is an array of word objects;
  * `field` selects which string to pull (chinese / french / clozeWord-ish).
  */
 export function pickDistractors(candidates, { answer, answerPos, n = 3, field = 'chinese', rng = Math.random } = {}) {

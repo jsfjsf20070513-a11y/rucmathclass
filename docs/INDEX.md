@@ -1,21 +1,12 @@
-# 文档导航 · rucmathclass(班级网站线)
+# 文档导航
 
-> 2026-09-02 重写。旧版是 2026-06-09 的 MathClassWebsite-public 黑客松导航,所指文件已全部删除。
+这里只保留当前代码的说明。旧交接稿、路线图和归档 Markdown 已从工作目录移除，需要追溯时查 Git 历史。
 
-## 先读(仓库根)
-- [`../CLAUDE.md`](../CLAUDE.md) —— 给 AI 的正本:身份、红线、命令、部署入口(`AGENTS.md` 是它的软链)
-- [`../README.md`](../README.md) —— 对外总览
+- [网站与运行方式](../README.md)
+- [代码怎么分工](architecture.md)
+- [开发与验证](development.md)
+- [现有界面](design-constitution.md)
+- [还没解决的问题](remaining-work.md)
+- [Worker 接口](../worker/README.md)
 
-## 现行文档
-- [`design-constitution.md`](design-constitution.md) + [`aesthetic-profile.md`](aesthetic-profile.md) —— 视觉最高裁定(2026-08-20 立宪)
-- [`handoff-2026-08-20/`](handoff-2026-08-20/) —— 08-20 杂志刊设计稿:`DESIGN.md` + `Home-B-Galerie.dc.html` + `Interieur v2.dc.html`
-- [`mathclass-line-restart-2026-08-13.md`](mathclass-line-restart-2026-08-13.md) —— 线重启底稿:五维盘点、风险清单、roadmap
-- [`rls-live-check-2026-09-03.sql`](rls-live-check-2026-09-03.sql) —— 只读巡检 SQL:核 `comments` 线上列级/表级授权与策略是否堵住 `user_email`(配 `harden_rls.sql` 09-03 修订)
-
-## 归档(只作历史,不是契约)
-- [`archive/design-2026-06-21/`](archive/design-2026-06-21/) —— 06-21 十页设计稿(Carnet de classe 初版)
-- [`archive/design-handoff-carnet-2026-08-13.md`](archive/design-handoff-carnet-2026-08-13.md) —— 08-13 设计交接,其"居中硬约束"已被宪法推翻
-- [`archive/math线摸底_2026-08-21.md`](archive/math线摸底_2026-08-21.md) —— 08-21 全线摸底现场记录(含 08-25 拆仓、09-02 清理附记);规则已并入线级 CLAUDE.md
-
-## 线级(仓外)
-- `line_math/CLAUDE.md` —— 两仓分工、部署互斥、共享 Supabase / Worker 边界
+`docs/archive/` 和 `docs/handoff-2026-08-20/` 剩下的 HTML 是静态设计样稿，不在 `src/App.jsx` 的运行链里，也不是新增功能清单。根目录的 [CLAUDE.md](../CLAUDE.md) 是代理入口，`AGENTS.md` 是它的链接。

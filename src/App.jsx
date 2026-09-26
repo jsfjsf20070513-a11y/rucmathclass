@@ -27,10 +27,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
-        {/* 已下线页面 → 重定向兜底,旧链接/书签不硬 404。
-            寄语墙与整条 Solana 链路已随 2026-08 减法移除(链上数据仍在
-            devnet,恢复只需还原本次 commit);图版(涉及同学人脸)、黑客松
-            陈列与 web3 个人页更早下线,一律回扉页。 */}
+        {/* 旧地址兼容：这些页面没有现役实现，访问时回首页。 */}
         <Route path="witness" element={<Navigate to="/" replace />} />
         <Route path="hackathon" element={<Navigate to="/" replace />} />
         <Route path="web3-profile" element={<Navigate to="/" replace />} />

@@ -11,8 +11,7 @@ import { usePageFlip } from '../hooks/usePageFlip'
 import { startWeatherCanvas, weatherInkFor } from '../lib/weatherCanvas'
 import { flipNavFrom, markFlipNav } from '../lib/flipNav'
 
-// 扉页 Home — 2026-08 杂志刊(宪法 docs/design-constitution.md §5.1;
-// 设计稿 docs/handoff-2026-08-20/Home-B-Galerie.dc.html 原样执行):
+// 扉页：全屏横翻，各页样式在 App.css 的 .mag 下。
 // 一本 5 页横翻的美术馆图录 + 撕开进入的 Connexion 屏。100svh 无纵向滚动。
 // 01 封面(60 人肖像墙 + 天气 canvas)/ 02 Vocabulaire / 03 Théorème /
 // 04 Bibliothèque / 05 Parole(木色)→ 撕开 → 06 Connexion(原地对接 auth)。

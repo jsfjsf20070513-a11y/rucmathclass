@@ -7,8 +7,7 @@ import { normalizeResourcePayload, submitOpsSubmission } from '../lib/opsQueue'
 
 // 资源增补 ResourceCurate — design contract: centered « Curation de ressources »
 // masthead → a 4-field submit form (书架 / 标题 / 链接 / 理由) → 待审 confirmation.
-// Reached from 协作 (II 资源增补). The submission goes through the real ops queue
-// (submitOpsSubmission → 审核 → 并入 resourceCatalog).
+// Writes a resource recommendation to the ops queue. No review UI is routed.
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
 const SHELVES = resourceCategories.map((category, index) => ({
   value: category.label,

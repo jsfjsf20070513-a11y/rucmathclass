@@ -1,6 +1,6 @@
 import { json } from './http.js'
 
-// ── 动态降级链:免费层配额按模型独立计,把全家额度榨干 ──
+// 动态查询聊天模型，失败时使用下面的候选列表。
 // 每小时从 ListModels 拉一次当前可用模型,自动排序(flash 新版本优先 → pro →
 // flash-lite → gemma 兜底);Google 上新模型自动收编,不用改代码。
 // ListModels 失败时用静态兜底链(2026-08 快照)。

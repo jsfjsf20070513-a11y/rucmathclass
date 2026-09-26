@@ -3,8 +3,8 @@
 // 两个无状态端点,持有的 API key 都是 Wrangler secret,浏览器永远拿不到:
 //   POST /api/chat   → Gemini(GEMINI_API_KEY)双语数学/法语答疑,返回 { text }。
 //   GET  /api/speak  → Gemini TTS(同一把 GEMINI_API_KEY)按需法语朗读;Gemini 返回
-//                      16-bit PCM,Worker 包 WAV 头后返回 audio/wav。免费层、不绑卡。
-//                      用 Cloudflare 边缘缓存(caches.default),每个词一辈子只生成一次。
+//                      16-bit PCM,Worker 包 WAV 头后返回 audio/wav。
+//                      用 Cloudflare 边缘缓存(caches.default)，命中时复用音频。
 //
 // 设计取向与主站一致:静态 SPA + 极薄无状态代理;不引入数据库、不存对话。
 // 部署见 ../README.md。
@@ -125,7 +125,7 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) })
     }
-    // 简单限流:每 IP 每分钟若干次,防刷爆 Gemini/ElevenLabs 配额。绑定缺失时跳过。
+    // 每 IP 限流。绑定缺失或调用失败时继续处理请求。
     if (env.RATE_LIMITER) {
       const ip = request.headers.get('CF-Connecting-IP') || 'anon'
       try {

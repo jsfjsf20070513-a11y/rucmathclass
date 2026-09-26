@@ -1,6 +1,6 @@
 // Pure SRS (spaced-repetition) core for the bilingual French vocabulary trainer.
 //
-// Design (see MathClassWebsite/CLAUDE.md · "SRS 双语背词器"):
+// Scheduling rules implemented below:
 //   - Ebbinghaus FIXED ladder: next_review_at = completion_date + CURVE_DAYS[stage].
 //     A correct answer advances one stage; a wrong answer resets to stage 0.
 //     Anchoring to the calendar date (not the exact instant) lets a whole day's

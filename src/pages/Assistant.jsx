@@ -45,7 +45,7 @@ function renderRich(text) {
   return out.join('')
 }
 
-// 答疑 Assistant — 2026-08 编排版「Correspondance 书信体」(宪法 §5.4):
+// 答疑 Assistant — Correspondance 书信布局:
 // 空状态(刊头 + 起手问题细字链)与对话态是两个停顿;Q./R. 小型悬挂眉头,
 // 答句挂发丝左线(自上而下画出),等待指示是一根呼吸发丝线;拍题照片
 // 渲染为「Figure n」编号图框。会话与网络生命周期由 useAssistantConversation 管理。
