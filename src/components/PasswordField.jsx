@@ -5,6 +5,7 @@ export default function PasswordField({
   value,
   onChange,
   required = false,
+  disabled = false,
   placeholder = '',
   autoComplete = 'current-password',
 }) {
@@ -19,12 +20,14 @@ export default function PasswordField({
           value={value}
           onChange={onChange}
           required={required}
+          disabled={disabled}
           placeholder={placeholder}
           autoComplete={autoComplete}
         />
         <button
           type="button"
           className="password-toggle"
+          disabled={disabled}
           onClick={() => setVisible((current) => !current)}
           aria-pressed={visible}
           aria-label={visible ? '隐藏密码' : '显示密码'}

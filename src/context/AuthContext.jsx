@@ -1,42 +1,27 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import { AuthContext } from './auth-context'
+import { createAuthSession } from '../lib/authSession'
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [session] = useState(() => createAuthSession(supabase?.auth))
+  const state = useSyncExternalStore(session.subscribe, session.getSnapshot)
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
-      setLoading(false)
-      return undefined
-    }
-
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
+    session.start()
+    return session.stop
+  }, [session])
 
   const value = {
-    signOut: () => (supabase ? supabase.auth.signOut() : Promise.resolve()),
-    user,
-    loading,
+    ...state,
+    signOut: session.signOut,
+    refreshSession: session.refresh,
     isAuthEnabled: isSupabaseConfigured,
   }
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   )
 }
