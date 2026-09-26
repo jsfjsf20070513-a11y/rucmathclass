@@ -1,47 +1,7 @@
--- harden_rls.sql
--- Idempotent hardening pass for the math-class site Supabase project.
--- Safe to run as many times as needed; every CREATE POLICY is paired
--- with a DROP POLICY IF EXISTS, and table / column DDL is guarded by
--- IF NOT EXISTS.  This file does NOT drop any tables or columns.
---
--- Run order (fresh project):
---   1) setup_admin.sql                -- creates `public.profiles`,
---                                        the `handle_new_user()` trigger
---                                        on auth.users, and the seed
---                                        super_admin row.
---   2) setup_official_content.sql     -- creates `albums` / `album_photos` /
---                                        `resources`.  Its policies reference
---                                        `public.profiles`, so step 1 must run
---                                        before this.
---   3) setup_storage_buckets.sql      -- creates the `gallery-photos` bucket
---                                        and its `storage.objects` policies.
---                                        Also references `public.profiles`.
---   4) harden_rls.sql (this file)     -- canonical RLS state.  Overrides the
---                                        first-cut policies installed by
---                                        steps 1-3 with the centralised
---                                        `public.is_admin()` /
---                                        `public.is_super_admin()` helpers and
---                                        the moderation-insert guard.
---
--- This file is also self-sufficient with respect to the `public.profiles`
--- table itself: section 0 below creates it if missing, so harden_rls.sql
--- still works when run on its own.  setup_admin.sql remains responsible
--- for the one-time bootstrap pieces that don't belong in an idempotent
--- hardening pass: the `handle_new_user()` trigger that auto-creates a
--- profile row whenever a user signs up, and the seed INSERT that
--- promotes a specific email to super_admin.
---
--- After this file runs, the policies it creates are the authoritative
--- set; treat enable_rls.sql / setup_admin_v2.sql as historical and do
--- not re-run them without re-running this script afterwards.
+-- 历史综合授权脚本，涉及 comments、profiles、resources 和相册。
+-- 会创建、删除和替换多张表的策略，不是当前数据库的权威快照。
+-- 依赖目标库已有业务表；不能整段重跑来修复权限，也不能据此认定线上隔离。
 
--- =========================================================================
--- 0. Ensure public.profiles exists.  Mirrors the schema in setup_admin.sql
---    so this file can run first on a fresh project (the policies and
---    is_admin() helper below assume the table is in place).  The
---    new-user trigger and super_admin seed live in setup_admin.sql and
---    are intentionally NOT duplicated here.
--- =========================================================================
 create table if not exists public.profiles (
   id uuid not null references auth.users(id) on delete cascade primary key,
   email text,
@@ -215,7 +175,7 @@ drop policy if exists "Enable update for users based on user_id"                
 drop policy if exists "Enable delete for users based on user_id"                                     on public.comments;
 drop policy if exists "Users can delete their own comments"                                          on public.comments;
 drop policy if exists "Users can delete own comments OR admins can delete any"                       on public.comments;
--- 2026-09-04 线上核查发现的手工第三套策略名(见 docs/rls-live-check-2026-09-03.sql),一并纳入 drop 清单,
+-- 2026-09-04 线上核查发现的手工第三套策略名(见 sql/audit/comments_permissions.sql),一并纳入 drop 清单,
 -- 否则重跑本文件会把它们留在原地、叠加出第二套。
 drop policy if exists "Users can insert their own comments"                                          on public.comments;
 drop policy if exists "Authenticated users can read own comments or admins can read al"              on public.comments;

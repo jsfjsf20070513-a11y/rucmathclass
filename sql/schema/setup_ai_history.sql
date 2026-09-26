@@ -1,14 +1,6 @@
--- setup_ai_history.sql
--- Creates `public.ai_messages` for the 班级 AI 助手 的账号级云端对话历史。
--- Idempotent: 可重复执行(CREATE 全部 IF NOT EXISTS,每条 CREATE POLICY 都配
--- DROP POLICY IF EXISTS)。不 DROP 任何已有对象。
---
--- ⚠ 共享 Supabase 红线:本仓与原班级站共用一个 Supabase 实例。ai_messages 是
--- per-user、自我隔离的——用户只能读/写/删 自己的行(auth.uid() = user_id)。
--- 与 harden_rls.sql 的口径保持一致,不要放松自我隔离守卫。本表与现有表无关联,
--- 仅新增,不改动 review_states / comments / albums 等任何现有表。
+-- AI 对话历史表与按账号隔离的策略定义，供核对结构。
+-- 依赖 auth.users。执行前必须核对目标库已有表、授权和策略；不能从此文件判断实例是否共享。
 
--- 1) Table -------------------------------------------------------------------
 create table if not exists public.ai_messages (
   id         bigint generated always as identity primary key,
   user_id    uuid        not null references auth.users (id) on delete cascade,
