@@ -1,0 +1,126 @@
+/* ══ /resources 「一册图录」 ══ */
+
+.bib {
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #f0eae0;
+  color: var(--mag-ink-2);
+  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow: hidden;
+  position: relative;
+}
+
+.bib-stack {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.bib-page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f0eae0;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bib-scroll {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+}
+.bib-shelf-inner {
+  margin: auto;
+  max-width: 680px;
+  width: 100%;
+  padding: 56px 24px 72px;
+}
+.bib-shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.bib-shelf-roman {
+  font-family: "Bodoni Moda", serif;
+  font-size: 16px;
+  color: var(--mag-wine-hover);
+}
+.bib-shelf-title {
+  margin: 0;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-size: 25px;
+  font-weight: 500;
+  color: var(--mag-ink);
+}
+.bib-shelf-count {
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--mag-muted);
+}
+.bib-shelf-intro {
+  margin: 5px 0 16px 30px;
+  font-size: 13px;
+  color: var(--mag-muted);
+}
+.bib-retry { min-width: 44px; min-height: 44px; }
+.bib-entries { list-style: none; margin: 0; padding: 0; }
+.bib-entry { border-top: 1px solid rgba(34, 29, 24, 0.14); padding: 13px 0; }
+.bib-entry:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }
+.bib-entry-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+.bib-entry-title,
+.bib-entry-title:visited {
+  flex: 1;
+  border-bottom: none;
+  font-size: 17px;
+  color: var(--mag-ink-2);
+}
+.bib-entry-title:hover { color: var(--mag-wine); }
+.bib-entry-tag {
+  font-family: "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--mag-wine-hover);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bib-entry-desc {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--mag-muted);
+}
+
+/* 末架页脚:木色缩小版 Parole coda */
+.bib-coda {
+  margin-top: 52px;
+  background: #b9a58a;
+  padding: 30px 26px;
+  text-align: center;
+}
+.bib-coda .section-coda {
+  mix-blend-mode: multiply;
+  color: rgba(20, 13, 7, 0.96);
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.bib-folio { text-transform: uppercase; }
+
+@media (max-width: 640px) {
+  .bib-shelf-inner { padding: 32px 18px 72px; }
+  .bib-index-grid { max-width: none; }
+}
+

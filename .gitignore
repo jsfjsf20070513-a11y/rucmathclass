@@ -139,3 +139,6 @@ dist
 
 # Local Worker build/runtime output
 .wrangler/
+
+# Local browser validation screenshots and traces
+output/playwright/

@@ -1,0 +1,134 @@
+/* ══ /login Connexion 视觉 ══ */
+
+/* /login /reset-password 已脱离 Layout,自成杂志第 06 屏同款纸面:
+   根容器铺满视口(封面同纸色),内容按 Connexion 屏收进居中窄列。 */
+.lgn {
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: #f4efe6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px 56px;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.lgn > * { width: min(420px, 100%); }
+.lgn-masthead { margin-bottom: 30px; }
+.lgn-back,
+.lgn-back:visited {
+  display: inline-block;
+  margin-bottom: 26px;
+  border-bottom: none;
+  color: var(--mag-muted);
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.lgn-back:hover { color: #2a211c; }
+.lgn-title {
+  margin: 0 0 10px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 44px;
+  font-weight: 400;
+  font-style: italic;
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 96;
+  color: var(--mag-ink);
+}
+.lgn-summary { margin: 0; font-size: 15px; color: var(--mag-muted); }
+.lgn-dest { display: flex; justify-content: center; gap: 34px; margin-top: 10px; }
+
+/* 模式/方式切换:发丝线 chips */
+.lgn .login-tabs {
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 8px;
+}
+.lgn .login-tabs .text-button {
+  background: transparent;
+  border: none;
+  padding: 0 0 3px;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
+}
+.lgn .login-tabs .text-button:hover { color: var(--mag-ink); }
+.lgn .login-tabs .text-button.active { color: var(--mag-ink); box-shadow: inset 0 -1px 0 var(--mag-wine); }
+
+/* 表单:小型 Bodoni 眉头标签 + 居中发丝线输入框 */
+.lgn .login-form { display: flex; flex-direction: column; gap: 26px; margin-top: 26px; }
+.lgn .login-form label { display: flex; flex-direction: column; gap: 6px; }
+.lgn .login-form label > span,
+.lgn .password-field > span {
+  font-family: "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mag-muted);
+}
+.lgn .login-form input {
+  width: 100%;
+  padding: 10px 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(34, 29, 24, 0.28);
+  border-radius: 0;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-size: 16px;
+  color: var(--mag-ink-2);
+  outline: none;
+  text-align: center;
+}
+.lgn .login-form input:focus { border-bottom-color: var(--mag-wine); outline: none; }
+.lgn .password-field-control { position: relative; display: block; }
+.lgn .password-field-control input { padding-right: 44px; }
+.lgn .password-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font-size: 11px;
+  padding: 6px 2px;
+}
+.lgn .password-toggle:hover { color: var(--mag-ink); }
+.lgn .editorial-actions { display: flex; justify-content: center; gap: 20px; }
+.lgn .login-submit { margin-top: 4px; }
+.lgn .lgn-submit { font-size: 12px; }
+.lgn .status-line { margin: 4px 0 0; font-size: 13px; }
+.lgn .status-line.is-error { color: var(--mag-wine); }
+.lgn .status-line.is-success { color: var(--ok); }
+
+/* 登录表单占位符化:空标签隐藏,占位符同 Connexion 屏灰度 */
+.lgn .password-field > span:empty { display: none; }
+.lgn .login-form input::placeholder { color: rgba(111, 103, 94, 0.65); }
+
+/* 登录页窄屏:旧站 @720px 把 .editorial-actions 压成竖排左对齐(页签散成四行),
+   杂志纸面必须夺回——页签一行横排居中,表单与按钮保持居中一列,与桌面同构。 */
+@media (max-width: 720px) {
+  .lgn .editorial-actions,
+  .lgn .editorial-actions.tabs {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .lgn .login-tabs { gap: 16px; }
+  .lgn .login-form { align-items: center; }
+  .lgn .login-form label,
+  .lgn .password-field { width: 100%; }
+  .lgn .lgn-submit { align-self: center; }
+}
+

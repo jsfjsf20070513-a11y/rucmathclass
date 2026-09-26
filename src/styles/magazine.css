@@ -1,0 +1,604 @@
+/* ══════════════════════════════════════════════════════════════════
+   杂志页面，结构说明见 docs/design-constitution.md
+   .mag-* = 扉页五页翻页刊 + Connexion。翻页物理在 usePageFlip,此处只管纸面。
+   ══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --flip-ease: cubic-bezier(0.72, 0, 0.22, 1);
+  --mag-ink: #1a130e;
+  --mag-ink-2: #221d18;
+  --mag-muted: #6f675e;
+  --mag-wine: #7d2f28;
+  --mag-wine-hover: #7f302b;
+  --mag-hairline: rgba(34, 29, 24, 0.16);
+  --mag-hairline-dark: rgba(34, 29, 24, 0.22);
+}
+
+@keyframes magFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes magBreathe {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.mag {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  background: #f4efe6;
+  color: var(--mag-ink-2);
+  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.mag-page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+}
+
+/* ── 01 封面 ── */
+.mag-cover {
+  background: #f4efe6;
+  padding: 0 24px;
+  flex-direction: column;
+  text-align: center;
+}
+
+.mag-weather {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.mag-wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(12, 13.5vh);
+  grid-template-columns: repeat(12, 13.5svh);
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  justify-content: center;
+  gap: 0;
+  mix-blend-mode: multiply;
+  opacity: 0.74;
+  pointer-events: none;
+}
+
+.mag-wall-cell {
+  border: 0.24vw solid #fdfbf6;
+  box-shadow: 0 2px 9px rgba(23, 16, 12, 0.24);
+  overflow: hidden;
+}
+
+.mag-wall-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.24) brightness(1.02);
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.mag-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.mag-fade-top {
+  top: 0;
+  height: 13%;
+  background: linear-gradient(to bottom, #f4efe6 8%, rgba(244, 239, 230, 0.85) 55%, rgba(244, 239, 230, 0) 100%);
+}
+.mag-fade-bottom {
+  bottom: 0;
+  height: 17%;
+  background: linear-gradient(to top, #f4efe6 12%, rgba(244, 239, 230, 0.85) 55%, rgba(244, 239, 230, 0) 100%);
+}
+
+.mag-cover-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 28px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #2a211c;
+}
+.mag-cover-weather {
+  transition: color 1.2s ease;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.mag-cover-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 17vh 0 7vh;
+  padding: 17svh 0 7svh;
+  will-change: transform, opacity;
+  opacity: 0;
+}
+
+.mag-masthead {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: fit-content;
+  margin: 0;
+  font-family: "Pinyon Script", cursive;
+  font-size: 52px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.2;
+  color: var(--mag-wine);
+  z-index: 2;
+}
+
+.mag-edition {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+.mag-edition p {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 1.2s ease;
+}
+.mag-edition-rule {
+  display: block;
+  width: 64px;
+  height: 1px;
+  background: rgba(34, 29, 24, 0.18);
+}
+
+/* ── 02 Vocabulaire(引导页,左对齐编辑排版) ── */
+.mag-vocab { background: #faf6ee; }
+.mag-vocab-inner {
+  max-width: 880px;
+  width: 100%;
+  padding: 0 4vw;
+}
+.mag-pageno {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+}
+.mag-pageno p {
+  margin: 0;
+  color: var(--mag-muted);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  font-family: "Bodoni Moda", serif;
+}
+.mag-rule {
+  height: 1px;
+  background: var(--mag-hairline-dark);
+  margin: 14px 0 9vh;
+  margin: 14px 0 9svh;
+}
+.mag-giant {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: min(12.5vw, 19vh);
+  font-size: min(12.5vw, 19svh);
+  font-weight: 400;
+  font-style: italic;
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  color: var(--mag-ink);
+}
+.mag-vocab-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 8vh;
+  margin-top: 8svh;
+  gap: 32px;
+}
+.mag-vocab-quote {
+  margin: 0;
+  max-width: 400px;
+  color: #4a423a;
+  font-size: 17px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.mag-enter {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--mag-ink-2);
+  font-family: "Bodoni Moda", serif;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 0 0 6px;
+  box-shadow: inset 0 -1px 0 rgba(34, 29, 24, 0.35);
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+}
+.mag-enter:hover,
+.mag-enter:focus-visible {
+  color: var(--mag-wine-hover);
+  box-shadow: inset 0 -1px 0 var(--mag-wine-hover);
+}
+.mag-enter:disabled { opacity: 0.5; cursor: default; }
+
+/* ── 03 Théorème ── */
+.mag-theorem {
+  background: #fdfcf8;
+  text-align: center;
+  padding: 0;
+}
+.mag-scroll {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  display: flex;
+}
+.mag-theorem-inner {
+  margin: auto;
+  max-width: 640px;
+  width: 100%;
+  padding: 56px 24px;
+}
+.mag-kicker {
+  margin: 0 0 8px;
+  color: var(--mag-wine-hover);
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.mag-theorem-title {
+  margin: 0 0 12px;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.mag-theorem-formula {
+  text-align: center;
+  color: var(--mag-ink-2);
+  overflow-x: auto;
+  font-size: 15px;
+}
+
+/* ── 04 Bibliothèque(索引页) ── */
+.mag-biblio { background: #f0eae0; }
+.mag-biblio-inner {
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+}
+.mag-biblio .mag-kicker { margin: 0 0 6px; }
+.mag-biblio-zh {
+  margin: 0 0 40px;
+  color: var(--mag-muted);
+  font-size: 12px;
+  letter-spacing: 0.3em;
+}
+.mag-biblio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(4, auto);
+  grid-auto-flow: column;
+  column-gap: 56px;
+  text-align: left;
+}
+.mag-biblio-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(34, 29, 24, 0.14);
+  padding: 15px 2px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+.mag-biblio-row:nth-child(4),
+.mag-biblio-row:nth-child(8) {
+  border-bottom: 1px solid rgba(34, 29, 24, 0.14);
+}
+.mag-biblio-roman {
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  color: var(--mag-wine-hover);
+  width: 26px;
+  flex-shrink: 0;
+}
+.mag-biblio-label {
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-size: 17px;
+  color: var(--mag-ink-2);
+  transition: color 0.15s ease;
+}
+.mag-biblio-row:hover .mag-biblio-label,
+.mag-biblio-row:focus-visible .mag-biblio-label {
+  color: var(--mag-wine);
+}
+.mag-biblio-enter { margin-top: 36px; }
+
+/* ── 05 Correspondance(登录后才存在;镜像 02 的编辑页) ── */
+.mag-cor { background: #fdfcf8; }
+.mag-cor-inner .mag-pageno { justify-content: flex-start; }
+.mag-cor-inner .mag-giant {
+  text-align: right;
+  /* Correspondance 比 Vocabulaire 长 3 字母,同字号会溢出 */
+  font-size: min(9vw, 15vh);
+  font-size: min(9vw, 15svh);
+}
+.mag-cor-inner .mag-vocab-quote { text-align: right; }
+
+/* ── 压卷 Parole(木色卡片页) ── */
+.mag-parole {
+  background: #b9a58a;
+  text-align: center;
+}
+.mag-parole-card {
+  max-width: 520px;
+  width: 100%;
+  mix-blend-mode: multiply;
+  color: rgba(20, 13, 7, 0.96);
+}
+.mag-parole-kicker {
+  margin: 0 0 14px;
+  color: #4a3a28;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-family: "Bodoni Moda", serif;
+}
+.mag-parole-text {
+  margin: 0;
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.5;
+}
+.mag-parole-note {
+  margin: 12px 0 0;
+  color: #4a3a28;
+  font-size: 14px;
+}
+.mag-parole-rule {
+  width: 24px;
+  height: 1px;
+  margin: 16px auto;
+  background: rgba(46, 34, 20, 0.4);
+}
+.mag-parole-author {
+  margin: 0;
+  color: #4a3a28;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+.mag-parole-foot {
+  position: absolute;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+.mag-parole-foot p {
+  margin: 0;
+  color: #4a3a28;
+  font-size: 11px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+  letter-spacing: 0.02em;
+}
+.mag-parole-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #4a3a28;
+  font: inherit;
+  transition: color 0.2s ease;
+}
+.mag-parole-link:hover,
+.mag-parole-link:focus-visible { color: var(--mag-wine-hover); }
+
+/* ── 06 Connexion(撕开后露出) ── */
+.mag-connexion {
+  z-index: 50;
+  visibility: hidden;
+  background: #f4efe6;
+  text-align: center;
+}
+.mag-connexion-box {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mag-connexion-title {
+  margin: 0 0 6vh;
+  margin: 0 0 6svh;
+  font-family: "Bodoni Moda", serif;
+  font-size: 44px;
+  font-weight: 400;
+  font-style: italic;
+  font-optical-sizing: auto;
+  font-variation-settings: "opsz" 96;
+  color: var(--mag-ink);
+}
+.mag-connexion-input {
+  width: 100%;
+  padding: 10px 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(34, 29, 24, 0.28);
+  border-radius: 0;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-size: 16px;
+  color: var(--mag-ink-2);
+  outline: none;
+  text-align: center;
+}
+.mag-connexion-input + .mag-connexion-input { margin-top: 26px; }
+.mag-connexion-input:focus {
+  border-bottom-color: var(--mag-wine);
+  outline: none;
+}
+.mag-connexion-submit { margin-top: 6vh; margin-top: 6svh; }
+.mag-connexion-error {
+  margin: 18px 0 0;
+  color: var(--mag-wine);
+  font-size: 13px;
+}
+.mag-connexion-done {
+  margin: 0 0 4vh;
+  margin: 0 0 4svh;
+  color: var(--mag-muted);
+  font-size: 14px;
+}
+.mag-connexion-more {
+  margin-top: 26px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font-size: 12px;
+  font-family: inherit;
+  transition: color 0.2s ease;
+}
+.mag-connexion-more:hover { color: var(--mag-wine-hover); }
+.mag-connexion-back {
+  margin-top: 5vh;
+  margin-top: 5svh;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+.mag-connexion-back:hover { color: var(--mag-wine-hover); }
+
+/* ── folio 与翻页钮(不翻的常驻层) ── */
+.mag-folio {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  z-index: 40;
+  font-family: "Bodoni Moda", serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--mag-muted);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.mag-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+}
+.mag-arrow {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--mag-muted);
+  font-family: "Bodoni Moda", serif;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+.mag-arrow.is-next { color: #2a211c; }
+.mag-arrow:hover:not(:disabled),
+.mag-arrow:focus-visible:not(:disabled) { color: var(--mag-wine); }
+.mag-arrow:disabled { opacity: 0.35; cursor: default; }
+
+/* ── 移动端 ── */
+@media (max-width: 640px) {
+  .mag-masthead { font-size: 40px; top: 10px; }
+  .mag-cover-nav {
+    top: 56px;
+    padding: 0 18px;
+    font-size: 9px;
+    letter-spacing: 0.22em;
+  }
+  .mag-fade-top { height: 14%; }
+  .mag-fade-bottom { height: 19%; }
+  .mag-edition { gap: 12px; }
+  .mag-edition p { font-size: 9px; }
+  .mag-edition-rule { width: 36px; }
+  .mag-vocab-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    margin-top: 6vh;
+    margin-top: 6svh;
+  }
+  .mag-biblio-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+  .mag-biblio-row:nth-child(4) { border-bottom: none; }
+  .mag-biblio-row:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }
+  .mag-biblio-zh { margin-bottom: 24px; }
+  .mag-folio { bottom: 18px; left: 18px; font-size: 10px; }
+  .mag-connexion-box { width: min(320px, 86vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mag *,
+  .mag *::before,
+  .mag *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
