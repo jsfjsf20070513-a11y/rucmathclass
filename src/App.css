@@ -3258,38 +3258,6 @@
 .notfound-home a, .notfound-home a:visited { color: var(--muted); border-bottom: none; font-size: 16px; }
 .notfound-home a:hover { color: var(--accent); }
 
-/* ── PageLoading (quiet carnet loader) ──────────────────────────────── */
-.pl-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  background: var(--paper);
-  animation: pl-fade 0.4s ease both;
-}
-.pl-overlay.is-leaving { opacity: 0; transition: opacity 0.35s ease; }
-.pl-inline { display: flex; justify-content: center; padding-top: 96px; }
-.pl-shell { max-width: 440px; width: 100%; text-align: center; }
-.pl-eyebrow { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
-.pl-body { min-height: 128px; display: flex; flex-direction: column; justify-content: center; margin-top: 34px; }
-.pl-fr { margin: 0; font-size: 19px; line-height: 1.5; color: var(--accent); animation: pl-fade 0.5s ease both; }
-.pl-zh { margin: 12px 0 0; font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif; font-size: 22px; line-height: 1.5; color: var(--ink); animation: pl-fade 0.5s ease both; }
-.pl-note { margin: 14px 0 0; color: var(--muted); font-size: 13px; animation: pl-fade 0.5s ease both; }
-.pl-foot { margin-top: 40px; display: flex; align-items: center; gap: 16px; justify-content: center; }
-.pl-track { position: relative; width: 140px; height: 2px; background: rgba(26, 26, 26, 0.1); overflow: hidden; }
-.pl-sweep { position: absolute; top: 0; left: 0; height: 2px; width: 30%; background: var(--accent); animation: pl-sweep 1.2s ease-in-out infinite; }
-.pl-count { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; }
-@keyframes pl-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pl-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
-@media (prefers-reduced-motion: reduce) {
-  .pl-overlay, .pl-fr, .pl-zh, .pl-note { animation: none; }
-  .pl-sweep { animation: none; width: 100%; opacity: 0.5; }
-}
-
-/* ── Witness · 班级寄语墙 (memorial wall, fully centered) ────────────── */
 /* ── Resources · 资源与书目 (BIBLIOTHÈQUE → 书架索引 → 编号书架) ──────── */
 .biblio-masthead { text-align: center; }
 .biblio-kicker {
@@ -4803,6 +4771,7 @@
   font-size: 13px;
   color: var(--mag-muted);
 }
+.bib-retry { min-width: 44px; min-height: 44px; }
 .bib-entries { list-style: none; margin: 0; padding: 0; }
 .bib-entry { border-top: 1px solid rgba(34, 29, 24, 0.14); padding: 13px 0; }
 .bib-entry:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }

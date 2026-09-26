@@ -30,7 +30,7 @@ function buildShelfOrder(catalogItems) {
 
 export default function Resources() {
   const navigate = useNavigate()
-  const { catalogItems } = useResourceCatalog()
+  const { catalogItems, loading, error, refresh } = useResourceCatalog()
   const [arrive] = useState(() => wasFlipNav())
 
   const shelves = useMemo(() => {
@@ -50,11 +50,16 @@ export default function Resources() {
   // 页面栈 = 书架 Ⅰ..Ⅷ,轻翻(0.5s);首架平摊,其余停靠右侧。
   const pageCount = shelves.length
   const sides = useMemo(() => shelves.map((_, k) => (k === 0 ? 'none' : 'right')), [shelves])
-  const { page, next, prev, goTo, setPageEl } = usePageFlip({
+  const { page, next, prev, goTo, jumpTo, setPageEl } = usePageFlip({
     count: pageCount,
     sides,
     durationMs: 500,
   })
+
+  // A removed publication can remove an extra shelf while it is being read.
+  useEffect(() => {
+    if (page >= pageCount) jumpTo(pageCount - 1)
+  }, [page, pageCount, jumpTo])
 
   // /resources#shelf-N 直达(Home 第 4 页索引行点击进来;N 从 1 计)。
   useEffect(() => {
@@ -101,6 +106,14 @@ export default function Resources() {
                   <span className="bib-shelf-count">{shelf.items.length}</span>
                 </div>
                 {shelf.intro ? <p className="bib-shelf-intro" data-animate="">{shelf.intro}</p> : null}
+                {error && index === page ? (
+                  <p className="bib-shelf-intro" role="status">
+                    {error}{' '}
+                    <button type="button" className="mag-enter bib-retry" onClick={refresh} disabled={loading}>
+                      {loading ? '更新中…' : '重试'}
+                    </button>
+                  </p>
+                ) : null}
                 <ol className="bib-entries">
                   {shelf.items.map((item) => {
                     const lead = getResourceLead(item)

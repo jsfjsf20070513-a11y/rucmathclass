@@ -9,9 +9,9 @@ export function fakeSupabase(initial = []) {
     loseNextWriteResponse() { loseResponse = true },
     from(table) {
       const filters = [], orders = []
-      let action = 'select', payload, limit = Infinity
+      let action = 'select', payload, columns, limit = Infinity
       const execute = async (single = false) => {
-        calls.push({ table, action, filters, payload })
+        calls.push({ table, action, filters, payload, columns })
         const matches = (row) => filters.every(([key, value, op]) => op === 'gt' ? row[key] > value : op === 'lte' ? row[key] <= value : row[key] === value)
         if (action !== 'select') client.beforeWrite?.()
         let data
@@ -44,7 +44,7 @@ export function fakeSupabase(initial = []) {
         return { data: structuredClone(single ? data[0] || null : data), error: null }
       }
       const query = {
-        select: () => query,
+        select: (value) => { columns = value; return query },
         abortSignal: () => query,
         eq: (key, value) => { filters.push([key, value]); return query },
         gt: (key, value) => { filters.push([key, value, 'gt']); return query },

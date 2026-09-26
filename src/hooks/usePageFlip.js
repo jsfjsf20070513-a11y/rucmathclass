@@ -33,6 +33,7 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
   const pagesRef = useRef([])
   const pageStateRef = useRef(initialPage)
   const appliedPageRef = useRef(-1)
+  const appliedElementRef = useRef(null)
   const instantRef = useRef(true)
   const wheelLockRef = useRef(0)
   const wheelAccRef = useRef(0)
@@ -48,9 +49,11 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
 
   const apply = useCallback((cur, instant) => {
     const reduced = prefersReducedMotion()
-    // 数据加载等原因导致的重跑不算翻页:只有页码真变才重播进场编排。
-    const changed = appliedPageRef.current !== cur
+    // A removed shelf may move another DOM page into the same index. Its
+    // previously hidden contents still need an entrance even without a new index.
+    const changed = appliedPageRef.current !== cur || appliedElementRef.current !== pagesRef.current[cur]
     appliedPageRef.current = cur
+    appliedElementRef.current = pagesRef.current[cur]
     pagesRef.current.forEach((el, i) => {
       if (!el) return
       const side = sides[i] || 'right'
