@@ -1,13 +1,5 @@
-import {
-  Suspense,
-  createContext,
-  lazy,
-  useContext,
-  useMemo,
-  useRef,
-  useEffect,
-} from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Suspense, lazy, useEffect } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import './App.css'
@@ -20,58 +12,12 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const Vocabulary = lazy(() => import('./pages/Vocabulary'))
 const Assistant = lazy(() => import('./pages/Assistant'))
 
-const CARNET_VISITED_KEY = 'carnet_visited'
-
-const RouteLoadingContext = createContext({
-  pathname: '/',
-  markRouteReady: () => {},
-})
-
-function hasVisitedCarnet() {
-  if (typeof window === 'undefined') {
-    return false
-  }
-
-  try {
-    return window.localStorage.getItem(CARNET_VISITED_KEY) !== null
-  } catch {
-    return false
-  }
-}
-
-function rememberCarnetVisited() {
-  try {
-    window.localStorage.setItem(CARNET_VISITED_KEY, '1')
-  } catch {
-    // Loading should never fail just because storage is unavailable.
-  }
-}
-
-function RouteReadySignal() {
-  const { pathname, markRouteReady } = useContext(RouteLoadingContext)
-
-  useEffect(() => {
-    markRouteReady(pathname)
-  }, [markRouteReady, pathname])
-
-  return null
-}
-
-function ReadyPage({ children }) {
-  return (
-    <>
-      <RouteReadySignal />
-      {children}
-    </>
-  )
-}
-
 function DeferredPage({ children }) {
   // 杂志刊契约(2026-08-20):路由切换不再有加载页;懒加载空档留白纸,
-  // 由目标页的翻入动画接管。旧 carnet 加载视图只服务冷启动首访。
+  // 由目标页的翻入动画接管。冷启动纸面由 index.html 提供。
   return (
     <Suspense fallback={null}>
-      <ReadyPage>{children}</ReadyPage>
+      {children}
     </Suspense>
   )
 }
@@ -80,7 +26,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<ReadyPage><Home /></ReadyPage>} />
+        <Route index element={<Home />} />
         {/* 已下线页面 → 重定向兜底,旧链接/书签不硬 404。
             寄语墙与整条 Solana 链路已随 2026-08 减法移除(链上数据仍在
             devnet,恢复只需还原本次 commit);图版(涉及同学人脸)、黑客松
@@ -115,31 +61,6 @@ function AppRoutes() {
   )
 }
 
-// 路由外壳:杂志刊没有加载幕(启动纸面在 index.html,翻页动画即转场),
-// 这里只保留首访标记与站内 flip 记忆。
-function RoutedExperience() {
-  const location = useLocation()
-  const shouldRememberVisitRef = useRef(!hasVisitedCarnet())
-
-  useEffect(() => {
-    if (shouldRememberVisitRef.current) {
-      rememberCarnetVisited()
-      shouldRememberVisitRef.current = false
-    }
-  }, [])
-
-  const routeLoadingValue = useMemo(
-    () => ({ pathname: location.pathname, markRouteReady: () => {} }),
-    [location.pathname],
-  )
-
-  return (
-    <RouteLoadingContext.Provider value={routeLoadingValue}>
-      <AppRoutes />
-    </RouteLoadingContext.Provider>
-  )
-}
-
 // 首屏空闲后预取懒路由 chunk(背词 chunk 含 3650 词词库,等点击才下载会顿)。
 function useIdlePrefetch() {
   useEffect(() => {
@@ -161,11 +82,9 @@ function useIdlePrefetch() {
 function App() {
   useIdlePrefetch()
   return (
-    <>
-      <BrowserRouter>
-        <RoutedExperience />
-      </BrowserRouter>
-    </>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   )
 }
 

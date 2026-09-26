@@ -1,10 +1,8 @@
 import { isSupabaseConfigured, supabase } from './supabase'
 import { sanitizeStoredUrl } from './safeUrl'
+import { emitOfficialContentUpdated } from './contentEvents'
 
 const FALLBACK_COVER = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'
-
-export const OFFICIAL_CONTENT_UPDATED_EVENT = 'mathclass-site-official-content-updated'
-export const OFFICIAL_CONTENT_UPDATED_STORAGE_KEY = 'mathclass-site-official-content-updated-at'
 
 function normalizeDate(value) {
   if (!value) return ''
@@ -17,15 +15,6 @@ function ensureArray(value) {
 
 export function isMissingTableError(error) {
   return error?.code === 'PGRST205' || `${error?.message || ''}`.toLowerCase().includes('schema cache')
-}
-
-function emitOfficialContentUpdated() {
-  window.dispatchEvent(new CustomEvent(OFFICIAL_CONTENT_UPDATED_EVENT))
-  try {
-    window.localStorage.setItem(OFFICIAL_CONTENT_UPDATED_STORAGE_KEY, `${Date.now()}`)
-  } catch {
-    // Ignore storage write failures in private mode or restricted browsers.
-  }
 }
 
 async function ensureOfficialTables(tables) {
@@ -51,103 +40,6 @@ async function ensureOfficialTables(tables) {
   }
 
   return { ready: true, mode: 'official' }
-}
-
-function groupPhotosByAlbum(photoRows) {
-  return photoRows.reduce((accumulator, row) => {
-    const key = row.album_id
-    if (!accumulator[key]) {
-      accumulator[key] = []
-    }
-
-    accumulator[key].push({
-      src: row.src,
-      caption: row.caption || '',
-    })
-
-    return accumulator
-  }, {})
-}
-
-function mapOfficialAlbum(row, photosByAlbum) {
-  const photos = photosByAlbum[row.id] || []
-
-  return {
-    id: `official-album-${row.id}`,
-    commentScopeId: row.id,
-    title: row.title,
-    featured: Boolean(row.featured),
-    count: photos.length || 1,
-    date: row.date,
-    updatedAt: normalizeDate(row.updated_at),
-    cover: row.cover || photos[0]?.src || FALLBACK_COVER,
-    description: row.description || '',
-    recordedBy: row.recorded_by || '站点协作',
-    location: row.location || '待补充',
-    photos: photos.length ? photos : [{ src: row.cover || FALLBACK_COVER, caption: '正式发布封面' }],
-    cloud: true,
-    published: true,
-    official: true,
-    previewLabel: '正式发布',
-    sourceSubmissionId: row.source_submission_id,
-  }
-}
-
-function mapOfficialResource(row) {
-  return {
-    id: `official-resource-${row.id}`,
-    category: row.category || '未分类',
-    title: row.title,
-    url: sanitizeStoredUrl(row.url),
-    tag: row.tag || '',
-    description: row.description || '',
-    curator: row.curator || '站点协作',
-    createdAt: row.created_at,
-    cloud: true,
-    published: true,
-    official: true,
-    previewLabel: '正式发布',
-    sourceSubmissionId: row.source_submission_id,
-  }
-}
-
-export async function fetchOfficialContent() {
-  if (!isSupabaseConfigured || !supabase) {
-    return {
-      mode: 'disabled',
-      albums: [],
-      resources: [],
-    }
-  }
-
-  const tableState = await ensureOfficialTables(['albums', 'album_photos', 'resources'])
-  if (!tableState.ready) {
-    return {
-      mode: tableState.mode,
-      albums: [],
-      resources: [],
-    }
-  }
-
-  const [albumsResult, photosResult, resourcesResult] = await Promise.all([
-    supabase.from('albums').select('*').order('updated_at', { ascending: false }),
-    supabase.from('album_photos').select('*').order('position', { ascending: true }),
-    supabase.from('resources').select('*').order('created_at', { ascending: false }),
-  ])
-
-  const results = [albumsResult, photosResult, resourcesResult]
-  const fatal = results.find((result) => result.error)
-  if (fatal) {
-    throw fatal.error
-  }
-
-  const photosByAlbum = groupPhotosByAlbum(photosResult.data || [])
-
-  return {
-    mode: 'official',
-    albums: (albumsResult.data || []).map((row) => mapOfficialAlbum(row, photosByAlbum)),
-    resources: (resourcesResult.data || []).map(mapOfficialResource),
-  }
 }
 
 export async function publishOfficialContent(kind, submission, user) {
