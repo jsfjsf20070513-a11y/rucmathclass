@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
-import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { supabase, isSupabaseConfigured, recoveryCallbackFailed } from '../lib/supabase'
 import { AuthContext } from './auth-context'
 import { createAuthSession } from '../lib/authSession'
 
@@ -17,6 +17,7 @@ export function AuthProvider({ children }) {
     signOut: session.signOut,
     refreshSession: session.refresh,
     isAuthEnabled: isSupabaseConfigured,
+    recoveryCallbackFailed,
   }
 
   return (

@@ -4,6 +4,18 @@ import { withRequestDeadline } from './requestDeadline'
 
 const RESOURCE_COLUMNS = 'id,category,title,url,tag,description,curator,created_at,source_submission_id'
 
+export function subscribeToPublishedResources(onChange, client = supabase) {
+  if (!client) return () => {}
+  let active = true
+  const channel = client.channel('public:resources')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, () => { if (active) onChange() })
+    .subscribe()
+  return () => {
+    active = false
+    client.removeChannel(channel)
+  }
+}
+
 function mapResource(row) {
   return {
     id: `official-resource-${row.id}`,

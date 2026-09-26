@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { buildPublicResourceCatalog } from '../data/resourceCatalog'
-import { fetchPublishedResources } from '../lib/resourceBackend'
-import { OFFICIAL_CONTENT_UPDATED_EVENT, OFFICIAL_CONTENT_UPDATED_STORAGE_KEY } from '../lib/contentEvents'
-import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { fetchPublishedResources, subscribeToPublishedResources } from '../lib/resourceBackend'
 
 export function useResourceCatalog() {
   const [state, setState] = useState({ resources: [], loading: true, error: '' })
@@ -35,21 +33,10 @@ export function useResourceCatalog() {
       window.clearTimeout(timer)
       timer = window.setTimeout(refresh, 120)
     }
-    const onStorage = (event) => {
-      if (event.key === OFFICIAL_CONTENT_UPDATED_STORAGE_KEY) scheduleRefresh()
-    }
-    window.addEventListener(OFFICIAL_CONTENT_UPDATED_EVENT, scheduleRefresh)
-    window.addEventListener('storage', onStorage)
-    const channel = isSupabaseConfigured && supabase
-      ? supabase.channel('public:resources')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'resources' }, scheduleRefresh)
-        .subscribe()
-      : null
+    const unsubscribe = subscribeToPublishedResources(scheduleRefresh)
     return () => {
+      unsubscribe()
       window.clearTimeout(timer)
-      window.removeEventListener(OFFICIAL_CONTENT_UPDATED_EVENT, scheduleRefresh)
-      window.removeEventListener('storage', onStorage)
-      if (channel) supabase.removeChannel(channel)
     }
   }, [refresh])
 
