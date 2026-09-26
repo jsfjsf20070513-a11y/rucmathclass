@@ -7,9 +7,10 @@
 | 命令 | 会做什么 |
 | --- | --- |
 | `npm run dev` | 先离线检查肖像素材，再生成定理 HTML、health 文件并启动 Vite |
-| `npm run lint` | 检查 JS/JSX/MJS 和前端导入边界；当前不检查 Worker |
+| `npm run lint` | 检查前端、Worker 与脚本的 JS/JSX/MJS，以及前端导入边界 |
 | `npm test` | 在 Node 环境运行 `src/`、`worker/src/`、`scripts/` 下的 `*.test.js` |
 | `npm run build` | 运行同样的生成步骤，再生成 `dist/` |
+| `npm run worker:check` | 离线打包 Worker 到 `worker/.wrangler/check`，不发布 |
 | `npm run preview` | 本地查看已有构建 |
 
 `.env.example` 列出登录所需的公开配置。`VITE_AI_ENDPOINT` 可覆盖聊天地址；未设置时仍会调用 `https://rucmathclass.com/api/chat`。首页也会访问 Open-Meteo。需要离线或隔离验证时，应明确使用本地模拟服务，不要以为 Vite 自动模拟了这些接口。
@@ -37,7 +38,7 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 ## 这些检查能保护什么
 
-单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和部分 Worker 聊天请求。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
+单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和Worker 聊天、语音、请求取消、输入限制和入口分派。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
 
 当前没有自动浏览器测试。涉及状态或布局的修改，至少在真实页面验证相关流程：账号切换、请求失败后的重试、背词最后一题与刷新恢复、资源云端失败后的静态目录、AI 保存失败提示。改首页还要确认登录前后页数变化和翻页动画、窄屏肖像加载和横向溢出。改路由加载时，用本地生产构建验证慢下载、模块失败和整个入口脚本失败后的重载。不要用注入 DOM 拼出的截图代替验证。
 

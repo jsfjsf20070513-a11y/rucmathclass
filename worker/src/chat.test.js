@@ -22,6 +22,34 @@ beforeEach(async () => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('chat API contract', () => {
+  it.each(['before', 'discovery', 'generation'])('cancels at %s without starting another model group', async (stage) => {
+    const controller = new AbortController()
+    const signals = []
+    let generated = 0
+    vi.stubGlobal('fetch', vi.fn((url, { signal }) => {
+      signals.push(signal)
+      if (!url.includes(':generateContent')) {
+        if (stage === 'discovery') {
+          controller.abort()
+          return new Promise(() => {})
+        }
+        return Promise.resolve(Response.json({ models: Array.from({ length: 6 }, (_, i) => ({
+          name: `models/gemini-${99 - i}-flash`, supportedGenerationMethods: ['generateContent'],
+        })) }))
+      }
+      generated += 1
+      queueMicrotask(() => controller.abort())
+      return new Promise(() => {})
+    }))
+    if (stage === 'before') controller.abort()
+    const response = await worker.fetch(new Request('https://rucmathclass.com/api/chat', {
+      method: 'POST', signal: controller.signal, body: JSON.stringify({ messages: [{ content: '问题' }] }),
+    }), { GEMINI_API_KEY: 'test-key' }, {})
+    expect(response.status).toBe(499)
+    expect(generated).toBe(stage === 'generation' ? 3 : 0)
+    expect(signals.every((signal) => signal.aborted)).toBe(true)
+    if (stage === 'before') expect(fetch).not.toHaveBeenCalled()
+  })
   it('returns the first valid answer and cancels slower requests', async () => {
     const aborted = []
     upstream((url, { signal }) => {

@@ -1,4 +1,6 @@
 import { json } from './http.js'
+import { readChatBody } from './requestBody.js'
+import { createRequestScope } from './requestScope.js'
 
 // 动态查询聊天模型，失败时使用下面的候选列表。
 // 每小时从 ListModels 拉一次当前可用模型,自动排序(flash 新版本优先 → pro →
@@ -31,16 +33,18 @@ function rankModel(name) {
   return family * 100 + ver
 }
 
-async function getChatModels(env) {
+async function getChatModels(env, signal) {
+  signal.throwIfAborted()
   const now = Date.now()
   if (chainCache && now - chainCacheAt < CHAIN_TTL_MS) return chainCache
+  const scope = createRequestScope(signal, 3000)
   try {
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', {
+    const r = await scope.run(() => fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', {
       headers: { 'X-goog-api-key': env.GEMINI_API_KEY },
-      signal: AbortSignal.timeout(3000),
-    })
+      signal: scope.signal,
+    }))
     if (r.ok) {
-      const data = await r.json()
+      const data = await scope.run(() => r.json())
       const names = (data.models || [])
         .filter((m2) => Array.isArray(m2.supportedGenerationMethods)
           && m2.supportedGenerationMethods.includes('generateContent'))
@@ -53,7 +57,8 @@ async function getChatModels(env) {
         return chainCache
       }
     }
-  } catch { /* 走兜底 */ }
+  } catch { /* 请求仍有效时才走兜底 */ } finally { scope.close() }
+  signal.throwIfAborted()
   return FALLBACK_CHAIN
 }
 const MAX_MESSAGES = 20
@@ -79,9 +84,9 @@ export async function handleChat(request, env, origin) {
 
   let body
   try {
-    body = await request.json()
-  } catch {
-    return json({ error: 'Invalid JSON' }, 400, origin)
+    body = await readChatBody(request)
+  } catch (error) {
+    return json({ error: error.status ? error.message : 'Invalid JSON' }, error.status || 400, origin)
   }
 
   const raw = Array.isArray(body && body.messages) ? body.messages.slice(-MAX_MESSAGES) : []
@@ -139,7 +144,10 @@ export async function handleChat(request, env, origin) {
     })
   }
 
-  const chatModels = await getChatModels(env)
+  let chatModels
+  try { chatModels = await getChatModels(env, request.signal) } catch {
+    return json({ error: 'Request cancelled' }, 499, origin)
+  }
 
   const failures = []
   const tryModel = async (model, signal) => {
@@ -164,21 +172,21 @@ export async function handleChat(request, env, origin) {
   // 串行等三个就是一分钟(用户感知 = "AI 没反应")。同时发给前 3 个,
   // 谁先给出正文用谁;全败再补第二梯队。
   const race = async (models, timeoutMs) => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const scope = createRequestScope(request.signal, timeoutMs)
     try {
-      return await Promise.any(models.map((model) => tryModel(model, controller.signal)))
+      return await scope.run(() => Promise.any(models.map((model) => tryModel(model, scope.signal))))
     } catch (error) {
       failures.push(...(error.errors || [error]))
       return null
     } finally {
-      clearTimeout(timer)
-      controller.abort()
+      scope.close()
     }
   }
 
   let win = await race(chatModels.slice(0, 3), 18000)
+  if (request.signal.aborted) return json({ error: 'Request cancelled' }, 499, origin)
   if (!win && chatModels.length > 3) win = await race(chatModels.slice(3, 6), 15000)
+  if (request.signal.aborted) return json({ error: 'Request cancelled' }, 499, origin)
   if (win) return json(win, 200, origin)
 
   const limited = failures.length > 0 && failures.every((error) => error.status === 429)
