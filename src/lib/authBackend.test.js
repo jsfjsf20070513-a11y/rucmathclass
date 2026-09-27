@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { requestEmailCode, signIn, updatePassword } from './authBackend'
+import { getAccessToken, requestEmailCode, signIn, updatePassword } from './authBackend'
 
 const h = vi.hoisted(() => ({ auth: {} }))
 vi.mock('./supabase', () => ({
@@ -14,6 +14,31 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('authentication API boundary', () => {
+  it('returns only the current conversation account token', async () => {
+    await expect(getAccessToken('a')).resolves.toBe('token-a')
+    h.auth.getSession.mockResolvedValueOnce({ data: { session: { user: { id: 'b' }, access_token: 'token-b' } } })
+    await expect(getAccessToken('a')).rejects.toThrow('账号已退出或切换')
+    h.auth.getSession.mockResolvedValueOnce({ data: { session: null } })
+    await expect(getAccessToken('a')).rejects.toThrow('账号已退出或切换')
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('requires an expected account rather than sending whichever token is cached', async () => {
+    await expect(getAccessToken()).rejects.toThrow('请先登录')
+    expect(h.auth.getSession).not.toHaveBeenCalled()
+  })
+
+  it('cancels waiting for a session refresh without leaking a late token to the caller', async () => {
+    const controller = new AbortController()
+    let resolveSession
+    h.auth.getSession.mockReturnValueOnce(new Promise((resolve) => { resolveSession = resolve }))
+    const result = expect(getAccessToken('a', { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' })
+    controller.abort()
+    await result
+    resolveSession({ data: { session: { user: { id: 'b' }, access_token: 'token-b' } } })
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
   it('normalizes email consistently and keeps code login limited to existing accounts', async () => {
     h.auth.signInWithPassword = vi.fn(async () => ({ data: {} }))
     h.auth.signInWithOtp = vi.fn(async () => ({ data: {} }))

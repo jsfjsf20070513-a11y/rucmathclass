@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-let worker
+let handleChat
 const image = { mimeType: 'image/jpeg', data: 'aGVsbG8=' }
 const answer = (text) => Response.json({ candidates: [{ content: { parts: [{ text }] } }] })
-const request = (body = { messages: [{ role: 'user', content: 'question' }] }) => worker.fetch(
+const request = (body = { messages: [{ role: 'user', content: 'question' }] }) => handleChat(
   new Request('https://rucmathclass.com/api/chat', { method: 'POST', body: JSON.stringify(body) }),
-  { GEMINI_API_KEY: 'test-key' }, {},
+  { GEMINI_API_KEY: 'test-key' }, 'https://rucmathclass.com',
 )
 function upstream(generate, count = 3) {
   vi.stubGlobal('fetch', vi.fn((url, options) => {
@@ -17,11 +17,11 @@ function upstream(generate, count = 3) {
 }
 beforeEach(async () => {
   vi.resetModules()
-  worker = (await import('./index.js')).default
+  handleChat = (await import('./chat.js')).handleChat
 })
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
-describe('chat API contract', () => {
+describe('chat handler contract after access verification', () => {
   it.each(['before', 'discovery', 'generation'])('cancels at %s without starting another model group', async (stage) => {
     const controller = new AbortController()
     const signals = []
@@ -42,9 +42,9 @@ describe('chat API contract', () => {
       return new Promise(() => {})
     }))
     if (stage === 'before') controller.abort()
-    const response = await worker.fetch(new Request('https://rucmathclass.com/api/chat', {
+    const response = await handleChat(new Request('https://rucmathclass.com/api/chat', {
       method: 'POST', signal: controller.signal, body: JSON.stringify({ messages: [{ content: '问题' }] }),
-    }), { GEMINI_API_KEY: 'test-key' }, {})
+    }), { GEMINI_API_KEY: 'test-key' }, 'https://rucmathclass.com')
     expect(response.status).toBe(499)
     expect(generated).toBe(stage === 'generation' ? 3 : 0)
     expect(signals.every((signal) => signal.aborted)).toBe(true)

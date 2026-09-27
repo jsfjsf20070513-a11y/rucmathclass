@@ -4,7 +4,10 @@ import { requestAssistant } from '../lib/assistantClient'
 import { createAssistantConversation } from '../lib/assistantConversation'
 
 export function useAssistantConversation(userId) {
-  const conversation = useMemo(() => createAssistantConversation({ userId, history, request: requestAssistant }), [userId])
+  const conversation = useMemo(() => createAssistantConversation({
+    userId, history,
+    request: (messages, options) => requestAssistant(messages, { ...options, userId }),
+  }), [userId])
   const state = useSyncExternalStore(conversation.subscribe, conversation.getSnapshot)
   useEffect(() => {
     conversation.initialize()

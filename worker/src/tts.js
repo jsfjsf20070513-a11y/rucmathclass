@@ -50,6 +50,9 @@ function audioFromResponse(data) {
 
 function withCors(response, origin) {
   const headers = new Headers(response.headers)
+  // Only the Worker owns the shared audio cache. A downstream cache must not
+  // replay an authenticated response without running the access check again.
+  headers.set('Cache-Control', 'private, no-store')
   for (const [key, value] of Object.entries(corsHeaders(origin))) headers.set(key, value)
   return new Response(response.body, { status: response.status, headers })
 }
