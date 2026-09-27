@@ -164,6 +164,14 @@ try {
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
       assert.equal(await page.locator('.bib-folio').textContent(), initial)
       await noHorizontalOverflow(page)
+      for (let flips = 0; !await page.getByRole('button', { name: '下一页', exact: true }).isDisabled(); flips += 1) {
+        assert.ok(flips < 12, 'Resource pagination did not reach its final shelf')
+        await page.getByRole('button', { name: '下一页', exact: true }).click()
+        await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
+      }
+      await page.locator('.bib-page:not([inert]) .section-coda').scrollIntoViewIfNeeded()
+      await rendered(page, '.bib-page:not([inert]) .section-coda-translation')
+      await noHorizontalOverflow(page)
     })
     await scenario(`${size}-forms`, viewport, async (page) => {
       await page.goto(`${baseUrl}/login`)
@@ -225,7 +233,29 @@ try {
       assert.equal(await page.getByRole('textbox', { name: '向 AI 助手提问', exact: true }).count(), 0)
       await noHorizontalOverflow(page)
     })
+    await scenario(`${size}-not-found`, viewport, async (page) => {
+      await page.goto(`${baseUrl}/missing-browser-fixture`)
+      await page.waitForURL(`${baseUrl}/404`)
+      await rendered(page, '.notfound-title')
+      await rendered(page, '.site-nav')
+      await noHorizontalOverflow(page)
+      await page.getByRole('link', { name: '资源 · 书目', exact: true }).click()
+      await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
+      await page.goBack()
+      await rendered(page, '.notfound-title')
+    })
   }
+  await scenario('reduced-motion', { width: 390, height: 844 }, async (page) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto(baseUrl)
+    await rendered(page, '.mag-masthead')
+    await page.getByRole('button', { name: '下一页', exact: true }).click()
+    await rendered(page, '.mag-vocab .mag-giant')
+    await page.goto(`${baseUrl}/resources`)
+    await page.getByRole('button', { name: '下一页', exact: true }).click()
+    await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
+    await noHorizontalOverflow(page)
+  })
   await scenario('tablet-navigation', { width: 800, height: 1024 }, async (page) => {
     for (const path of ['/resources', '/vocabulary', '/assistant']) {
       await page.goto(`${baseUrl}${path}`)

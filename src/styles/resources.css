@@ -121,6 +121,4 @@
 
 @media (max-width: 640px) {
   .bib-shelf-inner { padding: 32px 18px 72px; }
-  .bib-index-grid { max-width: none; }
 }
-
