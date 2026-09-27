@@ -73,11 +73,13 @@
 
 本仓 `worker/wrangler.toml` 的路由只写了 `rucmathclass.com`，CORS 列表只有班级站域名和本地开发地址。2026-09-27 通过 Cloudflare API 只读确认：当前 zone 只有班级站 `/api/chat`、`/api/speak*` 两条 Worker 路由，均绑定 `mathclass-ai`；两个站点没有 Worker 自定义域名绑定。
 
-相邻 Raccord 仓库仍把 Worker 写成 `mathclass-ai`，并列出了两个域名的路由。这不是当前线上路由，却仍有覆盖风险：若从那份配置向同一个账号发布，就会操作班级站的同名 Worker。Raccord 再次发布前，必须先明确自己的 Worker 目标。
+Raccord 的 [隔离改动](https://github.com/jsfjsf20070513-a11y/raccord/pull/1) 将 Worker 改为 `raccord-ai`，只列自己的子域路由，限流 namespace 与班级站不同。其开发代理只连接本机 Worker，不再调用班级站生产服务。两边 Worker 的密钥分别配置，不能从 Raccord 仓库发布本服务。
 
-相册 SQL 仍作为历史运维文件保留。运行代码里的旧审核、相册写入和对应 Web3、黑客松样式已移除。两仓本地配置和班级站线上脚本指向同一个 Supabase 项目，Raccord 代码也读写同名的个人进度、对话和资源表。生产表及行策略没有站点区分：同一个账号从两份客户端登录，会使用同一份个人记录。**账号之间的行隔离不是两个站点之间的数据隔离**，收紧表授权也不会改变这层共用关系。
+相册 SQL 仍作为历史运维文件保留。运行代码里的旧审核、相册写入和对应 Web3、黑客松样式已移除。班级站保留现有 Supabase 项目；用户已确定 Raccord 使用独立数据库，不复制账号或个人记录。Raccord 客户端只读取自己的环境变量，并拒绝已知班级站地址。新项目尚未接入，初始化 SQL 目前通过的是隔离环境测试，不能称为真实新库已验收。旧项目历史记录保持原样；旧表没有站点字段，不按猜测划分或删除记录。
 
-班级站发布脚本固定 `/var/www/MathClassWebsite/dist`，Raccord 仓库 Nginx 文件写的是 `/var/www/raccord/dist`；服务器实际目录和账号权限尚未核验。同日公开 HTTP 检查中，Raccord 根地址返回 301，跳向班级站根地址；班级站 health 仍标记 2026-09-04 构建。**代码入口独立不等于生产服务已经隔离**，这些只读结果也不是迁库或改路由的授权。
+两仓发布脚本分别固定 `/var/www/MathClassWebsite/dist` 与 `/var/www/raccord/dist`，核验各自仓库、主分支和构建标记，默认只在本地检查。Raccord 已移除班级站 Nginx 副本。2026-09-27 SSH 只读确认班级站目录存在，Raccord 目录和站点尚未启用；Nginx 默认站点会将未匹配域名跳到班级站。公开 Raccord 地址也返回 301，但 Cloudflare DNS 和重定向规则尚未读取，不能断言只有源站这一层。当前 SSH 账号是 root，目录与脚本分离不等于服务器账号权限隔离。
+
+班级站实际静态目录与公开 health 均标记 2026-09-04 构建。本轮没有上传静态文件、发布 Worker、修改 Nginx 或删除旧库记录，合并代码不代表线上已经更新。
 
 ## 首页动画
 
@@ -99,7 +101,7 @@
 
 聊天和语音分别在 `chat.js`、`tts.js`，不处理登录逻辑。`requestBody.js` 在读取时限制聊天正文，`requestScope.js` 把响应正文也计入超时，并把请求取消传到上游。语音内部缓存只保存音频；每次读取仍先校验身份，返回浏览器的响应禁止缓存。背词页面使用浏览器朗读，不调用 Worker 语音。
 
-这些模块不导入 React 或前端代码；身份核验通过 Supabase HTTP API 完成，不安装 Supabase SDK，也不读取业务表。共享 Supabase 项目的账号仍属于同一个身份体系，这项校验没有拆分两站账号或数据库权限。
+这些模块不导入 React 或前端代码；身份核验通过 Supabase HTTP API 完成，不安装 Supabase SDK，也不读取业务表。它只接受配置项目中的账号；Raccord 的独立账号体系由新数据库提供，不靠 CORS 或这个 Worker 划分个人记录。
 
 以上是仓库实现。2026-09-27 读取生产版本时，线上 Worker 仍是 2026-08-20 发布的 `4ff0f625-91e4-41cd-af26-1afc40e6026e`，尚无身份认证，限流故障仍放行；也没有新增校验所需的两个 Supabase 配置。发布前要按 [Worker 配置说明](../worker/README.md) 准备并与前端一起核对，不能将合并视为上线。
 
