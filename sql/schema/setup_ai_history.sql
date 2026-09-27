@@ -40,3 +40,6 @@ for delete
 using ( auth.uid() = user_id );
 
 -- 不开放 UPDATE:对话历史只追加/清空,不原地改写。
+-- 先撤销旧授权，再保留当前两个客户端实际使用的操作。
+revoke all on public.ai_messages from anon, authenticated;
+grant select, insert, delete on public.ai_messages to authenticated;
