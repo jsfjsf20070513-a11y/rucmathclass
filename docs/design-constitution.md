@@ -15,8 +15,9 @@
 | 范围 | 代码入口 |
 | --- | --- |
 | 全站颜色、基础字体、间距 | [index.css](../src/index.css) 的 `:root` |
-| 首页与共享翻页控件 | [magazine.css](../src/styles/magazine.css) |
-| 背词与共享页内导航 | [vocabulary.css](../src/styles/vocabulary.css) |
+| 共用导航、翻页、文字按钮、动效及纸面颜色 | [shared-controls.css](../src/styles/shared-controls.css)、[PageNav](../src/components/PageNav.jsx)、[PageControls](../src/components/PageControls.jsx) |
+| 首页 | [magazine.css](../src/styles/magazine.css) |
+| 背词 | [vocabulary.css](../src/styles/vocabulary.css) |
 | 书架 | [resources.css](../src/styles/resources.css) |
 | AI 对话 | [assistant.css](../src/styles/assistant.css) |
 | 登录与密码重置 | [auth.css](../src/styles/auth.css) |
@@ -33,7 +34,7 @@
 
 保持中文、法文和数学公式可读。检查桌面与窄屏的对齐、断行、按钮状态、错误提示和键盘焦点；首页还要检查登录前后插页、退出和动画结束状态。
 
-`App.css` 只按固定顺序导入上述文件，仍是 App 的唯一样式入口。拆分保留了原规则和顺序，生产 CSS 逐字节一致。部分页内导航、按钮和表单规则被多个页面共用，因此不能直接改成按路由懒加载。
+`App.css` 只按固定顺序导入上述文件，仍是 App 的唯一样式入口。共享规则先于各页面规则载入。共享控件保留原有声明数值与响应式条件：导航在 880px 以下缩小，页码在 640px 以下调整位置；全局层叠仍需在真实页面中核对，不能直接改成按路由懒加载。
 
 `editorial-base.css` 仍含早期版式，后面的页面规则会覆盖其中一些定义。清理时先查 JSX 中的使用和 CSS 选择器，再看真实页面。不能仅凭前缀旧、类名难看或历史样稿不同就删除。
 

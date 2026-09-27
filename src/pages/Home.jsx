@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { signIn, authErrorMessage } from '../lib/authBackend'
 import AuthStatus from '../components/AuthStatus'
+import PageControls from '../components/PageControls'
 import { dailyTheoremNotes } from '../data/dailyTheoremNotes.generated'
 import { paroles } from '../data/siteContent'
 import PortraitWall from '../components/PortraitWall'
@@ -168,7 +169,7 @@ export default function Home() {
   const folio = `0${page + 1} — 0${pageCount}`
 
   return (
-    <div className={`mag${entry.back ? ' mag-arrive-back' : ''}`}>
+    <div className={`mag${entry.back ? ' page-arrive-back' : ''}`}>
       {/* ── 01 封面:肖像长墙 ── */}
       <section ref={setPageEl(0)} className="mag-page mag-cover" style={{ zIndex: 10 }} aria-label="封面">
         <canvas ref={canvasRef} className="mag-weather" />
@@ -203,7 +204,7 @@ export default function Home() {
             <p className="mag-vocab-quote" lang="fr">Dire les mathématiques en français, un mot à la fois.</p>
             <button
               type="button"
-              className="mag-enter"
+              className="text-action"
               lang="fr"
               onPointerEnter={() => prefetchPage('/vocabulary')}
               onFocus={() => prefetchPage('/vocabulary')}
@@ -252,7 +253,7 @@ export default function Home() {
           </div>
           <button
             type="button"
-            className="mag-enter mag-biblio-enter"
+            className="text-action mag-biblio-enter"
             lang="fr"
             data-animate=""
             onClick={() => flipNavigate('/resources')}
@@ -275,7 +276,7 @@ export default function Home() {
             <div className="mag-rule" data-animate="" />
             <h2 className="mag-giant" lang="fr" data-animate="">Correspondance</h2>
             <div className="mag-vocab-foot" data-animate="">
-              <button type="button" className="mag-enter" lang="fr" onPointerEnter={() => prefetchPage('/assistant')} onFocus={() => prefetchPage('/assistant')} onClick={() => flipNavigate('/assistant')}>
+              <button type="button" className="text-action" lang="fr" onPointerEnter={() => prefetchPage('/assistant')} onFocus={() => prefetchPage('/assistant')} onClick={() => flipNavigate('/assistant')}>
                 Entrer&nbsp;&nbsp;→
               </button>
               <p className="mag-vocab-quote" lang="fr">Pose une question de maths ou de français — en chinois ou en français.</p>
@@ -327,7 +328,7 @@ export default function Home() {
           {user ? (
             <>
               <p className="mag-connexion-done">Connecté · 已登录 {displayName}</p>
-              <button type="button" className="mag-enter" onClick={() => splitParole(false)} lang="fr">
+              <button type="button" className="text-action" onClick={() => splitParole(false)} lang="fr">
                 Retour&nbsp;→
               </button>
             </>
@@ -356,7 +357,7 @@ export default function Home() {
                 required
               />
               {authError ? <p className="mag-connexion-error">{authError}</p> : null}
-              <button type="submit" className="mag-enter mag-connexion-submit" disabled={authLoading || sessionLoading} lang="fr">
+              <button type="submit" className="text-action mag-connexion-submit" disabled={authLoading || sessionLoading} lang="fr">
                 {authLoading ? 'Connexion…' : 'Entrer'}
               </button>
               <button
@@ -378,11 +379,11 @@ export default function Home() {
       </section>
 
       {/* ── folio 与翻页钮(不翻的常驻层) ── */}
-      <div className="mag-folio" aria-hidden="true">{folio}</div>
-      <div className="mag-controls">
-        <button type="button" onClick={prev} aria-label="上一页" className="mag-arrow" disabled={connexionOpen || page === 0}>‹</button>
-        <button type="button" onClick={next} aria-label="下一页" className="mag-arrow is-next" disabled={connexionOpen || page === pageCount - 1}>›</button>
-      </div>
+      <PageControls
+        folio={folio} onPrevious={prev} onNext={next}
+        previousDisabled={connexionOpen || page === 0}
+        nextDisabled={connexionOpen || page === pageCount - 1}
+      />
     </div>
   )
 }

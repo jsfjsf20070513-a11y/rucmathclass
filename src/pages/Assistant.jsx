@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import katex from 'katex'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
+import PageNav from '../components/PageNav'
 import { useAssistantConversation } from '../hooks/useAssistantConversation'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 
@@ -162,41 +163,39 @@ export default function Assistant() {
   let figureCounter = 0
 
   const nav = (
-    <nav className="vpl-nav" aria-label="页内导航">
-      <button type="button" className="vpl-nav-back" onClick={goHome} lang="fr">← Accueil</button>
-      <span className="vpl-nav-title" lang="fr">Correspondance</span>
+    <PageNav title="Correspondance" onBack={goHome}>
       {messages.length ? (
-        <button type="button" className="vpl-nav-back cor-effacer" onClick={handleClear} disabled={busy} lang="fr">Effacer · 清空</button>
+        <button type="button" className="page-nav-back cor-effacer" onClick={handleClear} disabled={busy} lang="fr">Effacer · 清空</button>
       ) : (
-        <span className="vpl-nav-side">{authLoading || authError ? '登录状态待确认' : user ? (busy ? 'Chargement…' : 'Historique · 对话') : '未登录'}</span>
+        <span className="page-nav-side">{authLoading || authError ? '登录状态待确认' : user ? (busy ? 'Chargement…' : 'Historique · 对话') : '未登录'}</span>
       )}
-    </nav>
+    </PageNav>
   )
 
   if (authLoading || authError) {
-    return <main className={`cor${arrive ? ' mag-arrive' : ''}`}>{nav}<div className="cor-gate"><AuthStatus className="vpl-notice-text" /></div></main>
+    return <main className={`cor${arrive ? ' page-arrive' : ''}`}>{nav}<div className="cor-gate"><AuthStatus className="page-notice" /></div></main>
   }
   if (!user) {
     return (
-      <main className={`cor${arrive ? ' mag-arrive' : ''}`}>
+      <main className={`cor${arrive ? ' page-arrive' : ''}`}>
         {nav}
         <div className="cor-gate">
-          <p className="vpl-kicker" lang="fr">Connexion requise</p>
-          <p className="vpl-notice-text">登录后即可使用班级 AI 助手 —— 双语数学答疑,可拍题问图。</p>
-          <Link className="mag-enter" to="/login">Connexion&nbsp;&nbsp;→</Link>
+          <p className="page-kicker" lang="fr">Connexion requise</p>
+          <p className="page-notice">登录后即可使用班级 AI 助手 —— 双语数学答疑,可拍题问图。</p>
+          <Link className="text-action" to="/login">Connexion&nbsp;&nbsp;→</Link>
         </div>
       </main>
     )
   }
 
   return (
-    <main className={`cor${arrive ? ' mag-arrive' : ''}`}>
+    <main className={`cor${arrive ? ' page-arrive' : ''}`}>
       {nav}
 
       {messages.length === 0 && !loading ? (
         /* ── 停顿一:刊头空状态 ── */
         <div className="cor-cover" key="cover">
-          <p className="vpl-kicker" data-animate="" style={{ animationDelay: '0.1s' }} lang="fr">Assistant · 班级答疑</p>
+          <p className="page-kicker" data-animate="" style={{ animationDelay: '0.1s' }} lang="fr">Assistant · 班级答疑</p>
           <h1 className="cor-masthead" lang="fr">Correspondance</h1>
           <p className="cor-sub" lang="fr">Pose une question de maths ou de français — en chinois ou en français.</p>
           <div className="cor-starters">

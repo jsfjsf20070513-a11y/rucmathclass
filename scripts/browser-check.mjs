@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import { preview } from 'vite'
+import { createAccountFixture } from './browser-account-fixture.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, 'output/playwright')
@@ -54,6 +55,7 @@ async function scenario(name, viewport, run) {
   const errors = []
   const unexpectedRequests = []
   const fault = { chunk: '', kind: '', resourcesUnavailable: false }
+  const account = createAccountFixture()
   // Every non-local request is intercepted. The build uses only placeholder
   // Supabase/AI configuration, and no real account is created or signed in.
   await context.route('**/*', async (route) => {
@@ -68,6 +70,7 @@ async function scenario(name, viewport, run) {
     if (url.hostname === 'fixture.invalid' && url.pathname === '/rest/v1/resources') {
       return route.fulfill({ status: fault.resourcesUnavailable ? 503 : 200, contentType: 'application/json', body: fault.resourcesUnavailable ? '{"message":"fixture unavailable"}' : '[]' })
     }
+    if (await account.handle(route)) return
     if (url.hostname === 'api.open-meteo.com') {
       return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: 0, is_day: 1 } } })
     }
@@ -180,7 +183,58 @@ try {
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
       await noHorizontalOverflow(page)
     })
+    await scenario(`${size}-account-pages`, viewport, async (page) => {
+      await page.goto(`${baseUrl}/vocabulary`)
+      await page.getByText('背词进度按账号保存,请先登录。', { exact: true }).waitFor()
+      await page.getByRole('link', { name: /Connexion/ }).click()
+      await page.getByRole('textbox', { name: '邮箱', exact: true }).fill('browser@example.invalid')
+      await page.getByLabel('Mot de passe', { exact: true }).fill('local-fixture-only')
+      await page.getByRole('button', { name: 'Entrer', exact: true }).click()
+      await page.getByRole('heading', { name: 'Bienvenue', exact: true }).waitFor()
+      await rendered(page, '.lgn-dest')
+      await noHorizontalOverflow(page)
+      await page.getByRole('link', { name: /Vocabulaire/ }).click()
+      await rendered(page, '.vpl-title')
+      await page.getByRole('button', { name: /Commencer/ }).click()
+      await rendered(page, '.vpl-study-zh')
+      await rendered(page, '.vpl-study-actions button')
+      await noHorizontalOverflow(page)
+      await page.screenshot({ path: join(output, `${size}-vocabulary.png`), fullPage: true })
+      await page.getByRole('button', { name: '← Accueil', exact: true }).click()
+      await rendered(page, '.mag-vocab .mag-giant')
+
+      await page.goto(`${baseUrl}/assistant`)
+      await rendered(page, '.cor-r-text')
+      await rendered(page, '.cor-input')
+      assert.equal(await page.locator('.cor-r-text .katex').count(), 1)
+      await noHorizontalOverflow(page)
+      await page.screenshot({ path: join(output, `${size}-assistant-history.png`), fullPage: true })
+      await page.getByRole('button', { name: 'Effacer · 清空', exact: true }).click()
+      await rendered(page, '.cor-masthead')
+      assert.equal(await page.locator('.cor-turn').count(), 0)
+      await noHorizontalOverflow(page)
+      await page.screenshot({ path: join(output, `${size}-assistant-empty.png`), fullPage: true })
+      await page.getByRole('button', { name: '← Accueil', exact: true }).click()
+      await rendered(page, '.mag-cor .mag-giant')
+
+      await page.goto(`${baseUrl}/login`)
+      await page.getByRole('button', { name: '退出并重新登录', exact: true }).click()
+      await page.getByRole('textbox', { name: '邮箱', exact: true }).waitFor()
+      await page.goto(`${baseUrl}/assistant`)
+      await rendered(page, '.cor-gate a')
+      assert.equal(await page.getByRole('textbox', { name: '向 AI 助手提问', exact: true }).count(), 0)
+      await noHorizontalOverflow(page)
+    })
   }
+  await scenario('tablet-navigation', { width: 800, height: 1024 }, async (page) => {
+    for (const path of ['/resources', '/vocabulary', '/assistant']) {
+      await page.goto(`${baseUrl}${path}`)
+      await rendered(page, 'nav[aria-label="页内导航"]')
+      await noHorizontalOverflow(page)
+      await page.getByRole('button', { name: '← Accueil', exact: true }).click()
+      await page.waitForURL(baseUrl + '/')
+    }
+  })
   await scenario('failure-slow-route', { width: 390, height: 844 }, async (page, fault) => {
     fault.chunk = '/Resources-'; fault.kind = 'slow'
     await page.goto(`${baseUrl}/resources`)

@@ -20,7 +20,7 @@
   font-variant-numeric: lining-nums tabular-nums;
   overflow: hidden;
 }
-.cor .vpl-nav { border-bottom-color: var(--mag-hairline); }
+.cor .page-nav { border-bottom-color: var(--mag-hairline); }
 .cor-effacer { letter-spacing: 0.18em; }
 
 .cor-gate {
@@ -44,7 +44,7 @@
   text-align: center;
   padding: 24px;
 }
-.cor-cover .vpl-kicker { animation: magFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cor-cover .page-kicker { animation: magFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .cor-masthead {
   margin: 0 0 12px;
   font-family: "Bodoni Moda", serif;

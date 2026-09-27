@@ -37,7 +37,7 @@ export default function ResetPassword() {
             : '登录服务尚未配置，暂时无法修改密码。'}
         />
         <div className="reset-state">
-          <p><Link to="/login" className="mag-enter">重新申请 · 找回密码 →</Link></p>
+          <p><Link to="/login" className="text-action">重新申请 · 找回密码 →</Link></p>
         </div>
       </article>
     )
@@ -49,7 +49,7 @@ export default function ResetPassword() {
         <Masthead summary="密码已更新，当前账号仍保持登录。" />
         <div className="reset-state">
           <p className="reset-ok">✓ 已更新</p>
-          <p><Link to="/" className="mag-enter">返回首页 · Accueil →</Link></p>
+          <p><Link to="/" className="text-action">返回首页 · Accueil →</Link></p>
         </div>
       </article>
     )
@@ -78,12 +78,12 @@ export default function ResetPassword() {
             autoComplete="new-password"
           />
           <div className="editorial-actions login-submit">
-            <button type="submit" className="mag-enter" disabled={submitting || uncertain}>
+            <button type="submit" className="text-action" disabled={submitting || uncertain}>
               {submitting ? '保存中…' : '保存新密码 · Enregistrer'}
             </button>
           </div>
           {message ? <p className="status-line is-error" role="status">{message}</p> : null}
-          {uncertain ? <Link to="/login" className="mag-enter">前往登录页核对 →</Link> : null}
+          {uncertain ? <Link to="/login" className="text-action">前往登录页核对 →</Link> : null}
         </form>
       </section>
     </article>

@@ -1,5 +1,6 @@
 /* Keep this order: shared foundations first, viewport corrections last. */
 @import "./styles/editorial-base.css";
+@import "./styles/shared-controls.css";
 @import "./styles/magazine.css";
 @import "./styles/vocabulary.css";
 @import "./styles/resources.css";
