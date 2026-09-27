@@ -52,6 +52,7 @@ async function noHorizontalOverflow(page) {
 async function scenario(name, viewport, run) {
   const context = await browser.newContext({ viewport })
   const errors = []
+  const unexpectedRequests = []
   const fault = { chunk: '', kind: '', resourcesUnavailable: false }
   // Every non-local request is intercepted. The build uses only placeholder
   // Supabase/AI configuration, and no real account is created or signed in.
@@ -70,6 +71,7 @@ async function scenario(name, viewport, run) {
     if (url.hostname === 'api.open-meteo.com') {
       return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: 0, is_day: 1 } } })
     }
+    unexpectedRequests.push(`${route.request().method()} ${url.origin}${url.pathname}`)
     return route.abort()
   })
   await context.routeWebSocket('**/*', (socket) => socket.close())
@@ -84,6 +86,7 @@ async function scenario(name, viewport, run) {
     await run(page, fault)
     await settledPages(page)
     assert.deepEqual(errors, [], 'Unexpected browser exceptions')
+    assert.deepEqual(unexpectedRequests, [], 'Unexpected external API requests')
     await page.screenshot({ path: join(output, `${name}.png`), fullPage: true })
     await context.tracing.stop()
     console.log(`PASS ${name}`)
@@ -173,8 +176,8 @@ try {
       await rendered(page, '.reset-state a')
       await noHorizontalOverflow(page)
       await page.goto(`${baseUrl}/resources/curate`)
-      await page.getByText('推荐资源需要先登录。', { exact: true }).waitFor()
-      await rendered(page, '.reset-state p')
+      await page.waitForURL(`${baseUrl}/resources`)
+      await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
       await noHorizontalOverflow(page)
     })
   }

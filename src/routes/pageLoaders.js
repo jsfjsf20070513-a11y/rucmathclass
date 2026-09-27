@@ -3,7 +3,6 @@
 import { canPrefetchInBrowser } from '../lib/pagePrefetch'
 export const pageLoaders = {
   '/resources': () => import('../pages/Resources'),
-  '/resources/curate': () => import('../pages/ResourceCurate'),
   '/login': () => import('../pages/Login'),
   '/reset-password': () => import('../pages/ResetPassword'),
   '/404': () => import('../pages/NotFound'),

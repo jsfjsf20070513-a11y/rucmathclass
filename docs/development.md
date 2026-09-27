@@ -41,7 +41,7 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和Worker 聊天、语音、请求取消、输入限制和入口分派。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
 
-`npm run browser:check` 使用 Chromium 验证 390×844 与 1280×800 的首页翻页、登录展开、资源失败后恢复、表单入口，以及路由慢下载、模块失败、入口脚本失败后的重载。首次使用前执行 `npx playwright install chromium`。它使用占位接口配置、拦截全部外部 HTTP 和 WebSocket，临时构建不覆盖 `dist/`，完成后恢复原 health 文件；截图和失败轨迹放在 `output/playwright/`，CI 失败时上传。
+`npm run browser:check` 使用 Chromium 验证 390×844 与 1280×800 的首页翻页、登录展开、资源失败后恢复、表单入口、旧资源推荐地址回书架，以及路由慢下载、模块失败、入口脚本失败后的重载。首次使用前执行 `npx playwright install chromium`。它使用占位接口配置、拦截全部外部 HTTP 和 WebSocket，临时构建不覆盖 `dist/`，完成后恢复原 health 文件；截图和失败轨迹放在 `output/playwright/`，CI 失败时上传。
 
 这些检查还没有覆盖真实移动设备、Safari 或登录后的完整流程。涉及相关状态或布局的修改，仍需在真实页面验证：账号切换、请求失败后的重试、背词最后一题与刷新恢复、资源云端失败后的静态目录、AI 保存失败提示。改首页还要确认登录前后页数变化和翻页动画、窄屏肖像加载和横向溢出。改路由加载时，用本地生产构建验证慢下载、模块失败和整个入口脚本失败后的重载。不要用注入 DOM 拼出的截图代替验证。
 

@@ -8,7 +8,6 @@ import { pageLoaders } from './routes/pageLoaders'
 import { usePagePrefetch } from './hooks/usePagePrefetch'
 
 const Resources = lazy(pageLoaders['/resources'])
-const ResourceCurate = lazy(pageLoaders['/resources/curate'])
 const Login = lazy(pageLoaders['/login'])
 const ResetPassword = lazy(pageLoaders['/reset-password'])
 const NotFound = lazy(pageLoaders['/404'])
@@ -35,8 +34,7 @@ function AppRoutes() {
           <Route path="vocabulary" element={<Vocabulary />} />
           <Route path="assistant" element={<Assistant />} />
           <Route path="resources" element={<Resources />} />
-          <Route path="resources/curate" element={<ResourceCurate />} />
-          {/* 资源详情页已下线(资源直接外链);旧 /resources/:id 链接回资源目录。 */}
+          {/* 资源详情与推荐已下线；旧 /resources/:id（含 curate）统一回书架。 */}
           <Route path="resources/:id" element={<Navigate to="/resources" replace />} />
           {/* 协作页(Atelier)已随 2026-08 减法整页下线;旧链接回扉页。 */}
           <Route path="atelier" element={<Navigate to="/" replace />} />

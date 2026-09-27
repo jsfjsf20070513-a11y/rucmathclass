@@ -4,7 +4,7 @@
 
 ## 页面结构
 
-[Layout.jsx](../src/components/Layout.jsx) 对首页、背词、资源、AI、登录和重置页直接渲染页面，不附加通用页眉页脚。资源推荐和 404 使用通用布局。
+[Layout.jsx](../src/components/Layout.jsx) 对首页、背词、资源、AI、登录和重置页直接渲染页面，不附加通用页眉页脚。404 使用通用布局；旧资源推荐地址直接回书架。
 
 首页是全屏横翻：未登录时有封面、背词、定理、书架和引语五页；登录后在引语前插入 AI 入口。登录表单从引语页展开。布局、账号变化和页数之间的关系在 [Home.jsx](../src/pages/Home.jsx)，通用翻页在 [usePageFlip.js](../src/hooks/usePageFlip.js)。改内部结构时不要顺便改这些视觉和交互行为。
 
