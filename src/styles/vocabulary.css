@@ -1,22 +1,5 @@
 /* ══ /vocabulary 「一叠卡片」 ══ */
 
-@keyframes magArrive {
-  from { transform: translateX(105%) rotate(2.2deg); }
-  to { transform: translateX(0) rotate(0deg); }
-}
-@keyframes magArriveBack {
-  from { transform: translateX(-105%) rotate(-2.2deg); }
-  to { transform: translateX(0) rotate(0deg); }
-}
-.mag-arrive {
-  animation: magArrive 0.5s var(--flip-ease) both;
-  transform-origin: 50% 100%;
-}
-.mag-arrive-back {
-  animation: magArriveBack 0.5s var(--flip-ease) both;
-  transform-origin: 50% 100%;
-}
-
 @keyframes vplCardIn {
   from { opacity: 0; transform: translateX(64px) rotate(0.6deg); }
   to { opacity: 1; transform: translateX(0) rotate(0deg); }
@@ -33,33 +16,6 @@
   font-variant-numeric: lining-nums tabular-nums;
   overflow: hidden;
 }
-
-.vpl-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 20px 36px 16px;
-  border-bottom: 1px solid var(--mag-hairline);
-  font-family: "Bodoni Moda", serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-.vpl-nav-back {
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--mag-muted);
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  transition: color 0.2s ease;
-}
-.vpl-nav-back:hover { color: #2a211c; }
-.vpl-nav-title { color: #2a211c; }
-.vpl-nav-side { color: var(--mag-muted); letter-spacing: 0.18em; }
 
 .vpl-stage {
   flex: 1;
@@ -108,17 +64,9 @@
   min-width: 0;
 }
 
-.vpl-kicker {
-  margin: 0 0 26px;
-  color: var(--mag-wine);
-  font-family: "Bodoni Moda", serif;
-  font-size: 11px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-}
-.vpl-card-notice .vpl-kicker,
-.vpl-card-idle .vpl-kicker,
-.vpl-card-done .vpl-kicker { margin-bottom: 10px; }
+.vpl-card-notice .page-kicker,
+.vpl-card-idle .page-kicker,
+.vpl-card-done .page-kicker { margin-bottom: 10px; }
 
 .vpl-word {
   margin: 0;
@@ -360,8 +308,6 @@
 .vpl-chip.is-on { color: var(--mag-ink); box-shadow: inset 0 -1px 0 var(--mag-wine); }
 .vpl-msg { margin: 0; font-size: 12px; color: var(--mag-muted); font-family: "Cormorant Garamond", "Songti SC", serif; letter-spacing: 0; text-transform: none; }
 
-.vpl-notice-text { margin: 0 0 22px; font-size: 17px; color: #4a423a; }
-
 .vpl-study-body { gap: 0; }
 .vpl-study-zh { margin: 0 0 14px; font-size: 24px; color: var(--mag-ink); }
 .vpl-study-example { margin: 0 0 6px; font-style: italic; font-size: 17px; line-height: 1.7; color: rgba(111, 103, 94, 0.9); }
@@ -429,7 +375,6 @@
   }
   .vpl-divider { display: none; }
   .vpl-word { font-size: clamp(40px, 15vw, 58px); }
-  .vpl-nav { padding: 16px 18px 12px; font-size: 9px; }
   .vpl-foot { padding: 12px 18px 18px; }
   .vpl-stagezone { justify-content: flex-start; }
   .vpl-interzone { justify-content: flex-start; }

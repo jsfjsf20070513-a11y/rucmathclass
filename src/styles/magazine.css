@@ -3,22 +3,6 @@
    .mag-* = 扉页五页翻页刊 + Connexion。翻页物理在 usePageFlip,此处只管纸面。
    ══════════════════════════════════════════════════════════════════ */
 
-:root {
-  --flip-ease: cubic-bezier(0.72, 0, 0.22, 1);
-  --mag-ink: #1a130e;
-  --mag-ink-2: #221d18;
-  --mag-muted: #6f675e;
-  --mag-wine: #7d2f28;
-  --mag-wine-hover: #7f302b;
-  --mag-hairline: rgba(34, 29, 24, 0.16);
-  --mag-hairline-dark: rgba(34, 29, 24, 0.22);
-}
-
-@keyframes magFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes magBreathe {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
@@ -239,27 +223,6 @@
   line-height: 1.6;
   font-style: italic;
 }
-
-.mag-enter {
-  flex-shrink: 0;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: var(--mag-ink-2);
-  font-family: "Bodoni Moda", serif;
-  font-size: 12px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  padding: 0 0 6px;
-  box-shadow: inset 0 -1px 0 rgba(34, 29, 24, 0.35);
-  transition: color 0.2s ease, box-shadow 0.2s ease;
-}
-.mag-enter:hover,
-.mag-enter:focus-visible {
-  color: var(--mag-wine-hover);
-  box-shadow: inset 0 -1px 0 var(--mag-wine-hover);
-}
-.mag-enter:disabled { opacity: 0.5; cursor: default; }
 
 /* ── 03 Théorème ── */
 .mag-theorem {
@@ -522,44 +485,6 @@
 }
 .mag-connexion-back:hover { color: var(--mag-wine-hover); }
 
-/* ── folio 与翻页钮(不翻的常驻层) ── */
-.mag-folio {
-  position: absolute;
-  bottom: 24px;
-  left: 28px;
-  z-index: 40;
-  font-family: "Bodoni Moda", serif;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  color: var(--mag-muted);
-  font-variant-numeric: lining-nums tabular-nums;
-}
-.mag-controls {
-  position: absolute;
-  bottom: 16px;
-  right: 20px;
-  z-index: 40;
-  display: flex;
-  gap: 4px;
-}
-.mag-arrow {
-  width: 44px;
-  height: 44px;
-  border: none;
-  background: transparent;
-  color: var(--mag-muted);
-  font-family: "Bodoni Moda", serif;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-  transition: color 0.2s ease, opacity 0.2s ease;
-}
-.mag-arrow.is-next { color: #2a211c; }
-.mag-arrow:hover:not(:disabled),
-.mag-arrow:focus-visible:not(:disabled) { color: var(--mag-wine); }
-.mag-arrow:disabled { opacity: 0.35; cursor: default; }
-
 /* ── 移动端 ── */
 @media (max-width: 640px) {
   .mag-masthead { font-size: 40px; top: 10px; }
@@ -589,7 +514,6 @@
   .mag-biblio-row:nth-child(4) { border-bottom: none; }
   .mag-biblio-row:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }
   .mag-biblio-zh { margin-bottom: 24px; }
-  .mag-folio { bottom: 18px; left: 18px; font-size: 10px; }
   .mag-connexion-box { width: min(320px, 86vw); }
 }
 

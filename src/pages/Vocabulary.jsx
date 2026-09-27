@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
+import PageNav from '../components/PageNav'
 import { EXERCISE_TYPES } from '../lib/exerciseGenerator'
 import { VALID_DECK } from '../lib/vocabularySession'
 import { useVocabularyTrainer } from '../hooks/useVocabularyTrainer'
@@ -178,9 +179,9 @@ export default function Vocabulary() {
         {saveStatus === 'saving' ? <p className="vpl-fb-note" role="status">正在保存本题进度…</p> : null}
         {errorMessage ? <p className="vpl-fb-note" role="alert">{errorMessage}</p> : null}
         <div className="vpl-fb-actions">
-          {saveStatus === 'error' ? <button type="button" className="mag-enter" onClick={() => persistAnswer(current)}>重试保存 →</button> : null}
-          {saveStatus === 'conflict' ? <button type="button" className="mag-enter" onClick={() => load()}>重新加载进度 →</button> : null}
-          <button type="button" className="mag-enter" onClick={next} disabled={saveStatus !== 'saved'}>
+          {saveStatus === 'error' ? <button type="button" className="text-action" onClick={() => persistAnswer(current)}>重试保存 →</button> : null}
+          {saveStatus === 'conflict' ? <button type="button" className="text-action" onClick={() => load()}>重新加载进度 →</button> : null}
+          <button type="button" className="text-action" onClick={next} disabled={saveStatus !== 'saved'}>
             {i + 1 >= steps.length ? 'Terminer  →' : 'Continuer  →'}
           </button>
           {/* AI 退到具体对象之后:只在答错的这一刻,给一个带上下文的解释入口。 */}
@@ -268,7 +269,7 @@ export default function Vocabulary() {
             aria-label="法语拼写输入"
           />
           {!fb ? (
-            <button type="button" className="mag-enter vpl-verify" onClick={submitSpelling} lang="fr">Vérifier&nbsp;&nbsp;↵</button>
+            <button type="button" className="text-action vpl-verify" onClick={submitSpelling} lang="fr">Vérifier&nbsp;&nbsp;↵</button>
           ) : null}
         </div>
       )
@@ -290,7 +291,7 @@ export default function Vocabulary() {
             ))}
           </div>
           {!fb ? (
-            <button type="button" className="mag-enter vpl-verify" onClick={submitBuild} disabled={!chosen.length} lang="fr">Vérifier&nbsp;&nbsp;↵</button>
+            <button type="button" className="text-action vpl-verify" onClick={submitBuild} disabled={!chosen.length} lang="fr">Vérifier&nbsp;&nbsp;↵</button>
           ) : null}
         </div>
       )
@@ -299,7 +300,7 @@ export default function Vocabulary() {
     return (
       <div className={`vpl-card${isChoice || ex.type === EXERCISE_TYPES.match ? '' : ' vpl-card-narrow'}`} key={`ex-${i}`}>
         <div className="vpl-stagezone">
-          <p className="vpl-kicker"><span lang="fr">{kfr}</span> · {kzh}</p>
+          <p className="page-kicker"><span lang="fr">{kfr}</span> · {kzh}</p>
           {stage}
         </div>
         <div className="vpl-divider" aria-hidden="true" />
@@ -318,45 +319,45 @@ export default function Vocabulary() {
 
   let body = null
   if (authLoading || authError) {
-    body = notice(<AuthStatus className="vpl-notice-text" />)
+    body = notice(<AuthStatus className="page-notice" />)
   } else if (!user) {
     body = notice(
       <>
-        <p className="vpl-kicker" lang="fr">Connexion requise</p>
-        <p className="vpl-notice-text">背词进度按账号保存,请先登录。</p>
-        <Link className="mag-enter" to="/login">Connexion&nbsp;&nbsp;→</Link>
+        <p className="page-kicker" lang="fr">Connexion requise</p>
+        <p className="page-notice">背词进度按账号保存,请先登录。</p>
+        <Link className="text-action" to="/login">Connexion&nbsp;&nbsp;→</Link>
       </>,
     )
   } else if (status === 'loading' || (sessionOwnerId !== userId && !['disabled', 'compat', 'error'].includes(status))) {
-    body = notice(<p className="vpl-notice-text">正在加载你的背词进度…</p>)
+    body = notice(<p className="page-notice">正在加载你的背词进度…</p>)
   } else if (status === 'disabled') {
-    body = notice(<p className="vpl-notice-text">站点尚未配置 Supabase,背词功能暂不可用。</p>)
+    body = notice(<p className="page-notice">站点尚未配置 Supabase,背词功能暂不可用。</p>)
   } else if (status === 'compat') {
     body = notice(
-      <p className="vpl-notice-text">背词进度服务暂不可用，请稍后再来。</p>,
+      <p className="page-notice">背词进度服务暂不可用，请稍后再来。</p>,
     )
   } else if (status === 'error') {
     body = notice(
       <>
-        <p className="vpl-notice-text">出错了:{errorMessage}</p>
-        <button type="button" className="mag-enter" onClick={() => load()}>Réessayer&nbsp;&nbsp;→</button>
+        <p className="page-notice">出错了:{errorMessage}</p>
+        <button type="button" className="text-action" onClick={() => load()}>Réessayer&nbsp;&nbsp;→</button>
       </>,
     )
   } else if (status === 'empty') {
     body = notice(
       <>
-        <p className="vpl-notice-text">这个范围今天没有要背的词了。换个级别、主题,或明天再来。</p>
+        <p className="page-notice">这个范围今天没有要背的词了。换个级别、主题,或明天再来。</p>
         {renderFilters()}
       </>,
     )
   } else if (status === 'idle') {
     body = (
       <div className="vpl-card vpl-card-idle" key="idle">
-        <p className="vpl-kicker" lang="fr">Vocabulaire</p>
+        <p className="page-kicker" lang="fr">Vocabulaire</p>
         <h1 className="vpl-title" lang="fr">Leçon du jour</h1>
         <p className="vpl-quota" lang="fr">{`Nouveaux ${newInQueue} · Révisions ${revInQueue}`}</p>
         {renderFilters()}
-        <button type="button" className="mag-enter vpl-commencer" onClick={commencer} lang="fr">Commencer&nbsp;&nbsp;→</button>
+        <button type="button" className="text-action vpl-commencer" onClick={commencer} lang="fr">Commencer&nbsp;&nbsp;→</button>
       </div>
     )
   } else if (status === 'study' && studyList[studyIdx]) {
@@ -365,7 +366,7 @@ export default function Vocabulary() {
     body = (
       <div className="vpl-card vpl-card-study" key={`study-${studyIdx}`}>
         <div className="vpl-stagezone">
-          <p className="vpl-kicker"><span lang="fr">Aperçu</span> · 先学一遍</p>
+          <p className="page-kicker"><span lang="fr">Aperçu</span> · 先学一遍</p>
           <p className="vpl-word" lang="fr">{sw.french}</p>
           <div className="vpl-word-meta">
             {posLong(sw) ? <span lang="fr">{posLong(sw)}</span> : null}
@@ -380,7 +381,7 @@ export default function Vocabulary() {
           {sw.exampleZh ? <p className="vpl-study-example-zh">{sw.exampleZh}</p> : null}
           {sw.note ? <p className="vpl-study-note">N.B. {sw.note}</p> : null}
           <div className="vpl-study-actions">
-            <button type="button" className="mag-enter" onClick={studyNext} lang="fr">
+            <button type="button" className="text-action" onClick={studyNext} lang="fr">
               {last ? 'Commencer  →' : 'Suivant  →'}
             </button>
             <button type="button" className="vpl-chip" onClick={skipStudy}>跳过预习</button>
@@ -393,7 +394,7 @@ export default function Vocabulary() {
   } else if (status === 'done') {
     body = (
       <div className="vpl-card vpl-card-done" key="done">
-        <p className="vpl-kicker" lang="fr">Leçon terminée</p>
+        <p className="page-kicker" lang="fr">Leçon terminée</p>
         <h1 className="vpl-title">本节完成</h1>
         <p className="vpl-done-score">答对 {stats.correct} / {stats.attempts} · 正确率 {acc} · 最高连击 ×{stats.maxCombo}</p>
         {deckStats ? (
@@ -418,8 +419,8 @@ export default function Vocabulary() {
           <p className="vpl-cue">全部答对 —— 漂亮。</p>
         )}
         <div className="vpl-done-actions">
-          {wrong.length ? <button type="button" className="mag-enter" onClick={retryWrong}>只练错词&nbsp;&nbsp;→</button> : null}
-          <button type="button" className="mag-enter" onClick={() => load()} lang="fr">Encore&nbsp;&nbsp;→</button>
+          {wrong.length ? <button type="button" className="text-action" onClick={retryWrong}>只练错词&nbsp;&nbsp;→</button> : null}
+          <button type="button" className="text-action" onClick={() => load()} lang="fr">Encore&nbsp;&nbsp;→</button>
         </div>
         {renderFilters()}
       </div>
@@ -427,12 +428,10 @@ export default function Vocabulary() {
   }
 
   return (
-    <main className={`vpl${arrive ? ' mag-arrive' : ''}`}>
-      <nav className="vpl-nav" aria-label="页内导航">
-        <button type="button" className="vpl-nav-back" onClick={goHome} lang="fr">← Accueil</button>
-        <span className="vpl-nav-title" lang="fr">Vocabulaire</span>
-        <span className="vpl-nav-side">{authLoading || authError ? '登录状态待确认' : user ? 'Connecté · 已登录' : '未登录'}</span>
-      </nav>
+    <main className={`vpl${arrive ? ' page-arrive' : ''}`}>
+      <PageNav title="Vocabulaire" onBack={goHome}>
+        <span className="page-nav-side">{authLoading || authError ? '登录状态待确认' : user ? 'Connecté · 已登录' : '未登录'}</span>
+      </PageNav>
       <div className="vpl-stage">{body}</div>
       <footer className="vpl-foot" aria-hidden={!progress}>
         {progress ? (

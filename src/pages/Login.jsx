@@ -209,13 +209,13 @@ function LoginForm() {
     return (
       <article className="page-column login-page lgn">
         <header className="lgn-masthead">
-          <p className="vpl-kicker" lang="fr">Connecté · 已登录</p>
+          <p className="page-kicker" lang="fr">Connecté · 已登录</p>
           <h1 className="lgn-title" lang="fr">Bienvenue</h1>
           <p className="lgn-summary">接下来去哪儿?</p>
         </header>
         <div className="lgn-dest">
-          <Link to="/vocabulary" className="mag-enter" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
-          <Link to="/" className="mag-enter" lang="fr">Accueil&nbsp;&nbsp;→</Link>
+          <Link to="/vocabulary" className="text-action" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
+          <Link to="/" className="text-action" lang="fr">Accueil&nbsp;&nbsp;→</Link>
         </div>
         <p className="status-line">
           <button type="button" className="text-button" onClick={signOut} disabled={signingOut}>{signingOut ? '退出中…' : '退出并重新登录'}</button>
@@ -325,7 +325,7 @@ function LoginForm() {
           ) : null}
 
           <div className="editorial-actions login-submit">
-            <button type="submit" className="mag-enter lgn-submit" disabled={loading || sessionLoading || !isAuthEnabled}>
+            <button type="submit" className="text-action lgn-submit" disabled={loading || sessionLoading || !isAuthEnabled}>
               {submitLabel}
             </button>
           </div>

@@ -17,6 +17,7 @@ export default function PasswordField({
       <span className="password-field-control">
         <input
           type={visible ? 'text' : 'password'}
+          aria-label={label ? undefined : placeholder}
           value={value}
           onChange={onChange}
           required={required}

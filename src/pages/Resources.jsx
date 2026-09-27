@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DailyMeditation from '../components/DailyMeditation'
+import PageNav from '../components/PageNav'
+import PageControls from '../components/PageControls'
 import { externalLinkProps } from '../lib/safeUrl'
 import { resourceCategories } from '../data/resourceCatalog'
 import { useResourceCatalog } from '../hooks/useResourceCatalog'
@@ -81,12 +83,10 @@ export default function Resources() {
   const folio = `${toRoman(page)} — ${toRoman(shelves.length - 1)}`
 
   return (
-    <main className={`bib${arrive ? ' mag-arrive' : ''}`}>
-      <nav className="vpl-nav" aria-label="页内导航">
-        <button type="button" className="vpl-nav-back" onClick={goHome} lang="fr">← Accueil</button>
-        <span className="vpl-nav-title" lang="fr">Bibliothèque</span>
-        <span className="vpl-nav-side" lang="fr">{catalogItems.length}&nbsp;entrées</span>
-      </nav>
+    <main className={`bib${arrive ? ' page-arrive' : ''}`}>
+      <PageNav title="Bibliothèque" onBack={goHome}>
+        <span className="page-nav-side" lang="fr">{catalogItems.length}&nbsp;entrées</span>
+      </PageNav>
 
       <div className="bib-stack">
         {/* ── 一架一页 ── */}
@@ -109,7 +109,7 @@ export default function Resources() {
                 {error && index === page ? (
                   <p className="bib-shelf-intro" role="status">
                     {error}{' '}
-                    <button type="button" className="mag-enter bib-retry" onClick={refresh} disabled={loading}>
+                    <button type="button" className="text-action bib-retry" onClick={refresh} disabled={loading}>
                       {loading ? '更新中…' : '重试'}
                     </button>
                   </p>
@@ -139,11 +139,10 @@ export default function Resources() {
         ))}
       </div>
 
-      <div className="mag-folio bib-folio" aria-hidden="true">{folio}</div>
-      <div className="mag-controls">
-        <button type="button" onClick={prev} aria-label="上一页" className="mag-arrow" disabled={page === 0}>‹</button>
-        <button type="button" onClick={next} aria-label="下一页" className="mag-arrow is-next" disabled={page === pageCount - 1}>›</button>
-      </div>
+      <PageControls
+        folio={folio} folioClassName="bib-folio" onPrevious={prev} onNext={next}
+        previousDisabled={page === 0} nextDisabled={page === pageCount - 1}
+      />
     </main>
   )
 }
