@@ -216,7 +216,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 03 Théorème(完整契约:kicker/题/prelude/公式/note/折叠证明) ── */}
+      {/* ── 03 Théorème：定理标题与公式 ── */}
       <section ref={setPageEl(2)} className="mag-page mag-theorem" style={{ zIndex: 12, transform: entry.page >= 2 ? 'none' : 'translateX(-105%) rotate(-2.2deg)' }} aria-label="每日定理">
         <div className="mag-scroll" data-flip-scroll="">
           <div className="mag-theorem-inner">

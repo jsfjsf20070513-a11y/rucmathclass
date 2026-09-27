@@ -21,7 +21,6 @@
 | 内容 | 应修改的输入 | 如何生成 |
 | --- | --- | --- |
 | 首页定理和引语 | [siteContent.js](../src/data/siteContent.js) | 定理执行 `npm run theorems:render`；引语直接读取 |
-| 双语证明文本 | [theoremExplanations.js](../src/data/theoremExplanations.js) | 同上；生成脚本存在不表示每份产物都正被页面使用 |
 | 法语词库 | [vocab-source.json](../scripts/vocab-source.json) | 先检查导入报告，再明确指定输出 |
 | 静态书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取；外链经过 URL 校验 |
 | 封面肖像 | [统一清单](../src/data/portraits.json) 与已入库的 `public/portraits/` | `npm run portraits:check` 离线检查缺图、JPEG 文件标记和多余文件；显式执行 `npm run portraits:fetch` 才会联网补图 |
@@ -33,7 +32,7 @@ npm run vocab:import -- scripts/vocab-source.json
 npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabulary.js
 ```
 
-第一条只输出报告。第二条写生成文件；检查拒绝项、重复项和 ID 后再执行。不要直接编辑生成的 `frenchVocabulary.js` 和 `*.generated.js`。
+第一条只输出报告。第二条写词条数据；检查拒绝项、重复项和 ID 后再执行。这个命令不导入用户的背词进度。不要直接编辑生成的 `frenchVocabulary.js` 和 `dailyTheoremNotes.generated.js`。
 
 构建生成的 `public/health.json` 记录 `status/app/version/buildTime/mode`，其中 `status: "ok"` 是固定标记，不执行数据库或 AI 探测。本地验证后，若它的变化只是新时间戳，在提交前执行 `git restore public/health.json`。不要一并还原其他手写文件。
 

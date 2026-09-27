@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { sanitizeHttpUrl, sanitizeStoredUrl, externalLinkProps } from './safeUrl'
 
-// Red line: contributor-supplied URLs travel to <a href>. The sanitizer is the
-// defense-in-depth layer that must never let a script-bearing protocol through,
-// even if an admin published it by mistake. These tests pin that guarantee.
+// Stored resource URLs must not introduce executable protocols into links.
 
 const DANGEROUS = [
   'javascript:alert(1)',
@@ -49,13 +47,13 @@ describe('sanitizeHttpUrl (render path)', () => {
   })
 })
 
-describe('sanitizeStoredUrl (write path)', () => {
+describe('sanitizeStoredUrl (stored resources)', () => {
   it('preserves an absolute allowed URL verbatim (no normalization)', () => {
     expect(sanitizeStoredUrl('https://example.com/path?q=1')).toBe('https://example.com/path?q=1')
     expect(sanitizeStoredUrl('mailto:a@b.com')).toBe('mailto:a@b.com')
   })
 
-  it('rejects a bare domain (no base resolution on the write path)', () => {
+  it('rejects a bare domain without resolving it against a placeholder', () => {
     expect(sanitizeStoredUrl('example.com/path')).toBe('')
   })
 
