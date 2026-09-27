@@ -9,7 +9,7 @@ const authOrigin = 'https://auth.example.invalid'
 const user = { id: '11111111-1111-4111-8111-111111111111' }
 let runtime, upstream
 
-beforeEach(() => {
+beforeEach(async () => {
   upstream = createFetchMock()
   upstream.disableNetConnect()
   runtime = new Miniflare({
@@ -24,7 +24,9 @@ beforeEach(() => {
     },
     ratelimits: { RATE_LIMITER: { simple: { limit: 30, period: 60 } } },
   })
-})
+  // Process startup can be slow on a busy host; it is separate from request assertions.
+  await runtime.ready
+}, 20_000)
 afterEach(async () => { await runtime?.dispose(); await upstream?.close() })
 
 const chat = () => runtime.dispatchFetch('https://rucmathclass.com/api/chat', {

@@ -42,7 +42,7 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和Worker 聊天、语音、请求取消、输入限制和入口分派。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
 
-`worker/src/runtime.test.js` 用 Miniflare 启动 workerd，直接执行 Worker 源码，核对失效令牌、有效身份进入输入校验，以及认证重定向不转发令牌。兼容日期取自 `worker/wrangler.toml`；所有外部请求使用假接口，禁止访问真实网络。它能发现 Node 与 Workers 的 API 差异，但不能证明真实模型或账号可用。
+`worker/src/runtime.test.js` 用 Miniflare 启动 workerd，直接执行 Worker 源码，核对失效令牌、有效身份进入输入校验，以及认证重定向不转发令牌。兼容日期取自 `worker/wrangler.toml`；所有外部请求使用假接口，禁止访问真实网络。引擎冷启动在准备阶段单独等待，不占用请求断言的时限。它能发现 Node 与 Workers 的 API 差异，但不能证明真实模型或账号可用。
 
 `scripts/lib/databaseGrants.test.js` 用 PGlite 的隔离 PostgreSQL 17 内存实例检查权限 SQL，也随 `npm test` 在 CI 运行。它验证正常个人读写、跨账号拒绝、公开书架、原资源管理员操作、重复应用时保留记录和行策略，以及 RLS 关闭时停止修改。测试账号与记录都是本地构造，不接收生产连接串或密钥；PGlite 仅是开发依赖，不进入网页。这是 SQL 行为检查，不是生产权限已经修好的证明。
 
@@ -79,15 +79,15 @@ SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是
 
 | 项目 | 已核验结果 |
 | --- | --- |
-| 发布源码 | `d6f9bd7ab22624a554feb7d727d5b74fe9d6aecb`，已合并 PR #53 |
-| 公网 health | `2026-09-27T06:45:51.879Z`，北京时间 14:45；应用标记为 `MathClassWebsite` |
-| Worker | `mathclass-ai`，版本 `63bb4a7c-9379-422d-9b8f-13ab2e1d60db`，承接 100% 流量 |
+| 前端源码 | `85567d605aba1b546613cab5f69e9779bcb5da49`，已合并 PR #54 |
+| 公网 health | `2026-09-27T06:58:56.817Z`，北京时间 14:58；应用标记为 `MathClassWebsite` |
+| Worker | `mathclass-ai`，版本 `63bb4a7c-9379-422d-9b8f-13ab2e1d60db`，承接 100% 流量；源码来自 `d6f9bd7`，PR #54 未改服务实现 |
 | 身份服务 | Worker 与前端使用班级站项目 `xfwkjhajrqxsakzovcwx`；模型 secret 保留 |
 | 服务器文件 | `/var/www/MathClassWebsite/dist`；源站 HTML 与本地发布产物一致 |
 | 静态文件 | 公网主 JS、CSS、带内容哈希的启动脚本均为 200，内容与发布产物一致 |
 | 网页与接口 | 首页、书架、背词、答疑、登录地址为 200；未登录及失效令牌为 401，错误方法 405，未知语音路径 404，预检 204 并允许 Authorization |
-| 页面查看 | 桌面首页、书架与手机宽度书架已查看，天气正常显示；答疑未登录提示正常 |
+| 页面查看 | 桌面和手机首页、书架已查看，天气与答疑未登录提示正常；补发后检查手机翻页、返回封面及恢复桌面尺寸，画布重新启动且未再报错 |
 
 班级站的 CSP snippet 已更新，允许 Open-Meteo，移除 Solana devnet。Nginx 配置检查通过后 reload；主站配置文件未替换。旧静态文件及原 Nginx 配置保存在服务器 `/var/backups/mathclass-release-20260927T062732Z/`。本次部署没有执行数据库 SQL 或改个人记录。
 
-发布检查包括 lint、249 项测试、生产构建、Worker 离线打包和 15 个 Chromium 场景，CI 通过。公网核验发现并修复了启动脚本旧缓存、Workers 不支持 `redirect: 'error'` 两个问题。真实账号的登录、模型回答及历史保存仍未验收，见 [剩余问题](remaining-work.md)。后续仅更新发布说明的提交不代表再次部署。
+发布检查包括 lint、251 项测试、生产构建、Worker 离线打包和 15 个 Chromium 场景，CI 通过。公网核验发现并修复了启动脚本旧缓存、Workers 不支持 `redirect: 'error'`、雨天首帧出现负半径三个问题；手机和桌面的首页检查现已覆盖雨天。真实账号的登录、模型回答及历史保存仍未验收，见 [剩余问题](remaining-work.md)。后续仅更新说明或测试的提交不代表再次部署。
