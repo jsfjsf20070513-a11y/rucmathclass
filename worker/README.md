@@ -31,7 +31,7 @@
 
 CORS 允许班级站两个域名和 `http://localhost:5173`，预检允许 Content-Type 和 Authorization。CORS 与服务端身份校验是两件事。前端从当前对话账号取得令牌，切换账号或取消请求后不会继续发送旧问题。
 
-2026-09-27 的 Cloudflare API 核验确认：实际路由只有班级站 `/api/chat`、`/api/speak*`，没有 Raccord 路由。生产仍在运行 2026-08-20 发布的版本 `4ff0f625-91e4-41cd-af26-1afc40e6026e`，没有上述登录校验，也没有两个 Supabase 配置。Raccord 仓库的同名 Worker 配置仍有覆盖风险，不能从那边发布本服务。
+2026-09-27 的 Cloudflare API 核验确认：实际路由只有班级站 `/api/chat`、`/api/speak*`，没有 Raccord 路由。生产仍在运行 2026-08-20 发布的版本 `4ff0f625-91e4-41cd-af26-1afc40e6026e`，没有上述登录校验，也没有两个 Supabase 配置。Raccord 仓库已将自己的目标改为 `raccord-ai` 并移除班级站路由，见 [隔离改动](https://github.com/jsfjsf20070513-a11y/raccord/pull/1)；两个 Worker 分别配置和发布，不能从那边发布本服务。
 
 ## 调试与验证
 
