@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 
 // Local browser checks only. Requests to fixture.invalid are fulfilled in the
 // browser; these credentials cannot create a session against a real service.
-export function createAccountFixture() {
+export function createAccountFixture(fault) {
   const user = {
     id: '11111111-1111-4111-8111-111111111111', aud: 'authenticated', role: 'authenticated',
     email: 'browser@example.invalid', app_metadata: {}, user_metadata: {},
@@ -29,6 +29,15 @@ export function createAccountFixture() {
         await route.fulfill({ json: user })
       } else if (url.pathname === '/auth/v1/logout' && method === 'POST') {
         await route.fulfill({ status: 204 })
+      } else if (url.pathname === '/api/chat' && method === 'POST') {
+        assert.equal(request.headers().authorization, `Bearer ${token}`)
+        assert.deepEqual(Object.keys(request.postDataJSON()), ['messages'])
+        if (fault.chatStatus === 401) {
+          await route.fulfill({ status: 401, json: { error: '登录状态已失效，请刷新页面并重新登录后再试。' } })
+        } else {
+          assert.equal(request.postDataJSON().messages.at(-1).content, '解释一下导数。')
+          await route.fulfill({ json: { text: '导数描述函数在某一点的变化率。' } })
+        }
       } else if (url.pathname === '/rest/v1/review_states' && method === 'GET') {
         assert.equal(url.searchParams.get('user_id'), `eq.${user.id}`)
         await route.fulfill({ json: [] })
@@ -40,6 +49,13 @@ export function createAccountFixture() {
         assert.equal(url.searchParams.get('id'), 'lte.2')
         history = []
         await route.fulfill({ status: 204 })
+      } else if (url.pathname === '/rest/v1/ai_messages' && method === 'POST') {
+        const rows = request.postDataJSON()
+        assert.deepEqual(rows.map(({ user_id }) => user_id), [user.id, user.id])
+        assert.deepEqual(rows.map(({ role }) => role), ['user', 'model'])
+        assert.equal(request.headers().authorization, `Bearer ${token}`)
+        history = rows.map((row, index) => ({ ...row, id: 3 + index })).reverse()
+        await route.fulfill({ status: 201, json: null })
       } else return false
       return true
     },

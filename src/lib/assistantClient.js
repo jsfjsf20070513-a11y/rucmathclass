@@ -1,9 +1,10 @@
 import { withRequestDeadline } from './requestDeadline'
+import { getAccessToken } from './authBackend'
 
 const AI_ENDPOINT = import.meta.env.VITE_AI_ENDPOINT || 'https://rucmathclass.com/api/chat'
 const MAX_CONTEXT = 20
 
-export async function requestAssistant(messages, { signal } = {}) {
+export async function requestAssistant(messages, { signal, userId } = {}) {
   // A complete recent turn starts with a user message, including for Gemma.
   const context = messages.slice(-MAX_CONTEXT)
   while (context.length && context[0].role !== 'user') context.shift()
@@ -12,8 +13,10 @@ export async function requestAssistant(messages, { signal } = {}) {
     ...(message.imageData ? { image: message.imageData } : {}),
   })) }
   return withRequestDeadline(async (requestSignal) => {
+    const token = await getAccessToken(userId, { signal: requestSignal })
+    requestSignal.throwIfAborted()
     const response = await fetch(AI_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body), signal: requestSignal,
     })
     let data

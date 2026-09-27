@@ -1,12 +1,7 @@
 import { useCallback, useRef } from 'react'
 
-// Browser speech is the current voice source; Worker TTS remains opt-in.
-const SPEAK_ENDPOINT = 'https://rucmathclass.com/api/speak'
-const USE_WORKER_VOICE = false
-
 export function useVocabularyAudio() {
   const audioRef = useRef(null)
-  const voiceRef = useRef(null)
   // ── audio: WebAudio verdict cue + speechSynthesis for the listen format ──
   const tone = useCallback((ok) => {
     try {
@@ -35,7 +30,7 @@ export function useVocabularyAudio() {
     }
   }, [])
 
-  const browserTTS = useCallback((text) => {
+  const speak = useCallback((text) => {
     try {
       const synth = window.speechSynthesis
       if (!synth || !text) return
@@ -64,34 +59,6 @@ export function useVocabularyAudio() {
       // speech is optional
     }
   }, [])
-
-  // Prefer the real voice via the Worker; fall back to browser TTS if the audio
-  // can't load. `fallbackOnce` guards so the fallback fires AT MOST ONCE — both
-  // `onerror` and the play() rejection used to fire it, causing a double voice.
-  const speak = useCallback((text) => {
-    if (!text) return
-    try { window.speechSynthesis && window.speechSynthesis.cancel() } catch { /* ignore */ }
-    // 暂走浏览器法语 TTS(见 USE_WORKER_VOICE 注释)。
-    if (!USE_WORKER_VOICE) {
-      browserTTS(text)
-      return
-    }
-    let usedFallback = false
-    const fallbackOnce = () => {
-      if (usedFallback) return
-      usedFallback = true
-      browserTTS(text)
-    }
-    try {
-      const a = voiceRef.current || (voiceRef.current = new Audio())
-      a.onerror = fallbackOnce
-      a.src = `${SPEAK_ENDPOINT}?text=${encodeURIComponent(text.slice(0, 160))}`
-      const p = a.play()
-      if (p && typeof p.catch === 'function') p.catch(fallbackOnce)
-    } catch {
-      fallbackOnce()
-    }
-  }, [browserTTS])
 
   return { tone, speak }
 }

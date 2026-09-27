@@ -54,8 +54,8 @@ async function scenario(name, viewport, run) {
   const context = await browser.newContext({ viewport })
   const errors = []
   const unexpectedRequests = []
-  const fault = { chunk: '', kind: '', resourcesUnavailable: false }
-  const account = createAccountFixture()
+  const fault = { chunk: '', kind: '', resourcesUnavailable: false, chatStatus: 200 }
+  const account = createAccountFixture(fault)
   // Every non-local request is intercepted. The build uses only placeholder
   // Supabase/AI configuration, and no real account is created or signed in.
   await context.route('**/*', async (route) => {
@@ -191,7 +191,7 @@ try {
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
       await noHorizontalOverflow(page)
     })
-    await scenario(`${size}-account-pages`, viewport, async (page) => {
+    await scenario(`${size}-account-pages`, viewport, async (page, fault) => {
       await page.goto(`${baseUrl}/vocabulary`)
       await page.getByText('背词进度按账号保存,请先登录。', { exact: true }).waitFor()
       await page.getByRole('link', { name: /Connexion/ }).click()
@@ -222,6 +222,21 @@ try {
       assert.equal(await page.locator('.cor-turn').count(), 0)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-empty.png`), fullPage: true })
+
+      fault.chatStatus = 401
+      const question = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
+      await question.fill('解释一下导数。')
+      await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
+      await page.getByRole('alert').filter({ hasText: '登录状态已失效' }).waitFor()
+      assert.equal(await question.inputValue(), '解释一下导数。')
+      assert.equal(await page.locator('.cor-turn').count(), 0)
+      fault.chatStatus = 200
+      await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
+      await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
+      await page.waitForFunction(() => document.querySelector('.cor-input')?.value === '')
+      await page.reload()
+      await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
+      await noHorizontalOverflow(page)
       await page.getByRole('button', { name: '← Accueil', exact: true }).click()
       await rendered(page, '.mag-cor .mag-giant')
 

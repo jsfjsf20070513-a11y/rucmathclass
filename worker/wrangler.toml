@@ -10,7 +10,7 @@ workers_dev = false
 TTS_VOICE = "Kore"
 
 # 路由:生产域名下的 /api/chat 绑到本 Worker(同域,前端同源调用)。
-# 静态站其余路径仍由 Vultr 源站经 Cloudflare 代理提供;只有 /api/chat 走 Worker。
+# 静态站其余路径仍由源站提供，聊天和语音请求走 Worker。
 [[routes]]
 pattern = "rucmathclass.com/api/chat"
 zone_name = "rucmathclass.com"
@@ -21,7 +21,7 @@ pattern = "rucmathclass.com/api/speak*"
 zone_name = "rucmathclass.com"
 
 # 限流绑定:每 IP 每 60s 最多 30 次。
-# namespace_id 是自取的整数标识。代码里 env.RATE_LIMITER 缺失会自动跳过。
+# namespace_id 是自取的整数标识。绑定缺失或出错时返回 503，不调用模型。
 [[unsafe.bindings]]
 name = "RATE_LIMITER"
 type = "ratelimit"
@@ -30,3 +30,6 @@ simple = { limit = 30, period = 60 }
 
 # ⚠️ API key 绝不写进本文件。它们是 secret:
 #   wrangler secret put GEMINI_API_KEY
+# 登录校验还需 SUPABASE_URL 和 SUPABASE_ANON_KEY；使用与前端相同的
+# Supabase 项目及公开客户端 key，均作为 Worker secret 单独配置。
+# 不使用 service_role，也不复用用户的 access token 作为服务配置。

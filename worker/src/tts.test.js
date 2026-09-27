@@ -6,22 +6,28 @@ const answer = (inlineData = validAudio) => Response.json({ candidates: [{ conte
 let pending
 let cache
 let fetch
+let auth
 const speak = (origin = 'https://rucmathclass.com', signal) => worker.fetch(
-  new Request('https://rucmathclass.com/api/speak?text=bonjour', { headers: { Origin: origin }, signal }),
-  { GEMINI_API_KEY: 'test-key' }, { waitUntil(task) { pending.push(task) } },
+  new Request('https://rucmathclass.com/api/speak?text=bonjour', { headers: { Origin: origin, Authorization: 'Bearer fixture-token' }, signal }),
+  {
+    GEMINI_API_KEY: 'test-key', SUPABASE_URL: 'https://auth.example.invalid', SUPABASE_ANON_KEY: 'fixture-key',
+    RATE_LIMITER: { limit: async () => ({ success: true }) },
+  }, { waitUntil(task) { pending.push(task) } },
 )
 beforeEach(() => {
   pending = []
   const values = new Map()
   cache = { match: vi.fn(async (key) => values.get(key.url)?.clone()), put: vi.fn(async (key, value) => { values.set(key.url, value) }) }
   fetch = vi.fn(async () => answer())
+  auth = vi.fn(async () => Response.json({ id: '11111111-1111-4111-8111-111111111111' }))
   vi.stubGlobal('caches', { default: cache })
-  vi.stubGlobal('fetch', fetch)
+  vi.stubGlobal('fetch', (url, options) => url === 'https://auth.example.invalid/auth/v1/user' ? auth(url, options) : fetch(url, options))
 })
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
 it('reuses valid WAV bytes with each caller’s CORS, keeping CORS out of the cache', async () => {
   const first = await speak()
+  expect(first.headers.get('Cache-Control')).toBe('private, no-store')
   const bytes = new Uint8Array(await first.arrayBuffer())
   const header = new DataView(bytes.buffer)
   expect(new TextDecoder().decode(bytes.slice(0, 4))).toBe('RIFF')
@@ -30,12 +36,20 @@ it('reuses valid WAV bytes with each caller’s CORS, keeping CORS out of the ca
   expect([...bytes.slice(44)]).toEqual([1, 2, 3, 4])
   await Promise.all(pending)
   expect(cache.put.mock.calls[0][1].headers.has('Access-Control-Allow-Origin')).toBe(false)
+  expect(cache.put.mock.calls[0][1].headers.get('Cache-Control')).toContain('public')
   for (const origin of ['https://www.rucmathclass.com', 'http://localhost:5173']) {
     const hit = await speak(origin)
     expect(hit.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+    expect(hit.headers.get('Cache-Control')).toBe('private, no-store')
     expect(new Uint8Array(await hit.arrayBuffer())).toEqual(bytes)
   }
   expect(fetch).toHaveBeenCalledOnce()
+  expect(auth).toHaveBeenCalledTimes(3)
+  auth.mockResolvedValue(new Response('', { status: 401 }))
+  expect((await speak()).status).toBe(401)
+  expect(cache.match).toHaveBeenCalledTimes(3)
+  expect(fetch).toHaveBeenCalledOnce()
+  expect(fetch.mock.calls[0][1].headers).not.toHaveProperty('Authorization')
 })
 it('still delivers audio when cache lookup and write both fail', async () => {
   cache.match.mockRejectedValue(new Error('cache unavailable'))

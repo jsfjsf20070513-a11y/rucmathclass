@@ -38,7 +38,9 @@
 
 页面经 `useAssistantConversation` 使用独立的对话控制器。它阻止读取、发送和清空互相抢状态；切换账号或卸载后，旧响应失效。
 
-[assistantClient](../src/lib/assistantClient.js) 发送最近的对话给 Worker；[aiAssistantBackend](../src/lib/aiAssistantBackend.js) 将一问一答一起写入 `ai_messages`，读取最近的文字历史。图片只留在当前页面，历史文字会注明曾有附图。收到回答和保存成功是两件事，保存不明时页面会明确提示。
+[assistantClient](../src/lib/assistantClient.js) 发送最近的对话给 Worker。它通过 `authBackend` 获取当前对话所属账号的访问令牌，放在 Authorization 请求头中；会话已退出或换成其他账号时停止发送，等待令牌期间也可取消。
+
+[aiAssistantBackend](../src/lib/aiAssistantBackend.js) 将一问一答一起写入 `ai_messages`，读取最近的文字历史。图片只留在当前页面，历史文字会注明曾有附图。收到回答和保存成功是两件事，保存不明时页面会明确提示。
 
 ## 数据表
 
@@ -52,7 +54,9 @@ SQL 中有 RLS 和列授权定义，但文件存在不等于线上已执行。�
 
 本仓运行代码没有导入 Raccord 目录，没有作品站页面。相册、协作台、Web3 等旧路径在 `App.jsx` 中只是重定向；公开资源读取也已脱离相册表。
 
-本仓 `worker/wrangler.toml` 的路由只写了 `rucmathclass.com`，CORS 列表只有班级站域名和本地开发地址。2026-09-27 只读对照相邻 Raccord 仓库时，发现它的 Worker 也叫 `mathclass-ai`，配置列出了两个域名的路由。实际 Cloudflare 账号和线上绑定未核验，发布前必须查清同名配置是否操作同一个 Worker。
+本仓 `worker/wrangler.toml` 的路由只写了 `rucmathclass.com`，CORS 列表只有班级站域名和本地开发地址。2026-09-27 通过 Cloudflare API 只读确认：当前 zone 只有班级站 `/api/chat`、`/api/speak*` 两条 Worker 路由，均绑定 `mathclass-ai`；两个站点没有 Worker 自定义域名绑定。
+
+相邻 Raccord 仓库仍把 Worker 写成 `mathclass-ai`，并列出了两个域名的路由。这不是当前线上路由，却仍有覆盖风险：若从那份配置向同一个账号发布，就会操作班级站的同名 Worker。Raccord 再次发布前，必须先明确自己的 Worker 目标。
 
 相册 SQL 仍作为历史运维文件保留。运行代码里的旧审核、相册写入和对应 Web3、黑客松样式已移除。两仓本地环境配置指向同一个 Supabase 项目；班级站公开线上脚本也指向该项目。Raccord 代码仍引用同名的个人进度、对话和资源表；这些证据不能证明线上表权限或数据已分开。
 
@@ -74,9 +78,13 @@ SQL 中有 RLS 和列授权定义，但文件存在不等于线上已执行。�
 
 ## Worker 的请求边界
 
-`worker/src/index.js` 只做准确路径分派、方法检查与现有限流；聊天和语音分别在 `chat.js`、`tts.js`。`requestBody.js` 在读取时限制聊天正文，`requestScope.js` 把响应正文也计入超时，并把请求取消传到上游。语音缓存只保存音频，不能缓存某个调用者的跨域响应头。
+`worker/src/index.js` 做准确路径分派、方法检查，再经过 `requestAccess.js` 校验权限。两个接口都要求 Bearer 令牌，经配置的 Supabase `/auth/v1/user` 核实；限流和身份核验合计最多等待五秒。未登录返回 401，明确超额返回 429，配置缺失、限流故障或身份服务不可用返回 503，不再继续调用模型。预检不要求登录。
 
-这些模块不依赖 React、Supabase 或前端页面。限流失败继续处理、接口没有身份认证，都是当前行为，不能根据前端登录门槛推断 Worker 权限。
+聊天和语音分别在 `chat.js`、`tts.js`，不处理登录逻辑。`requestBody.js` 在读取时限制聊天正文，`requestScope.js` 把响应正文也计入超时，并把请求取消传到上游。语音内部缓存只保存音频；每次读取仍先校验身份，返回浏览器的响应禁止缓存。背词页面使用浏览器朗读，不调用 Worker 语音。
+
+这些模块不导入 React 或前端代码；身份核验通过 Supabase HTTP API 完成，不安装 Supabase SDK，也不读取业务表。共享 Supabase 项目的账号仍属于同一个身份体系，这项校验没有拆分两站账号或数据库权限。
+
+以上是仓库实现。2026-09-27 读取生产版本时，线上 Worker 仍是 2026-08-20 发布的 `4ff0f625-91e4-41cd-af26-1afc40e6026e`，尚无身份认证，限流故障仍放行；也没有新增校验所需的两个 Supabase 配置。发布前要按 [Worker 配置说明](../worker/README.md) 准备并与前端一起核对，不能将合并视为上线。
 
 ## 样式与浏览器检查
 

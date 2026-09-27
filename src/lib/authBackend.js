@@ -22,6 +22,29 @@ export const requestEmailCode = (email) => callAuth('signInWithOtp', { email: em
 export const verifyEmailCode = (email, token) => callAuth('verifyOtp', { email: email.trim(), token: token.trim(), type: 'email' })
 export const requestPasswordReset = (email, origin) => callAuth('resetPasswordForEmail', email.trim(), { redirectTo: `${origin}/reset-password` })
 
+export async function getAccessToken(expectedUserId, { signal } = {}) {
+  if (!expectedUserId) throw new Error('请先登录后再试。')
+  signal?.throwIfAborted()
+  let onAbort
+  try {
+    // getSession can wait for a refresh in another tab. Stop waiting when the
+    // caller leaves; never send its conversation with another account's token.
+    const aborted = signal && new Promise((_, reject) => {
+      onAbort = () => reject(signal.reason)
+      signal.addEventListener('abort', onAbort, { once: true })
+    })
+    const pending = callAuth('getSession')
+    const { session } = await (aborted ? Promise.race([pending, aborted]) : pending)
+    signal?.throwIfAborted()
+    if (session?.user?.id !== expectedUserId || !session?.access_token) {
+      throw new Error('账号已退出或切换，请重新打开答疑页面。')
+    }
+    return session.access_token
+  } finally {
+    if (onAbort) signal.removeEventListener('abort', onAbort)
+  }
+}
+
 function unconfirmedPasswordError() {
   return Object.assign(new Error('密码更新结果尚未确认，请先退出当前账号，再用新密码核对登录，勿连续提交。'), { code: 'AUTH_WRITE_UNCONFIRMED' })
 }
