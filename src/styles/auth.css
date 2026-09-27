@@ -1,3 +1,170 @@
+/* 登录与密码重置共用的表单基础。下面的 .lgn 规则负责纸面排版。 */
+
+.login-page { max-width: 600px; }
+
+.editorial-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.editorial-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.editorial-form label > span {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.editorial-form input,
+.editorial-form textarea,
+.editorial-form select {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  padding: 10px 12px;
+}
+
+.password-field-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.password-field-control input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.password-toggle {
+  flex: 0 0 auto;
+  padding: 12px 8px;
+  margin: -12px -8px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: inherit;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--ink);
+}
+
+.editorial-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.editorial-actions.tabs {
+  margin-bottom: 18px;
+}
+
+.editorial-actions.tabs .text-button {
+  color: var(--muted);
+}
+
+.text-button {
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  line-height: inherit;
+}
+
+.text-button:hover,
+.text-button:focus-visible {
+  color: var(--ink);
+}
+
+.text-button.active {
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+
+  .password-field-control {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .password-toggle {
+    align-self: flex-start;
+  }
+
+  .editorial-form {
+    gap: 14px;
+  }
+
+  .editorial-form input,
+  .editorial-form textarea,
+  .editorial-form select {
+    padding: 9px 10px;
+  }
+
+  .editorial-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+.login-section { margin-top: 36px; }
+
+.login-tabs { justify-content: center; }
+
+.login-form { max-width: 22rem; margin: 28px auto 0; text-align: center; }
+
+.login-form label { display: block; margin: 0 0 20px; }
+
+.login-form label > span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.3);
+  background: transparent;
+  font-size: 20px;
+  text-align: center;
+  color: var(--ink);
+}
+
+.login-form input:focus { outline: none; border-bottom-color: var(--accent); }
+
+.login-submit { justify-content: center; margin-top: 8px; }
+
+.login-form .status-line { margin-top: 18px; text-align: center; }
+
+.reset-state { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--rule); text-align: center; }
+
+.reset-state p { margin: 0 0 18px; }
+
+.reset-state p:last-child { margin-bottom: 0; }
+
+.reset-ok { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ok); }
+
 /* ══ /login Connexion 视觉 ══ */
 
 /* /login /reset-password 已脱离 Layout,自成杂志第 06 屏同款纸面:
@@ -114,8 +281,7 @@
 .lgn .password-field > span:empty { display: none; }
 .lgn .login-form input::placeholder { color: rgba(111, 103, 94, 0.65); }
 
-/* 登录页窄屏:旧站 @720px 把 .editorial-actions 压成竖排左对齐(页签散成四行),
-   杂志纸面必须夺回——页签一行横排居中,表单与按钮保持居中一列,与桌面同构。 */
+/* 小屏页签横排居中，表单与按钮保持居中窄列。 */
 @media (max-width: 720px) {
   .lgn .editorial-actions,
   .lgn .editorial-actions.tabs {
@@ -131,4 +297,3 @@
   .lgn .password-field { width: 100%; }
   .lgn .lgn-submit { align-self: center; }
 }
-

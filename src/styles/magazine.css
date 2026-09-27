@@ -3,11 +3,6 @@
    .mag-* = 扉页五页翻页刊 + Connexion。翻页物理在 usePageFlip,此处只管纸面。
    ══════════════════════════════════════════════════════════════════ */
 
-@keyframes magBreathe {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
 .mag {
   position: relative;
   height: 100vh;
@@ -525,4 +520,3 @@
     transition-duration: 0.001ms !important;
   }
 }
-

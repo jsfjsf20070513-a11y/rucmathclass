@@ -21,7 +21,7 @@
 | 书架 | [resources.css](../src/styles/resources.css) |
 | AI 对话 | [assistant.css](../src/styles/assistant.css) |
 | 登录与密码重置 | [auth.css](../src/styles/auth.css) |
-| 通用版式与早期页面基础 | [editorial-base.css](../src/styles/editorial-base.css) |
+| 通用布局、每日一句、状态提示与 404 | [editorial-base.css](../src/styles/editorial-base.css) |
 | 最后的窄屏留白修正 | [viewport-overrides.css](../src/styles/viewport-overrides.css) |
 
 当前底色以暖纸色为主，正文用深褐色，提示和链接使用克制的酒红色。基础变量是 `--paper: #fdfcf8`、`--ink: #221d18`、`--accent: #7f302b`；杂志首页和登录页另用 `#f4efe6`。
@@ -36,6 +36,6 @@
 
 `App.css` 只按固定顺序导入上述文件，仍是 App 的唯一样式入口。共享规则先于各页面规则载入。共享控件保留原有声明数值与响应式条件：导航在 880px 以下缩小，页码在 640px 以下调整位置；全局层叠仍需在真实页面中核对，不能直接改成按路由懒加载。
 
-`editorial-base.css` 仍含早期版式，后面的页面规则会覆盖其中一些定义。清理时先查 JSX 中的使用和 CSS 选择器，再看真实页面。不能仅凭前缀旧、类名难看或历史样稿不同就删除。
+`editorial-base.css` 的旧管理台、钱包、旧首页及旧版背词、答疑规则已按当前代码引用清理。账号表单的基础规则和纸面覆盖都在 `auth.css`。以后删除样式仍需核对 JSX、动态类名、脚本生成的内容及实际页面，不能仅凭前缀旧就删除。
 
 `docs/` 里的 HTML 样稿没有进入应用路由，不能用它们证明现有页面已经实现某个功能。
