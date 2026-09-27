@@ -12,7 +12,7 @@
 
 其他路径返回 404，错误方法返回 405，均不消耗限流计数或请求模型。
 
-聊天和语音都要求 `Authorization: Bearer <当前账号的访问令牌>`，预检除外。Worker 先按 IP 限流，再向配置的 Supabase `/auth/v1/user` 验证身份；不会把问题或图片交给认证接口，也不会把用户令牌交给模型。未登录或令牌失效返回 401，超过限额返回 429，配置缺失、限流出错或认证服务失败返回 503。限流与认证合计最多等五秒，包含认证响应正文；失败后不调用模型、不读取语音缓存。这里验证的是同一个 Supabase 项目中的账号，不是班级成员资格，也没有拆分两站账号。
+聊天和语音都要求 `Authorization: Bearer <当前账号的访问令牌>`，预检除外。Worker 先按 IP 限流，再向配置的 Supabase `/auth/v1/user` 验证身份；不会把问题或图片交给认证接口，也不会把用户令牌交给模型。未登录或令牌失效返回 401，超过限额返回 429，配置缺失、限流出错或认证服务失败返回 503。限流与认证合计最多等五秒，包含认证响应正文；失败后不调用模型、不读取语音缓存。这里验证的是所配置 Supabase 项目中的账号，不额外确认班级成员资格。
 
 认证请求使用 Workers 支持的 `redirect: 'manual'`，收到 3xx 就返回 503，不跟随重定向。不要改回 `redirect: 'error'`：workerd 不支持它，会在发出请求前报错；仅在 Node 中模拟 fetch 的测试发现不了这个差异。[运行时测试](src/runtime.test.js) 会直接执行 workerd，并拦截全部外部请求。
 
@@ -33,7 +33,7 @@
 
 CORS 允许班级站两个域名和 `http://localhost:5173`，预检允许 Content-Type 和 Authorization。CORS 与服务端身份校验是两件事。前端从当前对话账号取得令牌，切换账号或取消请求后不会继续发送旧问题。
 
-2026-09-27 的 Cloudflare API 核验确认：实际路由只有班级站 `/api/chat`、`/api/speak*`，没有 Raccord 路由。生产仍在运行 2026-08-20 发布的版本 `4ff0f625-91e4-41cd-af26-1afc40e6026e`，没有上述登录校验，也没有两个 Supabase 配置。Raccord 仓库已将自己的目标改为 `raccord-ai` 并移除班级站路由，见 [隔离改动](https://github.com/jsfjsf20070513-a11y/raccord/pull/1)；两个 Worker 分别配置和发布，不能从那边发布本服务。
+2026-09-27 已配置班级站的两个 Supabase secret，并与前端一起发布；最终 Worker 版本及核验结果见 [发布记录](../docs/development.md#最近一次发布核验)。公开接口已确认未登录和失效令牌返回 401。Cloudflare 实际路由只有班级站 `/api/chat`、`/api/speak*`，没有 Raccord 路由。Raccord 仓库的目标是 `raccord-ai`，见 [隔离改动](https://github.com/jsfjsf20070513-a11y/raccord/pull/1)；两个 Worker 分别配置和发布，不能从那边发布本服务。
 
 ## 调试与验证
 
@@ -50,4 +50,4 @@ npx wrangler dev --config worker/wrangler.toml
 
 本地 Worker 配置可放在 `worker/.dev.vars`；这类文件已忽略，不提交 key。单测覆盖聊天契约、取消、流式输入限制、令牌失效、认证超时、限流故障、语音格式和跨来源缓存；包括缓存命中仍需认证。认证、缓存和模型都是模拟接口；lint 包含 Worker。真实认证、Cloudflare 缓存、连接断开信号和模型可用性仍需发布时核验，仓库检查通过不等于生产正常。
 
-部署需要用户明确授权，并单独确认目标配置。前端 `deploy.sh` 不会发布这个 Worker。此次发布要一起准备前端和 Worker：先核对并配置两个 Supabase secret，再发布携带令牌的前端与要求认证的 Worker，并验证当前账号流程。旧前端不带令牌，新 Worker 会拒绝它；旧 Worker 的跨域预检也不允许认证头，因此不要将二者长期分开发布，已打开的旧页面需要刷新。核验未通过时保留现场排查，不通过关闭认证来恢复访问。
+部署需要用户明确授权，并核对目标配置。前端 `deploy.sh` 不会发布这个 Worker。涉及认证协议的变更应一同准备前端和 Worker，确认服务配置后一起发布并验证账号流程。旧前端不带令牌，会被现行 Worker 拒绝，已打开的旧页面需要刷新。核验未通过时保留现场排查，不通过关闭认证来恢复访问。

@@ -105,7 +105,8 @@ export function startWeatherCanvas(canvas, weather, { override = 'auto', particl
 
   let last = performance.now()
   const draw = (nowT) => {
-    const dt = Math.min(nowT - last, 50) // 切标签页夹住
+    // rAF reports the frame start, which can precede initialization within that frame.
+    const dt = Math.max(0, Math.min(nowT - last, 50))
     last = nowT
     const t = nowT
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)

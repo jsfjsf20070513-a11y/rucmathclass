@@ -72,7 +72,7 @@ async function scenario(name, viewport, run) {
     }
     if (await account.handle(route)) return
     if (url.hostname === 'api.open-meteo.com') {
-      return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: 0, is_day: 1 } } })
+      return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: name.endsWith('-home') ? 61 : 0, is_day: 1 } } })
     }
     unexpectedRequests.push(`${route.request().method()} ${url.origin}${url.pathname}`)
     return route.abort()
