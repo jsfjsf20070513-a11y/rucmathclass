@@ -53,7 +53,7 @@ CI 的实际触发范围见 [.github/workflows/ci.yml](../.github/workflows/ci.y
 SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是供核对的定义与历史记录，不是一套安装顺序，也不证明生产已应用。
 
 - [schema/setup_vocabulary.sql](../sql/schema/setup_vocabulary.sql)、[schema/setup_ai_history.sql](../sql/schema/setup_ai_history.sql) 对应现役个人进度和对话表。
-- [schema/restrict_app_table_grants.sql](../sql/schema/restrict_app_table_grants.sql) 是根据实际权限准备的生产修正，尚未应用。它在一个事务内收紧四张表的浏览器角色授权，不改记录或行策略；表缺失或 RLS 未开启时终止。执行前重新核对现场，并单独取得生产变更授权，不能把前端部署理解成自动执行此 SQL。
+- [schema/restrict_app_table_grants.sql](../sql/schema/restrict_app_table_grants.sql) 已于 2026-09-27 获用户授权后在生产执行，并核对实际权限与匿名接口。它在一个事务内收紧四张表的浏览器角色授权，不改记录或行策略；表缺失或 RLS 未开启时终止。以后再次执行前仍要重新核对现场，并取得当次生产变更授权，不能把前端部署理解成自动执行此 SQL。
 - [legacy/setup_official_content.sql](../sql/legacy/setup_official_content.sql) 混合了现役 resources 和退役相册，不能当作完整的当前 schema。
 - `sql/legacy/` 其余文件保留旧存储桶、角色和综合授权 SQL；不要整段重跑来修权限。
 - [audit/comments_permissions.sql](../sql/audit/comments_permissions.sql) 只有三条 SELECT，查看执行时的列授权、表授权和行策略，不保存过去的生产结论。
