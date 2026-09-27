@@ -130,7 +130,7 @@ export default function Resources() {
                 </ol>
                 {index === shelves.length - 1 ? (
                   <div className="bib-coda" data-animate="">
-                    <DailyMeditation offset={8} />
+                    <DailyMeditation />
                   </div>
                 ) : null}
               </div>

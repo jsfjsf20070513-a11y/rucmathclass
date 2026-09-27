@@ -1,14 +1,5 @@
-// Tiny helpers for rendering user-supplied URLs without exposing the
-// site to `javascript:` / `data:` / `vbscript:` protocol XSS through
-// stored content.
-//
-// Background: the resource catalog merges hand-curated entries from
-// `src/data/resourceCatalog.js` (safe, authored by the maintainer) with
-// rows from the Supabase `resources` table that an admin published from
-// a contributor draft. The contributor draft's `url` field travels
-// straight to <a href={...}>, so even though admins are expected to
-// review before publishing, defense-in-depth keeps the renderer from
-// being the place an unsafe protocol leaks through.
+// 资源书架合并本地目录和云端书目。读取与渲染都校验 URL，
+// 避免 javascript:、data: 等协议进入链接。
 
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:', 'mailto:'])
 
@@ -42,17 +33,9 @@ export function sanitizeHttpUrl(input, fallback = '#') {
 }
 
 /**
- * Storage-layer counterpart to sanitizeHttpUrl. Used on the write path
- * (resource submit / publish) to decide whether a user-supplied URL is
- * even worth persisting. Differences from the render-layer helper:
- *   - Requires an ABSOLUTE url (no base) so a bare "example.com" — which
- *     the base-resolving sanitizeHttpUrl would mangle into
- *     "https://placeholder.invalid/example.com" — is rejected instead of
- *     stored broken.
- *   - Returns '' (empty) for anything invalid, so callers store an empty
- *     string rather than a placeholder '#'.
- *   - Preserves the original string (no normalization round-trip).
- * Allowed protocols are shared with the render layer.
+ * Validate URLs read from stored resource rows. Requires an absolute URL,
+ * returns '' for invalid input and preserves an allowed URL's spelling.
+ * The backend uses this when mapping cloud rows into resource entries.
  */
 export function sanitizeStoredUrl(input) {
   if (!input || typeof input !== 'string') {
