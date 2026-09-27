@@ -17,15 +17,15 @@
 
 ## 改动时守住的边界
 
-页面和组件不要直接导入 Supabase；通过业务 hook 或 backend 调用。`lib` 和 `data` 不要反过来导入 React、页面、组件或 hook。这两条的静态 import/export 由 ESLint 检查；动态 import() 和运行时行为暂未覆盖。
+页面、组件和 hook 不要直接导入 Supabase；通过业务 hook 或 backend 调用。`lib` 和 `data` 不要反过来导入 React、页面、组件或 hook。这两条的静态 import/export 由 ESLint 检查；动态 import() 和运行时行为暂未覆盖。
 
 词条 ID 关联 `review_states.word_id`，不要为了整理词库改 ID。排程结果只有经保存确认后才能推进；账号切换后，旧请求不能覆盖新账号状态。相关代码和测试见架构说明。
 
-不要把仓库里的 SQL 当作可以全部顺序执行的安装脚本。它们仍混有相册、存储和角色管理。也不要仅根据本仓推断 Raccord 的数据库、部署目录或线上配置。
+不要把仓库里的 SQL 当作可以全部顺序执行的安装脚本。现役个人表定义在 `sql/schema/`，混合旧业务与授权在 `sql/legacy/`，只读核查在 `sql/audit/`。也不要仅根据本仓推断 Raccord 的数据库、部署目录或线上配置。
 
 ## 完成一轮工作
 
-在工作分支修改，提交前运行 `npm run lint && npm test && npm run build`。构建会改写 `public/health.json`；若它只是本次验证产生的时间戳，在提交前还原。涉及交互或布局时还要看真实页面，不能只看测试数。
+在工作分支修改，提交前运行 `npm run lint && npm test && npm run build`。构建会改写 `public/health.json`；若它只是本次验证产生的时间戳，在提交前还原。Worker 修改还要跑 `npm run worker:check`；交互和布局修改跑 `npm run browser:check` 并看真实页面，不能只看测试数。
 
 提交说明写清改了什么、怎么验证、哪里仍未验证。同一工作目录只保留一位写入者。合并 PR 和部署需要用户明确授权；“继续”不自动表示授权合并或上线。
 

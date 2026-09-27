@@ -1,0 +1,12 @@
+/* 窄屏 body 的 16px 内边距是旧站列式版面的遗产,杂志页自己管理留白。
+   用负外边距抵消(而非 body:has —— 微信老 WebView 不认 :has)。 */
+@media (max-width: 480px) {
+  .mag,
+  .vpl,
+  .bib,
+  .cor {
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+  }
+}

@@ -36,3 +36,16 @@ jobs:
         run: npm run worker:check
         env:
           WRANGLER_SEND_METRICS: 'false'
+
+      - name: Install browser for UI checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Check mobile and desktop flows
+        run: npm run browser:check
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-failure
+          path: output/playwright/
+          retention-days: 7

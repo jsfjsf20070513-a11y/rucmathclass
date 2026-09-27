@@ -1,0 +1,315 @@
+/* ══ /assistant 「Correspondance 书信体」 ══ */
+
+@keyframes corRule {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes corBreathe {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.7; }
+}
+
+.cor {
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #fdfcf8;
+  color: var(--mag-ink-2);
+  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow: hidden;
+}
+.cor .vpl-nav { border-bottom-color: var(--mag-hairline); }
+.cor-effacer { letter-spacing: 0.18em; }
+
+.cor-gate {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+
+/* 停顿一:刊头空状态 */
+.cor-cover {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+}
+.cor-cover .vpl-kicker { animation: magFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cor-masthead {
+  margin: 0 0 12px;
+  font-family: "Bodoni Moda", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(40px, 6.5vw, 84px);
+  line-height: 0.95;
+  color: var(--mag-ink);
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.01em;
+  animation: magFadeIn 0.7s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cor-sub {
+  margin: 0 0 46px;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--mag-muted);
+  animation: magFadeIn 0.7s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cor-starters {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 520px;
+}
+.cor-starter {
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--mag-hairline);
+  padding: 14px 6px;
+  min-height: 44px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  color: #4a423a;
+  text-align: left;
+  transition: color 0.15s ease, background 0.15s ease;
+  animation: magFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cor-starter:last-child { border-bottom: 1px solid var(--mag-hairline); }
+.cor-starter:hover { color: var(--mag-wine); background: rgba(34, 29, 24, 0.03); }
+
+/* 停顿二:信笺流 */
+.cor-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.cor-thread-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 34px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+.cor-dateline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.cor-dateline p {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(111, 103, 94, 0.75);
+  white-space: nowrap;
+}
+.cor-dateline-rule { display: block; width: 56px; height: 1px; background: rgba(34, 29, 24, 0.18); }
+
+.cor-turn {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 18px;
+  animation: magFadeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cor-mark {
+  font-family: "Bodoni Moda", serif;
+  font-style: italic;
+  font-size: 19px;
+  line-height: 1.2;
+  font-variation-settings: "opsz" 96;
+  text-align: right;
+  padding-right: 2px;
+}
+.cor-mark.is-q { color: var(--mag-wine); }
+.cor-mark.is-r { color: var(--mag-ink-2); }
+
+.cor-q-text {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--mag-ink-2);
+  padding-top: 2px;
+  white-space: pre-wrap;
+}
+.cor-r-body {
+  border-left: 1px solid rgba(34, 29, 24, 0.18);
+  padding: 4px 0 4px 20px;
+  transform-origin: top;
+  animation: corRule 0.5s ease both;
+}
+.cor-r-text {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.85;
+  color: var(--mag-ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  animation: magFadeIn 0.6s 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cor-r-text .katex-display { overflow-x: auto; padding: 4px 0; }
+.cor-waiting { display: flex; align-items: center; min-height: 30px; }
+.cor-breathe {
+  display: block;
+  width: 120px;
+  height: 1px;
+  background: var(--mag-ink-2);
+  animation: corBreathe 1.6s ease-in-out infinite;
+}
+
+/* Figure n 图框 */
+.cor-figure {
+  margin: 0 0 10px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(34, 29, 24, 0.2);
+  padding: 10px 14px 12px;
+  background: transparent;
+  max-width: 100%;
+}
+.cor-figure figcaption {
+  font-family: "Bodoni Moda", serif;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mag-muted);
+}
+.cor-figure img { max-width: min(320px, 100%); max-height: 220px; object-fit: contain; }
+
+.cor-error {
+  margin: 8px auto 0;
+  max-width: 760px;
+  width: 100%;
+  padding: 0 24px;
+  font-size: 13px;
+  color: var(--mag-wine);
+}
+.cor-attach {
+  max-width: 760px;
+  width: 100%;
+  margin: 8px auto 0;
+  padding: 0 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.cor-figure-pending img { max-height: 90px; }
+.cor-attach-remove {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--mag-muted);
+  padding: 4px 8px;
+  min-height: 44px;
+}
+.cor-attach-remove:hover { color: var(--mag-wine); }
+
+/* 页脚 composer */
+.cor-composer {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 18px 24px 6px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+.cor-joindre {
+  background: transparent;
+  border: none;
+  padding: 0 0 10px;
+  cursor: pointer;
+  font-family: "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mag-muted);
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.cor-joindre:hover:not(:disabled) { color: var(--mag-wine-hover); }
+.cor-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(34, 29, 24, 0.28);
+  border-radius: 0;
+  padding: 8px 2px;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-size: 16px;
+  color: var(--mag-ink-2);
+  outline: none;
+  resize: none;
+  line-height: 1.5;
+}
+.cor-input:focus { border-bottom-color: var(--mag-wine); }
+.cor-envoyer {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--mag-ink-2);
+  padding: 0 0 10px;
+  box-shadow: inset 0 -1px 0 rgba(34, 29, 24, 0.35);
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
+}
+.cor-envoyer:hover:not(:disabled) { color: var(--mag-wine-hover); box-shadow: inset 0 -1px 0 var(--mag-wine-hover); }
+.cor-envoyer:disabled { opacity: 0.4; cursor: default; }
+.cor-foot {
+  margin: 0 auto;
+  max-width: 760px;
+  width: 100%;
+  padding: 4px 24px 16px;
+  font-size: 11px;
+  color: rgba(111, 103, 94, 0.7);
+}
+
+.cor-joindre-short { display: none; }
+@media (max-width: 640px) {
+  .cor-joindre-long { display: none; }
+  .cor-joindre-short { display: inline; }
+  .cor-turn { grid-template-columns: 38px minmax(0, 1fr); column-gap: 12px; }
+  .cor-composer { gap: 12px; padding: 12px 18px 4px; }
+  .cor-thread-inner { padding: 24px 18px 10px; }
+  .cor-foot { padding: 4px 18px 12px; }
+}
+
+
+/* 回信里的轻量 markdown 映射 */
+.cor-h {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: "Bodoni Moda", serif;
+  font-weight: 500;
+  font-size: 0.82em;
+  letter-spacing: 0.12em;
+}
+.cor-hr {
+  display: block;
+  width: 40px;
+  height: 1px;
+  margin: 10px 0;
+  background: rgba(34, 29, 24, 0.22);
+}
+

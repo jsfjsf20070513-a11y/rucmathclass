@@ -1,0 +1,437 @@
+/* ══ /vocabulary 「一叠卡片」 ══ */
+
+@keyframes magArrive {
+  from { transform: translateX(105%) rotate(2.2deg); }
+  to { transform: translateX(0) rotate(0deg); }
+}
+@keyframes magArriveBack {
+  from { transform: translateX(-105%) rotate(-2.2deg); }
+  to { transform: translateX(0) rotate(0deg); }
+}
+.mag-arrive {
+  animation: magArrive 0.5s var(--flip-ease) both;
+  transform-origin: 50% 100%;
+}
+.mag-arrive-back {
+  animation: magArriveBack 0.5s var(--flip-ease) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes vplCardIn {
+  from { opacity: 0; transform: translateX(64px) rotate(0.6deg); }
+  to { opacity: 1; transform: translateX(0) rotate(0deg); }
+}
+
+.vpl {
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #faf6ee;
+  color: var(--mag-ink-2);
+  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  overflow: hidden;
+}
+
+.vpl-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 20px 36px 16px;
+  border-bottom: 1px solid var(--mag-hairline);
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.vpl-nav-back {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  transition: color 0.2s ease;
+}
+.vpl-nav-back:hover { color: #2a211c; }
+.vpl-nav-title { color: #2a211c; }
+.vpl-nav-side { color: var(--mag-muted); letter-spacing: 0.18em; }
+
+.vpl-stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.vpl-card {
+  margin: auto;
+  width: 100%;
+  max-width: 1080px;
+  padding: 40px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px 400px;
+  gap: 0 44px;
+  animation: vplCardIn 0.5s var(--flip-ease) both;
+}
+.vpl-divider { background: var(--mag-hairline); }
+
+.vpl-card-narrow { max-width: 900px; grid-template-columns: minmax(0, 1fr) 1px 360px; }
+
+.vpl-card-notice,
+.vpl-card-idle,
+.vpl-card-done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 640px;
+  gap: 0;
+}
+
+.vpl-stagezone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+.vpl-interzone {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.vpl-kicker {
+  margin: 0 0 26px;
+  color: var(--mag-wine);
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.vpl-card-notice .vpl-kicker,
+.vpl-card-idle .vpl-kicker,
+.vpl-card-done .vpl-kicker { margin-bottom: 10px; }
+
+.vpl-word {
+  margin: 0;
+  font-family: "Bodoni Moda", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(44px, 6.5vw, 96px);
+  line-height: 0.98;
+  color: var(--mag-ink);
+  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+}
+.vpl-word-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  margin-top: 22px;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--mag-muted);
+}
+.vpl-listen {
+  background: transparent;
+  border: none;
+  padding: 0 0 3px;
+  cursor: pointer;
+  font-family: "Bodoni Moda", serif;
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--mag-ink-2);
+  box-shadow: inset 0 -1px 0 rgba(34, 29, 24, 0.35);
+  transition: color 0.2s ease, box-shadow 0.2s ease;
+}
+.vpl-listen:hover { color: var(--mag-wine-hover); box-shadow: inset 0 -1px 0 var(--mag-wine-hover); }
+.vpl-listen-lg { font-size: 13px; align-self: flex-start; padding-bottom: 6px; }
+
+.vpl-sentence {
+  margin: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.45;
+  color: var(--mag-ink);
+}
+.vpl-cue {
+  margin: 0;
+  font-size: 17px;
+  color: #4a423a;
+}
+.vpl-cue-lg { font-size: clamp(21px, 2.2vw, 26px); line-height: 1.6; color: var(--mag-ink); }
+.vpl-cue-pos { color: var(--mag-muted); font-style: italic; font-size: 0.8em; }
+
+/* 选项:罗马数字发丝线行;反馈时正确项反白墨块、错选划线 */
+.vpl-options { display: flex; flex-direction: column; }
+.vpl-option {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--mag-hairline);
+  padding: 16px 6px;
+  min-height: 44px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: background 0.15s ease, opacity 0.3s ease;
+}
+.vpl-option:last-child { border-bottom: 1px solid var(--mag-hairline); }
+.vpl-option:hover:not(:disabled) { background: rgba(34, 29, 24, 0.04); }
+.vpl-option-roman {
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  color: var(--mag-wine-hover);
+  width: 22px;
+  flex-shrink: 0;
+}
+.vpl-option-text {
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-size: 21px;
+  color: var(--mag-ink-2);
+}
+.vpl-option.is-answer { background: #221d18; border-color: #221d18; }
+.vpl-option.is-answer .vpl-option-text { color: #f4efe6; }
+.vpl-option.is-answer .vpl-option-roman { color: #c9a06a; }
+.vpl-option.is-answer + .vpl-option { border-top-color: #221d18; }
+.vpl-option.is-picked-wrong .vpl-option-text { color: var(--mag-wine); text-decoration: line-through; }
+.vpl-option.is-dim { opacity: 0.45; }
+
+/* 拼写 / 拼句 / 配对 */
+.vpl-write { display: flex; flex-direction: column; gap: 30px; align-items: flex-start; }
+.vpl-input {
+  width: 100%;
+  padding: 10px 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(34, 29, 24, 0.28);
+  border-radius: 0;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 26px;
+  color: var(--mag-ink-2);
+  outline: none;
+}
+.vpl-input:focus { border-bottom-color: var(--mag-wine); }
+.vpl-verify { align-self: flex-start; }
+
+.vpl-build { display: flex; flex-direction: column; gap: 22px; align-items: flex-start; }
+.vpl-build-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 44px;
+  width: 100%;
+  border-bottom: 1px solid rgba(34, 29, 24, 0.28);
+  padding-bottom: 10px;
+  align-items: center;
+}
+.vpl-build-placeholder { color: var(--mag-muted); font-style: italic; font-size: 15px; }
+.vpl-build-bank { display: flex; flex-wrap: wrap; gap: 8px; }
+.vpl-tile {
+  background: transparent;
+  border: 1px solid var(--mag-hairline-dark);
+  padding: 8px 14px;
+  min-height: 40px;
+  cursor: pointer;
+  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-size: 18px;
+  color: var(--mag-ink-2);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.2s ease;
+}
+.vpl-tile:hover:not(:disabled) { background: rgba(34, 29, 24, 0.05); }
+.vpl-tile.is-chosen,
+.vpl-tile.is-sel { background: #221d18; color: #f4efe6; border-color: #221d18; }
+.vpl-tile.is-done { opacity: 0.25; }
+.vpl-tile.is-wrong { border-color: var(--mag-wine); color: var(--mag-wine); }
+
+.vpl-match { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+.vpl-match-col { display: flex; flex-direction: column; gap: 10px; }
+.vpl-match .vpl-tile { min-height: 44px; text-align: center; }
+
+/* 判定反馈:原页揭示 */
+.vpl-fb {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--mag-hairline);
+  animation: magFadeIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.vpl-fb-verdict {
+  margin: 0 0 8px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.vpl-fb.is-ok .vpl-fb-verdict { color: var(--ok); }
+.vpl-fb.is-no .vpl-fb-verdict { color: var(--mag-wine); }
+.vpl-fb-answer { margin: 0 0 6px; font-size: 21px; font-style: italic; color: var(--mag-ink); }
+.vpl-fb-gloss { font-style: normal; font-size: 15px; color: var(--mag-muted); }
+.vpl-fb-note { margin: 0 0 6px; font-size: 14px; color: var(--mag-muted); }
+.vpl-fb-actions { display: flex; align-items: baseline; gap: 26px; margin-top: 16px; }
+.vpl-explain,
+.vpl-explain:visited {
+  border-bottom: none;
+  color: var(--mag-muted);
+  font-size: 13px;
+}
+.vpl-explain:hover { color: var(--mag-wine-hover); }
+
+/* 扉页 / 结算 / 通知 */
+.vpl-title {
+  margin: 0 0 18px;
+  font-family: "Bodoni Moda", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1;
+  color: var(--mag-ink);
+  font-variation-settings: "opsz" 96;
+}
+.vpl-quota {
+  margin: 0 0 6px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--mag-muted);
+}
+.vpl-deckstats { margin: 0 0 8px; font-size: 14px; color: var(--mag-muted); }
+.vpl-commencer { margin-top: 34px; font-size: 13px; }
+
+/* 两行同构小表:右对齐标签列 + 左对齐值列,整块居中(2026-08-20 用户:乱 → 收敛) */
+.vpl-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 34px;
+  align-items: center;
+}
+.vpl-filter-row {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  font-family: "Bodoni Moda", serif;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.vpl-filter-key {
+  color: var(--mag-wine-hover);
+  width: 58px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.vpl-filter-val {
+  display: flex;
+  align-items: baseline;
+  gap: 13px;
+  flex-wrap: wrap;
+  width: 300px;
+  justify-content: flex-start;
+  text-align: left;
+}
+.vpl-chip {
+  background: transparent;
+  border: none;
+  padding: 0 0 3px;
+  cursor: pointer;
+  color: var(--mag-muted);
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  transition: color 0.15s ease, box-shadow 0.15s ease;
+}
+.vpl-chip:hover { color: var(--mag-ink); }
+.vpl-chip.is-on { color: var(--mag-ink); box-shadow: inset 0 -1px 0 var(--mag-wine); }
+.vpl-msg { margin: 0; font-size: 12px; color: var(--mag-muted); font-family: "Cormorant Garamond", "Songti SC", serif; letter-spacing: 0; text-transform: none; }
+
+.vpl-notice-text { margin: 0 0 22px; font-size: 17px; color: #4a423a; }
+
+.vpl-study-body { gap: 0; }
+.vpl-study-zh { margin: 0 0 14px; font-size: 24px; color: var(--mag-ink); }
+.vpl-study-example { margin: 0 0 6px; font-style: italic; font-size: 17px; line-height: 1.7; color: rgba(111, 103, 94, 0.9); }
+.vpl-study-example-zh { margin: 0 0 6px; font-size: 14px; color: var(--mag-muted); }
+.vpl-study-note { margin: 8px 0 0; font-size: 14px; color: var(--mag-muted); }
+.vpl-study-actions { display: flex; align-items: baseline; gap: 26px; margin-top: 30px; }
+
+.vpl-done-score { margin: 0 0 0; font-size: 16px; color: #4a423a; }
+.vpl-done-rule { width: 24px; height: 1px; margin: 22px auto; background: rgba(34, 29, 24, 0.3); }
+.vpl-review { display: flex; flex-direction: column; width: 100%; max-width: 420px; margin-top: 10px; }
+.vpl-review-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  border-top: 1px solid var(--mag-hairline);
+  padding: 10px 2px;
+  font-size: 17px;
+}
+.vpl-review-row:last-child { border-bottom: 1px solid var(--mag-hairline); }
+.vpl-review-zh { color: var(--mag-muted); font-size: 15px; }
+.vpl-done-actions { display: flex; gap: 30px; margin-top: 26px; }
+
+/* 底部常驻进度线(全场唯一计数) */
+.vpl-foot {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 14px 36px 22px;
+  min-height: 44px;
+}
+.vpl-progress {
+  flex: 1;
+  height: 1px;
+  background: var(--mag-hairline);
+  position: relative;
+  align-self: center;
+}
+.vpl-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 1px;
+  background: var(--mag-wine);
+  transition: width 0.4s ease;
+}
+.vpl-progress-label {
+  font-family: "Bodoni Moda", serif;
+  font-size: 9px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(111, 103, 94, 0.75);
+  white-space: nowrap;
+}
+
+@media (max-width: 880px) {
+  .vpl-filter-row { flex-wrap: wrap; justify-content: center; row-gap: 10px; }
+  .vpl-filter-key { width: auto; text-align: center; }
+  .vpl-filter-val { width: auto; justify-content: center; }
+  .vpl-card,
+  .vpl-card-narrow {
+    grid-template-columns: 1fr;
+    gap: 26px 0;
+    padding: 26px 22px;
+    max-width: 560px;
+  }
+  .vpl-divider { display: none; }
+  .vpl-word { font-size: clamp(40px, 15vw, 58px); }
+  .vpl-nav { padding: 16px 18px 12px; font-size: 9px; }
+  .vpl-foot { padding: 12px 18px 18px; }
+  .vpl-stagezone { justify-content: flex-start; }
+  .vpl-interzone { justify-content: flex-start; }
+}
+

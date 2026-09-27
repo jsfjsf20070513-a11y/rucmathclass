@@ -15,11 +15,13 @@
 | 范围 | 代码入口 |
 | --- | --- |
 | 全站颜色、基础字体、间距 | [index.css](../src/index.css) 的 `:root` |
-| 首页 | [App.css](../src/App.css) 的 `.mag`、`.mag-*` |
-| 背词 | 同文件的 `.vpl`、`.vpl-*` |
-| 书架 | 同文件的 `.bib`、`.bib-*` |
-| AI 对话 | 同文件的 `.cor`、`.cor-*` |
-| 登录与密码重置 | 同文件的 `.lgn` 及其后代选择器 |
+| 首页与共享翻页控件 | [magazine.css](../src/styles/magazine.css) |
+| 背词与共享页内导航 | [vocabulary.css](../src/styles/vocabulary.css) |
+| 书架 | [resources.css](../src/styles/resources.css) |
+| AI 对话 | [assistant.css](../src/styles/assistant.css) |
+| 登录与密码重置 | [auth.css](../src/styles/auth.css) |
+| 通用版式与早期页面基础 | [editorial-base.css](../src/styles/editorial-base.css) |
+| 最后的窄屏留白修正 | [viewport-overrides.css](../src/styles/viewport-overrides.css) |
 
 当前底色以暖纸色为主，正文用深褐色，提示和链接使用克制的酒红色。基础变量是 `--paper: #fdfcf8`、`--ink: #221d18`、`--accent: #7f302b`；杂志首页和登录页另用 `#f4efe6`。
 
@@ -31,6 +33,8 @@
 
 保持中文、法文和数学公式可读。检查桌面与窄屏的对齐、断行、按钮状态、错误提示和键盘焦点；首页还要检查登录前后插页、退出和动画结束状态。
 
-`App.css` 仍保留没有现役页面使用的样式，也有后面的规则覆盖前面规则的情况。清理时先查 JSX 中的使用和 CSS 选择器，再看真实页面。不能仅凭前缀旧、类名难看或历史样稿不同就删除。
+`App.css` 只按固定顺序导入上述文件，仍是 App 的唯一样式入口。拆分保留了原规则和顺序，生产 CSS 逐字节一致。部分页内导航、按钮和表单规则被多个页面共用，因此不能直接改成按路由懒加载。
+
+`editorial-base.css` 仍含早期版式，后面的页面规则会覆盖其中一些定义。清理时先查 JSX 中的使用和 CSS 选择器，再看真实页面。不能仅凭前缀旧、类名难看或历史样稿不同就删除。
 
 `docs/` 里的 HTML 样稿没有进入应用路由，不能用它们证明现有页面已经实现某个功能。
