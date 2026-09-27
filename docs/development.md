@@ -72,3 +72,22 @@ SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是
 只有用户明确授权部署后，才可按部署流程执行 `bash deploy.sh --publish`。这会重复相同检查，然后远端建目录并执行 `rsync --delete`；原先不带参数就发布的行为已经取消。发布前后的线上 health 与页面仍需另行核对，本地检查成功不是上线授权。
 
 [deployment/nginx/](../deployment/nginx/) 是仓库里的服务器配置，不能据此宣称已在生产生效。Worker 独立构建和部署，见它的 [接口说明](../worker/README.md)。
+
+## 最近一次发布核验
+
+2026-09-27 获用户授权后发布了班级站；Raccord 未发布。这是当次现场记录，以后发布仍需重新核对。
+
+| 项目 | 已核验结果 |
+| --- | --- |
+| 发布源码 | `d6f9bd7ab22624a554feb7d727d5b74fe9d6aecb`，已合并 PR #53 |
+| 公网 health | `2026-09-27T06:45:51.879Z`，北京时间 14:45；应用标记为 `MathClassWebsite` |
+| Worker | `mathclass-ai`，版本 `63bb4a7c-9379-422d-9b8f-13ab2e1d60db`，承接 100% 流量 |
+| 身份服务 | Worker 与前端使用班级站项目 `xfwkjhajrqxsakzovcwx`；模型 secret 保留 |
+| 服务器文件 | `/var/www/MathClassWebsite/dist`；源站 HTML 与本地发布产物一致 |
+| 静态文件 | 公网主 JS、CSS、带内容哈希的启动脚本均为 200，内容与发布产物一致 |
+| 网页与接口 | 首页、书架、背词、答疑、登录地址为 200；未登录及失效令牌为 401，错误方法 405，未知语音路径 404，预检 204 并允许 Authorization |
+| 页面查看 | 桌面首页、书架与手机宽度书架已查看，天气正常显示；答疑未登录提示正常 |
+
+班级站的 CSP snippet 已更新，允许 Open-Meteo，移除 Solana devnet。Nginx 配置检查通过后 reload；主站配置文件未替换。旧静态文件及原 Nginx 配置保存在服务器 `/var/backups/mathclass-release-20260927T062732Z/`。本次部署没有执行数据库 SQL 或改个人记录。
+
+发布检查包括 lint、249 项测试、生产构建、Worker 离线打包和 15 个 Chromium 场景，CI 通过。公网核验发现并修复了启动脚本旧缓存、Workers 不支持 `redirect: 'error'` 两个问题。真实账号的登录、模型回答及历史保存仍未验收，见 [剩余问题](remaining-work.md)。后续仅更新发布说明的提交不代表再次部署。
