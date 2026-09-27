@@ -31,7 +31,8 @@ export async function checkRequestAccess(request, env, origin) {
     if (result?.success !== true) return unavailable(origin)
 
     const response = await scope.run(() => fetch(authUrl, {
-      method: 'GET', redirect: 'error', signal: scope.signal,
+      // Workers supports manual/follow; a 3xx stays here and fails the !ok check below.
+      method: 'GET', redirect: 'manual', signal: scope.signal,
       headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: authorization },
     }))
     if ([400, 401, 403].includes(response.status)) return unauthorized(origin)

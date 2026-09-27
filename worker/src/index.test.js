@@ -108,7 +108,7 @@ it('verifies with the configured auth server before either handler and never sen
   const input = request('/api/chat', { body: JSON.stringify({ messages: [{ role: 'user', content: 'private question' }] }) })
   expect((await worker.fetch(input, env, {})).status).toBe(200)
   expect(fetch).toHaveBeenCalledWith('https://auth.example.invalid/auth/v1/user', {
-    method: 'GET', redirect: 'error', signal: expect.any(AbortSignal),
+    method: 'GET', redirect: 'manual', signal: expect.any(AbortSignal),
     headers: { apikey: 'fixture-key', Authorization: 'Bearer fixture-token' },
   })
   expect(handleChat).toHaveBeenCalledWith(input, env, origin)

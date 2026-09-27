@@ -8,7 +8,7 @@
 | --- | --- |
 | `npm run dev` | 先离线检查肖像素材，再生成定理 HTML、health 文件并启动 Vite |
 | `npm run lint` | 检查前端、Worker 与脚本的 JS/JSX/MJS，以及前端导入边界 |
-| `npm test` | 在 Node 环境运行 `src/`、`worker/src/`、`scripts/` 下的 `*.test.js` |
+| `npm test` | 运行 `src/`、`worker/src/`、`scripts/` 下的测试；其中 Worker 运行时检查会启动本地 workerd |
 | `npm run build` | 运行同样的生成步骤，再生成 `dist/` |
 | `npm run worker:check` | 离线打包 Worker 到 `worker/.wrangler/check`，不发布 |
 | `npm run browser:check` | 临时构建，检查公开页面、模拟账号页面、平板导航及下载失败恢复；所有外部请求被拦截 |
@@ -36,9 +36,13 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 构建生成的 `public/health.json` 记录 `status/app/version/buildTime/mode`，其中 `status: "ok"` 是固定标记，不执行数据库或 AI 探测。本地验证后，若它的变化只是新时间戳，在提交前执行 `git restore public/health.json`。不要一并还原其他手写文件。
 
+启动失败恢复脚本仍编辑 `public/boot-start.js`。生产构建由 `vite.config.js` 按文件内容生成 `assets/boot-start-<hash>.js` 并替换 HTML 引用，避免 CDN 把旧脚本与新页面混用。它保持普通脚本形式，即使模块入口下载失败，也能显示重新加载按钮。
+
 ## 这些检查能保护什么
 
 单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和Worker 聊天、语音、请求取消、输入限制和入口分派。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
+
+`worker/src/runtime.test.js` 用 Miniflare 启动 workerd，直接执行 Worker 源码，核对失效令牌、有效身份进入输入校验，以及认证重定向不转发令牌。兼容日期取自 `worker/wrangler.toml`；所有外部请求使用假接口，禁止访问真实网络。它能发现 Node 与 Workers 的 API 差异，但不能证明真实模型或账号可用。
 
 `scripts/lib/databaseGrants.test.js` 用 PGlite 的隔离 PostgreSQL 17 内存实例检查权限 SQL，也随 `npm test` 在 CI 运行。它验证正常个人读写、跨账号拒绝、公开书架、原资源管理员操作、重复应用时保留记录和行策略，以及 RLS 关闭时停止修改。测试账号与记录都是本地构造，不接收生产连接串或密钥；PGlite 仅是开发依赖，不进入网页。这是 SQL 行为检查，不是生产权限已经修好的证明。
 
