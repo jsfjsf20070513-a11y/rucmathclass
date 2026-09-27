@@ -48,15 +48,24 @@
 
 旧 `/resources/curate` 地址回到书架。资源推荐表单、提交接口和队列编码已移除，运行代码不再读写 `comments`；旧数据及历史权限 SQL 未执行修改。不要因历史数据仍在而恢复已经下线的产品入口。
 
-2026-09-27 在生产 Supabase（PostgreSQL 17.6）只读查询了系统目录：`review_states` 和 `ai_messages` 已开启 RLS，个人记录的行策略要求 `auth.uid() = user_id`；对话只有读取、新增、删除策略。`anon` 和 `authenticated` 都不是表所有者，没有超级用户或绕过 RLS 的权限，也没有加入其他角色。这个结论来自实际策略，不代表已经用两个真实账号测试过读写。
+2026-09-27 经用户授权，在生产 Supabase（PostgreSQL 17.6）执行了 [restrict_app_table_grants.sql](../sql/schema/restrict_app_table_grants.sql)，并重新查询系统目录核对结果。`review_states` 和 `ai_messages` 已开启 RLS，个人记录的行策略要求 `auth.uid() = user_id`；对话只有读取、新增、删除策略。`anon` 和 `authenticated` 都不是表所有者，没有超级用户或绕过 RLS 的权限，也没有加入其他角色。
 
 `resources` 允许公开读取，管理操作仍检查 `profiles.role`；`profiles` 只允许读取自己的行。`public.handle_new_user()` 固定写入普通用户角色，没有使用注册信息中的自报角色。本次未发现 public 中引用这几张表的视图，也没有读个人记录。
 
-表授权仍过宽：匿名角色保留了对话表的全套表权限，登录角色在这四张表上也有多余权限。行策略能限制常规读写，但不能代替表授权，例如 [PostgreSQL 的 TRUNCATE 不受行策略限制](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)。不能据此推断匿名用户已经通过网页读到了对话，也不能因为 RLS 开着就忽略多余授权。
+实际表权限已收紧为下表；表权限允许的操作仍须通过原有行策略。
+
+| 表 | 匿名角色 | 登录角色 |
+| --- | --- | --- |
+| `review_states` | 无 | 读取、新增、修改、删除自己的进度 |
+| `ai_messages` | 无 | 读取、新增、删除自己的对话 |
+| `resources` | 公开读取 | 公开读取；原管理员可新增、修改、删除 |
+| `profiles` | 无 | 读取自己的资料 |
+
+四张表的实际有效权限逐项符合预期，没有额外列授权；行策略、所有者、角色设置和全局默认授权与执行前一致。匿名 REST 接口使用不返回记录的 HEAD 请求核对：书架返回 200，三张个人表返回 401。没有读取或修改用户记录，也没有用两个真实账号测试完整写入流程。表权限和行策略都要检查，例如 [PostgreSQL 的 TRUNCATE 不受行策略限制](https://www.postgresql.org/docs/17/ddl-rowsecurity.html)。
 
 现场还确认，`postgres` 和 `supabase_admin` 在 public 中新建表时，会默认给匿名和登录角色全套表权限。两个现役个人表的定义已显式撤销多余授权，测试也模拟了这种默认配置。权限修正只针对现有四张表，不改共享库的全局默认授权；以后新增或重建表仍须明确授权。
 
-[restrict_app_table_grants.sql](../sql/schema/restrict_app_table_grants.sql) 准备了授权收紧：个人表仅限登录账号按现有功能读写，书目保留公开读取和原管理员操作，资料表保留本人读取。它不迁库、不改记录或 RLS，**尚未在生产执行**。应用前须用 [app_permissions.sql](../sql/audit/app_permissions.sql) 重新核对，并取得生产变更授权；不能整段重跑历史 SQL。
+这次权限修正不迁库、不改记录或 RLS。以后再次执行前，仍须用 [app_permissions.sql](../sql/audit/app_permissions.sql) 重新核对，并取得当次生产变更授权；不能整段重跑历史 SQL。
 
 ## 与 Raccord 的边界
 
