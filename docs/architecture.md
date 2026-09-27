@@ -19,7 +19,7 @@
 
 [authSession](../src/lib/authSession.js) 同时接收初始化查询和登录事件。新事件优先，旧初始化响应不能把账号改回去；退出结果也按账号和生命周期隔离。公开页面不会等待认证初始化才挂载。
 
-[authTransport](../src/lib/authTransport.js) 把认证请求的响应正文也纳入超时。Login 和资源推荐表单按账号重新挂载，旧账号的表单结果不会出现在新账号页面。
+[authTransport](../src/lib/authTransport.js) 把认证请求的响应正文也纳入超时。Login 表单按账号重新挂载，旧账号的表单结果不会出现在新账号页面。
 
 密码重置先核对 session，再向服务端核对令牌所属用户，最后用同一令牌更新。账号变化或明确失效的重置回调会关闭表单。写入结果不明时不允许连续提交，用户需退出后核对密码。
 
@@ -40,13 +40,11 @@
 
 [assistantClient](../src/lib/assistantClient.js) 发送最近的对话给 Worker；[aiAssistantBackend](../src/lib/aiAssistantBackend.js) 将一问一答一起写入 `ai_messages`，读取最近的文字历史。图片只留在当前页面，历史文字会注明曾有附图。收到回答和保存成功是两件事，保存不明时页面会明确提示。
 
-## 数据表与资源推荐
+## 数据表
 
-当前页面实际使用的表是：`review_states`（个人进度）、`ai_messages`（个人对话）、`resources`（公开增补书目）、`comments`（资源推荐队列）。认证使用 Supabase Auth，不是自建登录表。
+当前页面实际使用的表是：`review_states`（个人进度）、`ai_messages`（个人对话）、`resources`（公开增补书目）。认证使用 Supabase Auth，不是自建登录表。
 
-`ResourceCurate` 把推荐编码后写入 `comments`，其中 `album_id = 0` 是队列标记，不表示当前还有相册页面。读取列不包括邮箱。写入模块是 [resourceRecommendations](../src/lib/resourceRecommendations.js)，只接受资源推荐；旧审核、相册写入和角色查询已从运行代码移除。提交结果不明时会锁住当前表单，避免直接重复写入；重新打开页面并不能确认此前是否已入库。
-
-**因此资源推荐只完成了入队，站内审核流程没有闭合。** 不要根据函数名或提交成功文案说它能自动发布。
+旧 `/resources/curate` 地址回到书架。资源推荐表单、提交接口和队列编码已移除，运行代码不再读写 `comments`；旧数据及历史权限 SQL 未执行修改。不要因历史数据仍在而恢复已经下线的产品入口。
 
 SQL 中有 RLS 和列授权定义，但文件存在不等于线上已执行。改数据权限之前必须查询目标数据库的实际策略，不能从文档或客户端表现倒推安全性。
 

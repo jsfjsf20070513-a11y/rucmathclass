@@ -28,9 +28,8 @@ AI 默认请求班级站的 `/api/chat`。本地调试可用 `VITE_AI_ENDPOINT` 
 | `/vocabulary` | 登录后背词，保存复习进度，恢复本机未完成的一轮 |
 | `/assistant` | 登录后提问，可附图片，文字对话存入个人历史 |
 | `/login`、`/reset-password` | 登录、注册、邮箱验证码和密码重置 |
-| `/resources/curate` | 登录后提交资源推荐；当前没有站内审核页面 |
 
-路由以 [App.jsx](src/App.jsx) 为准。相册、协作台、Web3 等旧地址只做兼容跳转，不表示这些功能还在运行。
+路由以 [App.jsx](src/App.jsx) 为准。资源推荐、相册、协作台、Web3 等旧地址只做兼容跳转，不表示这些功能还在运行。
 
 ## 维护入口
 

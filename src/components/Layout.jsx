@@ -69,7 +69,7 @@ export default function Layout() {
 
       <footer className="site-footer">
         <p className="site-footer-secondary">Pour la classe.</p>
-        {/* 资源推荐和 404 等通用布局页面显示账号状态。 */}
+        {/* 404 等通用布局页面显示账号状态。 */}
         <p className="site-footer-auth">
           {user ? (
             <>

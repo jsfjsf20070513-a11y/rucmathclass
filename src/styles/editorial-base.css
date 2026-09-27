@@ -138,7 +138,6 @@
 /* Per-page column widths from the design contract (.dc.html <main> max-width).
    All stay centered via .page-column's margin:0 auto; only the cap changes. */
 .login-page { max-width: 600px; }      /* Login / ResetPassword */
-.curate-page { max-width: 720px; }     /* ResourceCurate */
 .notfound-page { max-width: 680px; }   /* 404 */
 
 .home-page {
@@ -3054,31 +3053,6 @@
 .reset-state p { margin: 0 0 18px; }
 .reset-state p:last-child { margin-bottom: 0; }
 .reset-ok { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ok); }
-
-/* ── ResourceCurate · 资源增补 (centered masthead + centered form) ── */
-.curate-form { max-width: 30rem; margin: 38px auto 0; text-align: center; }
-.curate-form label { display: block; margin: 0 0 26px; }
-.curate-form label > span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 14px; }
-.curate-form input,
-.curate-form select,
-.curate-form textarea {
-  width: 100%;
-  padding: 9px 0;
-  border: none;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.3);
-  background: transparent;
-  font-family: inherit;
-  font-size: 18px;
-  color: var(--ink);
-  text-align: center;
-}
-.curate-form textarea { line-height: 1.6; resize: vertical; text-align: center; }
-.curate-form select { cursor: pointer; text-align: center; text-align-last: center; }
-.curate-form input:focus,
-.curate-form select:focus,
-.curate-form textarea:focus { outline: none; border-bottom-color: var(--accent); }
-.curate-actions { margin-top: 8px; gap: 24px; align-items: baseline; justify-content: center; }
-.curate-note { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 
 /* ── Login · value-prop bullets (login mode) ───────────────────────── */
 .login-values {
