@@ -40,6 +40,8 @@ npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabular
 
 单测覆盖排程、题型、快照、提交确认、背词与对话控制器、首页转场与天气、资源分页、认证状态和Worker 聊天、语音、请求取消、输入限制和入口分派。背词控制器测试会走完提交、重试、刷新恢复和错词重练，也检查重复输入与旧账号迟到响应。接口测试使用模拟客户端，不证明生产 RLS、外部模型或邮件服务正常。
 
+`scripts/lib/databaseGrants.test.js` 用 PGlite 的隔离 PostgreSQL 17 内存实例检查权限 SQL，也随 `npm test` 在 CI 运行。它验证正常个人读写、跨账号拒绝、公开书架、原资源管理员操作、重复应用时保留记录和行策略，以及 RLS 关闭时停止修改。测试账号与记录都是本地构造，不接收生产连接串或密钥；PGlite 仅是开发依赖，不进入网页。这是 SQL 行为检查，不是生产权限已经修好的证明。
+
 `npm run browser:check` 使用 Chromium 验证 390×844 与 1280×800 的首页翻页、登录展开、书架翻到末页、资源失败后恢复、表单入口、旧资源推荐地址回书架、404 出口，以及模拟登录后的背词预习、答疑历史、清空和退出。另查 800×1024 的页内导航、“减少动态效果”模式，以及路由慢下载、模块失败、入口脚本失败后的重载。首次使用前执行 `npx playwright install chromium`。它使用占位接口配置，账号和历史由 `scripts/browser-account-fixture.mjs` 模拟，拦截全部外部 HTTP 和 WebSocket；临时构建不覆盖 `dist/`，完成后恢复原 health 文件。截图和失败轨迹放在 `output/playwright/`，CI 失败时上传。这些检查不代表真实认证服务已通过验收。
 
 这些检查还没有覆盖真实移动设备、Safari 或登录后的完整流程。涉及相关状态或布局的修改，仍需在真实页面验证：账号切换、请求失败后的重试、背词最后一题与刷新恢复、资源云端失败后的静态目录、AI 保存失败提示。改首页还要确认登录前后页数变化和翻页动画、窄屏肖像加载和横向溢出。改路由加载时，用本地生产构建验证慢下载、模块失败和整个入口脚本失败后的重载。不要用注入 DOM 拼出的截图代替验证。
@@ -51,9 +53,11 @@ CI 的实际触发范围见 [.github/workflows/ci.yml](../.github/workflows/ci.y
 SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是供核对的定义与历史记录，不是一套安装顺序，也不证明生产已应用。
 
 - [schema/setup_vocabulary.sql](../sql/schema/setup_vocabulary.sql)、[schema/setup_ai_history.sql](../sql/schema/setup_ai_history.sql) 对应现役个人进度和对话表。
+- [schema/restrict_app_table_grants.sql](../sql/schema/restrict_app_table_grants.sql) 是根据实际权限准备的生产修正，尚未应用。它在一个事务内收紧四张表的浏览器角色授权，不改记录或行策略；表缺失或 RLS 未开启时终止。执行前重新核对现场，并单独取得生产变更授权，不能把前端部署理解成自动执行此 SQL。
 - [legacy/setup_official_content.sql](../sql/legacy/setup_official_content.sql) 混合了现役 resources 和退役相册，不能当作完整的当前 schema。
 - `sql/legacy/` 其余文件保留旧存储桶、角色和综合授权 SQL；不要整段重跑来修权限。
 - [audit/comments_permissions.sql](../sql/audit/comments_permissions.sql) 只有三条 SELECT，查看执行时的列授权、表授权和行策略，不保存过去的生产结论。
+- [audit/app_permissions.sql](../sql/audit/app_permissions.sql) 只读现役表和资料表的所有者、行策略、表授权、额外列授权、客户端角色及新建表的默认授权。它不读个人记录；查询结果描述执行当时的状态。
 
 ## 发布前的本地检查
 

@@ -54,6 +54,6 @@ for delete
 using ( auth.uid() = user_id );
 
 -- 3) Grants ------------------------------------------------------------------
--- anon has no business here (the trainer requires sign-in); revoke explicitly.
-revoke all on public.review_states from anon;
+-- 先撤销再授予，避免旧的 TRUNCATE / REFERENCES / TRIGGER 授权继续保留。
+revoke all on public.review_states from anon, authenticated;
 grant select, insert, update, delete on public.review_states to authenticated;
