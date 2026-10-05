@@ -112,7 +112,7 @@ describe('班级站发布', () => {
       changed = true
       return { buildTime: 'old' }
     }
-    await expect(deploySite(config)).rejects.toThrow('工作区')
+    await expect(deploySite(config)).rejects.toThrow('未提交')
     expect(commands.some(([name]) => ['ssh', 'rsync'].includes(name))).toBe(false)
   })
 

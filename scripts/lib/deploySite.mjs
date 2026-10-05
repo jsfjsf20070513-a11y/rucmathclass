@@ -19,7 +19,7 @@ export async function deploySite({ root, mode, env, run, isFile, getCheckedBuild
   const branch = await git('branch', '--show-current')
   const commit = await git('rev-parse', 'HEAD')
   const requireClean = async () => {
-    if (await git('status', '--porcelain', '--untracked-files=all')) throw new Error('工作区不干净；请先处理改动，不会自动丢弃文件。')
+    if (await git('status', '--porcelain', '--untracked-files=all')) throw new Error('还有未提交的改动。请先处理这些改动，再重试。')
   }
   const requireRemote = async () => {
     const remote = await git('ls-remote', '--exit-code', 'origin', 'refs/heads/mathclass/main')

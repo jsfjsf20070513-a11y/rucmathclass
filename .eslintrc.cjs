@@ -16,6 +16,10 @@ module.exports = {
     {
       files: ['src/pages/**/*.{js,jsx}', 'src/components/**/*.{js,jsx}', 'src/hooks/**/*.{js,jsx}'],
       rules: {
+        'no-restricted-syntax': ['error', {
+          selector: 'ImportExpression',
+          message: '这里使用静态导入；页面按需下载统一放在 routes/pageLoaders.js。',
+        }],
         'no-restricted-imports': ['error', {
           patterns: [{
             group: ['**/supabase', '**/supabase.js', '@supabase/supabase-js', '@supabase/supabase-js/**'],
@@ -27,6 +31,10 @@ module.exports = {
     {
       files: ['src/lib/**/*.{js,jsx}', 'src/data/**/*.{js,jsx}'],
       rules: {
+        'no-restricted-syntax': ['error', {
+          selector: 'ImportExpression',
+          message: '底层逻辑和数据使用静态导入，方便检查模块依赖。',
+        }],
         'no-restricted-imports': ['error', {
           patterns: [{
             group: ['**/pages/**', '**/components/**', '**/hooks/**', '**/context/**', 'react', 'react/**', 'react-dom', 'react-dom/**', 'react-router-dom', 'react-router-dom/**'],

@@ -103,7 +103,7 @@ export async function checkedBuild({ root, run, log }) {
     }
     await writeFile(healthPath, originalHealth)
     if ((await releaseIdentity(root, run)).key !== identity.key) throw new Error('检查期间源码、依赖或构建配置发生变化，请重新检查。')
-    if ((await run('git', ['status', '--porcelain', '--untracked-files=all'], { capture: true })).trim()) throw new Error('检查后工作区出现改动，未保存通过记录。')
+    if ((await run('git', ['status', '--porcelain', '--untracked-files=all'], { capture: true })).trim()) throw new Error('检查后工作区出现改动，检查结果未保存。请处理改动后重试。')
     const health = JSON.parse(await readFile(join(artifact, 'health.json'), 'utf8'))
     if (health.app !== 'MathClassWebsite' || health.mode !== 'static-spa' || !Number.isFinite(Date.parse(health.buildTime))) throw new Error('构建缺少有效的班级站标记。')
     const builtFrom = (await run('git', ['rev-parse', 'HEAD'], { capture: true })).trim()

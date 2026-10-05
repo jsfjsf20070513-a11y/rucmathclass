@@ -1,32 +1,27 @@
 # 在这个仓库工作
 
-这是班级网站的代码仓。先从 `package.json`、`src/App.jsx` 和相关调用链确认现状，再改代码。MD 是索引，不是证据；代码与说明不一致时，指出差异并修正说明，不按旧计划补功能。
+先从 `package.json`、`src/App.jsx` 和相关调用确认现状。文档只当地图；代码和说明不一致时，指出差异，不按旧计划补功能。
 
-## 这次工作的范围
+## 入口
 
-继续整理现有功能和架构，尽量保持页面设计。不因旧文档、旧路由或旧 SQL 的存在，恢复相册、Web3、作品站或管理后台。需要新增功能时先确认方向。
+- [README](README.md)：网站、本地假数据和页面对比。
+- [架构](docs/architecture.md)：代码入口、保存顺序和账号处理。
+- [开发](docs/development.md)：生成文件、发布方法和带日期的线上记录。
+- [界面](docs/design-constitution.md)：样式位置和页面验证。
+- [未完成项](docs/remaining-work.md)、[Worker](worker/README.md)。
 
-## 从哪里找
+## 这次工作的要求（用户于 2026-10-05 确认）
 
-- [README](README.md)：页面和本地运行。
-- [架构](docs/architecture.md)：模块、数据流和 Raccord 边界。
-- [开发](docs/development.md)：生成文件、检查命令和运维文件。
-- [界面](docs/design-constitution.md)：现有 JSX/CSS 对应关系。
-- [剩余问题](docs/remaining-work.md)：已知但还没完成的工作。
-- [Worker](worker/README.md)：服务接口。
+保持现有设计。页面先给前后对比图，确认后再落实。中文写清楚，一句话只说一件事；改完另请一个代理挑文字毛病。
 
-## 改动时守住的边界
+不恢复旧相册、Web3 或管理后台。不从本仓推断 Raccord 的现状。服务器还承载青协网站和代理出口，只操作班级站。谨慎保留文档和 skill，不为一次任务增加新入口。
 
-页面、组件和 hook 不要直接导入 Supabase；通过业务 hook 或 backend 调用。`lib` 和 `data` 不要反过来导入 React、页面、组件或 hook。这两条的静态 import/export 由 ESLint 检查；动态 import() 和运行时行为暂未覆盖。
+模块导入限制由 ESLint 检查。词条 ID 对应既有进度，不能重排。保存结果确认后才能进入下一题；账号切换后，旧请求不能覆盖新状态。原因和代码入口见架构说明。SQL 按 `schema/audit/legacy` 分工，不能整段顺序执行。
 
-词条 ID 关联 `review_states.word_id`，不要为了整理词库改 ID。排程结果只有经保存确认后才能推进；账号切换后，旧请求不能覆盖新账号状态。相关代码和测试见架构说明。
+## 完成一轮
 
-不要把仓库里的 SQL 当作可以全部顺序执行的安装脚本。现役个人表定义在 `sql/schema/`，混合旧业务与授权在 `sql/legacy/`，只读核查在 `sql/audit/`。也不要仅根据本仓推断 Raccord 的数据库、部署目录或线上配置。
+在工作分支修改，同一目录只有一位写入者。提交前运行 `npm run lint && npm test && npm run build`；Worker 修改加跑 `npm run worker:check`，交互或布局修改加跑 `npm run browser:check` 并查看真实页面。构建若只更新了 `public/health.json` 的时间戳，提交前还原它。
 
-## 完成一轮工作
+提交写清改了什么、怎样验证、还有什么未验。合并和上线必须取得明确授权；“继续”不算。删除分支前，先把备份标签推到远端。
 
-在工作分支修改，提交前运行 `npm run lint && npm test && npm run build`。构建会改写 `public/health.json`；若它只是本次验证产生的时间戳，在提交前还原。Worker 修改还要跑 `npm run worker:check`；交互和布局修改跑 `npm run browser:check` 并看真实页面，不能只看测试数。
-
-提交说明写清改了什么、怎么验证、哪里仍未验证。同一工作目录只保留一位写入者。合并 PR 和部署需要用户明确授权；“继续”不自动表示授权合并或上线。
-
-`AGENTS.md` 指向本文件，其他代理入口只链接这里，不另写一套项目事实。不要把会话过程、猜测和未完成计划不断追加进来。
+`AGENTS.md` 指向本文件。旧材料放 `docs/archive/`；不要把会话经过和未定计划写进代理入口。

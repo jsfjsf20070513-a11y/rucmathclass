@@ -14,7 +14,7 @@ export function createReleaseHttp(fetchImpl = fetch) {
   return {
     async before() {
       const health = JSON.parse((await read('/health.json')).toString())
-      if (health.app !== 'MathClassWebsite' || !Number.isFinite(Date.parse(health.buildTime))) throw new Error('线上 health 不是有效的班级站标记，已停止发布。')
+      if (health.app !== 'MathClassWebsite' || !Number.isFinite(Date.parse(health.buildTime))) throw new Error('线上版本文件 health.json 无效，已停止发布。')
       return { app: health.app, buildTime: health.buildTime, sourceDigest: health.sourceDigest || null }
     },
     async verify(build) {

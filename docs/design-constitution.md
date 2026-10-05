@@ -1,41 +1,22 @@
 # 现有界面怎么组织
 
-这份说明从当前 JSX 和 CSS 重新整理，沿用原文件名以免入口失效。它记录已经实现的样式，不根据旧设计稿给网站添加需求，也不能代替真实页面验证。
-
-## 页面结构
-
-[Layout.jsx](../src/components/Layout.jsx) 对首页、背词、资源、AI、登录和重置页直接渲染页面，不附加通用页眉页脚。404 使用通用布局；旧资源推荐地址直接回书架。
-
-首页是全屏横翻：未登录时有封面、背词、定理、书架和引语五页；登录后在引语前插入 AI 入口。登录表单从引语页展开。布局、账号变化和页数之间的关系在 [Home.jsx](../src/pages/Home.jsx)，通用翻页在 [usePageFlip.js](../src/hooks/usePageFlip.js)。改内部结构时不要顺便改这些视觉和交互行为。
-
-封面肖像统一从 [portraits.json](../src/data/portraits.json) 读取，图片在 `public/portraits/`。开发和构建会先做离线素材检查；它检查文件标记，不代替真实图片解码和页面观感验证。
-
-## 样式在哪里
+这里只说明从哪里改，以及哪些改动必须看真实页面。旧 HTML 样稿不是需求，也不能证明现有页面已经实现某个功能。
 
 | 范围 | 代码入口 |
 | --- | --- |
-| 全站颜色、基础字体、间距 | [index.css](../src/index.css) 的 `:root` |
-| 共用导航、翻页、文字按钮、动效及纸面颜色 | [shared-controls.css](../src/styles/shared-controls.css)、[PageNav](../src/components/PageNav.jsx)、[PageControls](../src/components/PageControls.jsx) |
-| 首页 | [magazine.css](../src/styles/magazine.css) |
-| 背词 | [vocabulary.css](../src/styles/vocabulary.css) |
-| 书架 | [resources.css](../src/styles/resources.css) |
-| AI 对话 | [assistant.css](../src/styles/assistant.css) |
-| 登录与密码重置 | [auth.css](../src/styles/auth.css) |
-| 通用布局、每日一句、状态提示与 404 | [editorial-base.css](../src/styles/editorial-base.css) |
-| 最后的窄屏留白修正 | [viewport-overrides.css](../src/styles/viewport-overrides.css) |
+| 全站颜色、字体、间距 | [index.css](../src/index.css)、[App.css](../src/App.css) |
+| 共用导航、翻页和文字按钮 | [shared-controls.css](../src/styles/shared-controls.css)、[PageNav](../src/components/PageNav.jsx)、[PageControls](../src/components/PageControls.jsx) |
+| 首页 | [Home.jsx](../src/pages/Home.jsx)、[magazine.css](../src/styles/magazine.css) |
+| 背词 | [Vocabulary.jsx](../src/pages/Vocabulary.jsx)、[vocabulary.css](../src/styles/vocabulary.css) |
+| 书架 | [Resources.jsx](../src/pages/Resources.jsx)、[resources.css](../src/styles/resources.css) |
+| 答疑 | [Assistant.jsx](../src/pages/Assistant.jsx)、[assistant.css](../src/styles/assistant.css) |
+| 登录与重置密码 | [auth.css](../src/styles/auth.css) |
+| 通用布局和窄屏修正 | [editorial-base.css](../src/styles/editorial-base.css)、[viewport-overrides.css](../src/styles/viewport-overrides.css) |
 
-当前底色以暖纸色为主，正文用深褐色，提示和链接使用克制的酒红色。基础变量是 `--paper: #fdfcf8`、`--ink: #221d18`、`--accent: #7f302b`；杂志首页和登录页另用 `#f4efe6`。
+2026-10-05 用户要求：页面修改先给真实本地站的前后对比图，确认后再落实。命令见 [README](../README.md)。先保持现有设计，不顺便加说明小字或改视觉。
 
-基础正文是 EB Garamond 与中文衬线字体回退；杂志正文使用 Cormorant Garamond，标题和小型导航使用 Bodoni Moda，首页 Math 字样使用 Pinyon Script。字体声明和载入位置以 CSS、[index.html](../index.html) 为准。
+`App.css` 的导入顺序决定样式覆盖。共享规则先于页面规则，窄屏修正在最后。不要只为拆文件就改成按路由加载，否则同一页面可能因访问顺序不同而变样。
 
-登录页内容居中，最大宽度 420px，输入框只有底线。各杂志页使用自己的留白和窄屏规则。不要把旧 `.editorial-*` 或通用按钮规则直接套到新位置而不看实际效果。
+删除样式前要查 JSX、动态类名和脚本生成的内容。旧前缀本身不能证明代码没用。修改共享规则后，要实际查看所有受影响页面。
 
-## 改动时怎样核对
-
-保持中文、法文和数学公式可读。检查桌面与窄屏的对齐、断行、按钮状态、错误提示和键盘焦点；首页还要检查登录前后插页、退出和动画结束状态。
-
-`App.css` 只按固定顺序导入上述文件，仍是 App 的唯一样式入口。共享规则先于各页面规则载入。共享控件保留原有声明数值与响应式条件：导航在 880px 以下缩小，页码在 640px 以下调整位置；全局层叠仍需在真实页面中核对，不能直接改成按路由懒加载。
-
-`editorial-base.css` 的旧管理台、钱包、旧首页及旧版背词、答疑规则已按当前代码引用清理。账号表单的基础规则和纸面覆盖都在 `auth.css`。以后删除样式仍需核对 JSX、动态类名、脚本生成的内容及实际页面，不能仅凭前缀旧就删除。
-
-`docs/` 里的 HTML 样稿没有进入应用路由，不能用它们证明现有页面已经实现某个功能。
+首页登录后会增加一页。改页序、翻页或登录展开时，要同时验证登录前后、退出、动画结束和窗口缩放。其他页面检查手机与桌面的对齐、断行、横向溢出、按钮状态和键盘焦点。
