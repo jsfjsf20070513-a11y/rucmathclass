@@ -10,6 +10,22 @@
 
 ```bash
 npm ci
+npm run demo
+```
+
+这是使用假数据的本地网站，不读取真实服务配置。假账号和密码会显示在终端。重启演示并重新打开页面后，假数据会重置。用 `npm run demo -- --help` 查看登录、背词、答疑和异常场景。
+
+页面改动先截图对比：
+
+```bash
+npm run compare -- --base mathclass/main --scene vocabulary-study
+```
+
+“改前”取指定提交，“改后”取当前工作区。两边共用假数据；手机和桌面拼图保存在 `output/playwright/comparisons/`。首次使用先运行 `npx playwright install chromium`。更多场景见命令的 `--help`，不在文档里另列一份。
+
+需要连接已配置的真实服务时运行：
+
+```bash
 npm run dev
 ```
 
