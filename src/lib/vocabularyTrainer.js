@@ -1,4 +1,4 @@
-import { buildStudyQueue, computeDeckStats, computeStudyStreak } from './srsScheduler'
+import { buildStudyQueue, computeDeckStats } from './srsScheduler'
 import { EXERCISE_TYPES, gradeExercise } from './exerciseGenerator'
 import { createReviewSubmission, recordSessionScore, confirmSnapshot } from './reviewSubmission'
 import { MAX_NEW, MAX_REVIEW, VALID_DECK, buildSession } from './vocabularySession'
@@ -27,7 +27,7 @@ export function createVocabularyTrainer({ userId, repository, snapshots, deck = 
   }
   const deckStats = (level) => {
     const time = now()
-    return { ...computeDeckStats({ deck: selectDeck(level), stateMap: states, now: time }), streak: computeStudyStreak(Object.values(states), time) }
+    return computeDeckStats({ deck: selectDeck(level), stateMap: states, now: time })
   }
   const snapshot = (pending = null) => ({
     userId, level: state.level, status: state.status === 'study' ? 'study' : 'ready',

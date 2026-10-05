@@ -13,7 +13,6 @@ import {
   cleanFrenchDeck,
   buildStudyQueue,
   computeDeckStats,
-  computeStudyStreak,
   MASTERED_STAGE,
   FRENCH_GENDERS,
 } from './srsScheduler'
@@ -239,39 +238,6 @@ describe('computeDeckStats', () => {
   it('counts an all-new deck as all due', () => {
     expect(computeDeckStats({ deck, stateMap: {}, now: NOW }))
       .toEqual({ total: 4, newCount: 4, learning: 0, mastered: 0, due: 4 })
-  })
-})
-
-describe('computeStudyStreak', () => {
-  const states = (dates) => dates.map((d) => ({ updated_at: d }))
-
-  it('counts consecutive days ending today', () => {
-    const s = states(['2026-06-17T08:00:00Z', '2026-06-16T20:00:00Z', '2026-06-15T09:00:00Z'])
-    expect(computeStudyStreak(s, NOW)).toBe(3)
-  })
-
-  it('collapses multiple sessions on the same day into one', () => {
-    const s = states(['2026-06-17T01:00:00Z', '2026-06-17T23:00:00Z'])
-    expect(computeStudyStreak(s, NOW)).toBe(1)
-  })
-
-  it('still counts a streak ending yesterday (today not studied yet)', () => {
-    const s = states(['2026-06-16T08:00:00Z', '2026-06-15T08:00:00Z'])
-    expect(computeStudyStreak(s, NOW)).toBe(2)
-  })
-
-  it('returns 0 when the most recent day is older than yesterday', () => {
-    expect(computeStudyStreak(states(['2026-06-14T08:00:00Z']), NOW)).toBe(0)
-  })
-
-  it('breaks the streak on a gap', () => {
-    // today + yesterday, then a gap (skip 06-15), then 06-14 → streak = 2
-    const s = states(['2026-06-17T08:00:00Z', '2026-06-16T08:00:00Z', '2026-06-14T08:00:00Z'])
-    expect(computeStudyStreak(s, NOW)).toBe(2)
-  })
-
-  it('returns 0 for no history', () => {
-    expect(computeStudyStreak([], NOW)).toBe(0)
   })
 })
 

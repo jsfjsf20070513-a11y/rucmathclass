@@ -17,6 +17,7 @@ export const SCENES = {
   'vocabulary-study': { title: '背词预习', path: '/vocabulary', study: true },
   'vocabulary-empty': { title: '今日没有待学词', path: '/vocabulary', emptyReviews: true },
   'vocabulary-save-error': { title: '背词保存失败', path: '/vocabulary', answer: true, reviewStatus: 503 },
+  'vocabulary-finish': { title: '背词完成', path: '/vocabulary', finish: true },
   assistant: { title: '已有对话', path: '/assistant' },
   'assistant-empty': { title: '新对话', path: '/assistant', emptyHistory: true },
   'assistant-error': { title: '答疑请求失败', path: '/assistant', emptyHistory: true, chatStatus: 429 },

@@ -22,19 +22,20 @@ export async function captureScene(browser, demo, viewport, path) {
     await page.goto(demo.url)
     await page.locator('#root > :not(.boot-overlay)').first().waitFor()
     await page.waitForFunction(() => !document.querySelector('.boot-overlay'))
-    if (demo.scene.answer) {
+    if (demo.scene.answer || demo.scene.finish) {
       const options = page.locator('.vpl-option')
       await options.first().waitFor()
       const labels = await options.allTextContents()
       await options.nth(labels.findIndex((label) => !label.includes('你好'))).click()
-      await page.getByRole('button', { name: '重试保存 →' }).waitFor()
+      if (demo.scene.finish) await page.getByRole('button', { name: /Terminer/ }).click()
+      else await page.getByRole('button', { name: '重试保存 →' }).waitFor()
     }
     if (demo.scene.chatStatus) {
       await page.getByRole('textbox', { name: '向 AI 助手提问' }).fill('解释一下导数。')
       await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
       await page.getByRole('alert').waitFor()
     }
-    const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
+    const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
       : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'

@@ -399,7 +399,7 @@ export default function Vocabulary() {
         <p className="vpl-done-score">答对 {stats.correct} / {stats.attempts} · 正确率 {acc} · 最高连击 ×{stats.maxCombo}</p>
         {deckStats ? (
           <p className="vpl-deckstats">
-            已掌握 {deckStats.mastered} · 学习中 {deckStats.learning} · 新词 {deckStats.newCount} · 连续 {deckStats.streak} 天
+            已掌握 {deckStats.mastered} · 学习中 {deckStats.learning} · 新词 {deckStats.newCount}
           </p>
         ) : null}
         <div className="vpl-done-rule" aria-hidden="true" />
