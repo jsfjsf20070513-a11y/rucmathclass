@@ -32,7 +32,7 @@ npm run vocab:import -- scripts/vocab-source.json
 npm run vocab:import -- scripts/vocab-source.json --out src/data/frenchVocabulary.js
 ```
 
-第一条只输出报告。第二条写词条数据；检查拒绝项、重复项和 ID 后再执行。这个命令不导入用户的背词进度。不要直接编辑生成的 `frenchVocabulary.js` 和 `dailyTheoremNotes.generated.js`。
+第一条只输出报告。第二条写词条数据。有拒绝项或重复 ID 时，命令报错且不改文件。写入当前词库时，还会检查旧 ID 是否缺失，以及已有法语词是否换了 ID。这个命令不导入用户的背词进度。不要直接编辑生成的 `frenchVocabulary.js` 和 `dailyTheoremNotes.generated.js`。
 
 构建生成的 `public/health.json` 记录 `status/app/version/buildTime/mode`，其中 `status: "ok"` 是固定标记，不执行数据库或 AI 探测。本地验证后，若它的变化只是新时间戳，在提交前执行 `git restore public/health.json`。不要一并还原其他手写文件。
 

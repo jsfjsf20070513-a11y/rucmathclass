@@ -49,6 +49,7 @@ export function parseCsv(text) {
       sawAny = true
     }
   }
+  if (inQuotes) throw new Error('CSV 有一处引号没有闭合。原文件未改，请修正后重试。')
   if (sawAny || field.length || row.length) {
     row.push(field)
     rows.push(row)
@@ -119,6 +120,10 @@ export function importVocabulary(text, { format } = {}) {
       return
     }
     const id = deriveId(word)
+    if (!id) {
+      rejected.push({ index, french: word.french, errors: ['词条 ID 不能为空白。'] })
+      return
+    }
     if (seenIds.has(id)) {
       duplicates.push({ index, id })
       return
@@ -151,4 +156,22 @@ ${body}
 
 export default frenchVocabulary
 `
+}
+
+// 校验失败时禁止写文件，避免用部分词条覆盖整份词库。
+export function assertVocabularyWrite({ words, report }, previous = []) {
+  if (!words.length || report.rejected.length || report.duplicates.length) {
+    throw new Error('词表有错误、重复 ID 或没有有效词条。原文件未改，请修正后重试。')
+  }
+  const ids = new Set(words.map((word) => word.id))
+  const missing = previous.filter((word) => !ids.has(word.id))
+  if (missing.length) throw new Error(`导入会丢失 ${missing.length} 个现有词条 ID。原文件未改；请保留旧 ID。`)
+  const oldIdsByFrench = new Map()
+  for (const word of previous) {
+    const ids = oldIdsByFrench.get(word.french) || new Set()
+    ids.add(word.id)
+    oldIdsByFrench.set(word.french, ids)
+  }
+  const changed = words.filter((word) => oldIdsByFrench.has(word.french) && !oldIdsByFrench.get(word.french).has(word.id))
+  if (changed.length) throw new Error(`有 ${changed.length} 个现有词被分配了别的 ID。原文件未改；请保留词与 ID 的对应关系。`)
 }
