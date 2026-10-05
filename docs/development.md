@@ -37,7 +37,7 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 发布前设置 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER` 和 `MATHCLASS_DEPLOY_SSH_KEY`。密钥必须使用绝对路径。获得明确上线授权后，运行 `bash deploy.sh --publish`。发布仅允许 `mathclass/main`，且本地提交必须与远端一致；上传前会再次核对。
 
-上传后核对用户平时访问的首页、版本文件、脚本和样式。记录保存在 `.cache/mathclass-release/records/`，失败也会记录停止位置。文件核对通过不能代替真实账号和 AI 验证。上传失败可能只更新了部分文件，脚本不会自动回滚，也不会把失败记为成功。
+上传后核对用户平时访问的首页、版本文件、脚本和样式。Cloudflare 当前会给首页插入检测脚本。检查只在比较内容时去掉已核实的完整脚本，其余内容必须与构建一致。脚本模板变化也会报错。记录保存在 `.cache/mathclass-release/records/`，失败也会记录停止位置。文件核对通过不能代替真实账号和 AI 验证。上传失败可能只更新了部分文件，脚本不会自动回滚，也不会把失败记为成功。
 
 发布目录固定为 `/var/www/MathClassWebsite/dist`。此命令不发布 Worker，不改服务器配置，不操作同机的青协网站和代理服务。构建中的 `health.json` 会另加一串根据源码计算的校验值，用来确认发布文件对应哪份源码；它仍不检查数据库或 AI。
 
@@ -45,16 +45,18 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 ## 最近一次发布核验
 
-以下是 2026-09-27 的现场记录，不代表工作分支已经上线。此次发布获用户明确授权；没有读取、复制或修改个人记录。
+以下是 2026-10-05 的现场记录。用户明确授权合并、部署 PR #56；没有读取或修改个人记录。
 
 | 项目 | 当次结果 |
 | --- | --- |
-| 前端源码 | `85567d605aba1b546613cab5f69e9779bcb5da49`，PR #54 |
-| 公网 health | `2026-09-27T06:58:56.817Z`，应用标记 `MathClassWebsite` |
-| Worker | `mathclass-ai`，版本 `63bb4a7c-9379-422d-9b8f-13ab2e1d60db`，100% 流量；源码 `d6f9bd7` |
-| 身份服务 | 前端与 Worker 均使用班级站项目 `xfwkjhajrqxsakzovcwx` |
-| 文件与备份 | 发布目录 `/var/www/MathClassWebsite/dist`；旧文件和 Nginx 配置在 `/var/backups/mathclass-release-20260927T062732Z/` |
-| 已核对 | 源站 HTML、公网主 JS/CSS 和启动脚本与产物一致；桌面、手机首页及书架可用 |
-| 接口 | 未登录和失效令牌为 401，错误方法 405，未知语音路径 404，预检 204 |
+| 前端源码 | `0539f6f8a0c87e69cfe00eb313b8446cea3ea005`，PR #56 |
+| 公网 health | `2026-10-05T10:37:50.635Z`，应用标记 `MathClassWebsite` |
+| Worker | `mathclass-ai`，版本 `8780d6b7-4d6c-420d-a368-04cba2d6e70e`，100% 流量 |
+| 身份服务 | 前端仍使用班级站项目 `xfwkjhajrqxsakzovcwx`；Worker 的已有密钥配置保留 |
+| 文件与备份 | 发布目录 `/var/www/MathClassWebsite/dist`；旧网页备份在 `/var/backups/mathclass-release-20261005T103818Z/`，备份已逐文件核对 |
+| 已核对 | 服务器上 161 个文件与构建一致；公网首页去掉已确认的 Cloudflare 检测脚本后相同，其余 13 个版本文件、脚本和样式完全一致 |
+| 接口 | 未登录和失效令牌返回 401，错误方法 405，未知语音路径 404，预检 204 |
 
-当次调整了班级站的网页资源访问限制（CSP），允许天气请求，移除 Solana devnet。Nginx 检查通过后重新加载，主站配置文件未替换。Raccord 未发布。真实账号、模型回答和历史保存仍未验证，见 [剩余问题](remaining-work.md)。
+首次自动核对因 Cloudflare 插入脚本而报错。原失败记录保留；修正后的检查已通过。补充结果见 `.cache/mathclass-release/public-verified-0539f6f.json` 和 `manual-files-0539f6f.json`。本次未改服务器或 Cloudflare 配置，也未操作同机服务和 Raccord。
+
+[上一版现场记录](https://github.com/jsfjsf20070513-a11y/rucmathclass/blob/0539f6f8a0c87e69cfe00eb313b8446cea3ea005/docs/development.md#最近一次发布核验)保留在 Git 历史中。真实账号、模型回答和历史保存仍未验证，见 [剩余问题](remaining-work.md)。
