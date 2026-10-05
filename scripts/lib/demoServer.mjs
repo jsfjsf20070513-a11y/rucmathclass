@@ -21,11 +21,11 @@ function bootstrap({ session, key, runId, scene }) {
     localStorage.setItem(marker, runId)
   }
   localStorage.setItem('mcw_weather_cache', JSON.stringify({ at: Date.now(), w: { temp: 20, code: 0, isDay: 1 } }))
-  if ((scene.study || scene.answer || scene.finish) && !localStorage.getItem(`mcw_vocab_session_v2:${session.user.id}`)) {
+  if ((scene.study || scene.answer || scene.finish || scene.queue) && !localStorage.getItem(`mcw_vocab_session_v2:${session.user.id}`)) {
     localStorage.setItem(`mcw_vocab_session_v2:${session.user.id}`, JSON.stringify({
       v: 2, userId: session.user.id,
       day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
-      status: scene.study ? 'study' : 'ready', level: 'all', queue: [{ id: 'fr-bonjour' }],
+      status: scene.study ? 'study' : 'ready', level: 'all', queue: (scene.queue || ['fr-bonjour']).map((id) => ({ id })),
       i: 0, studyIdx: 0, stats: { correct: 0, attempts: 0, combo: 0, maxCombo: 0 }, wrongIds: [],
     }))
   }

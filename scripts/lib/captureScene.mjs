@@ -35,7 +35,7 @@ export async function captureScene(browser, demo, viewport, path) {
       await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
       await page.getByRole('alert').waitFor()
     }
-    const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
+    const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.queue ? '.vpl-match' : demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
       : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'

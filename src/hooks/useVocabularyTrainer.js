@@ -6,15 +6,17 @@ import * as repository from '../lib/vocabularyBackend'
 import { useVocabularyAudio } from './useVocabularyAudio'
 
 const snapshots = { read: readSessionSnapshot, write: writeSessionSnapshot, clear: clearSessionSnapshot }
+const ownsKeyboard = (event) => Boolean(event.target?.closest?.('button, a, input, textarea, select, [role="button"], [role="link"], [contenteditable]:not([contenteditable="false"])'))
+const skipShortcut = (event) => event.defaultPrevented || event.repeat || event.isComposing || event.keyCode === 229 || event.altKey || event.ctrlKey || event.metaKey
 
 // Browser adapter: account lifetime, keyboard, focus and audio only.
 export function useVocabularyTrainer(userId) {
   const trainer = useMemo(() => createVocabularyTrainer({ userId, repository, snapshots }), [userId])
   const state = useSyncExternalStore(trainer.subscribe, trainer.getSnapshot)
-  const { status, phase, current, i, lastCorrect, match } = state
+  const { status, phase, current, i, studyIdx, lastCorrect, match } = state
   const { choose, submitSpelling, next, commencer, studyNext } = trainer
   const inputRef = useRef(null)
-  const { tone, speak } = useVocabularyAudio()
+  const { tone, speak, cancelSpeech } = useVocabularyAudio()
 
   useEffect(() => {
     trainer.initialize()
@@ -22,8 +24,8 @@ export function useVocabularyTrainer(userId) {
   }, [trainer])
 
   useEffect(() => {
-    return () => { try { window.speechSynthesis?.cancel() } catch { /* optional audio */ } }
-  }, [trainer, i, status])
+    return cancelSpeech
+  }, [trainer, i, studyIdx, status, phase, cancelSpeech])
 
   useEffect(() => {
     if (status === 'ready' && phase === 'feedback') tone(lastCorrect)
@@ -45,19 +47,19 @@ export function useVocabularyTrainer(userId) {
   useEffect(() => {
     if (status !== 'ready') return undefined
     const onKey = (event) => {
-      const tagName = event.target?.tagName
-      const inField = tagName === 'INPUT' || tagName === 'TEXTAREA'
+      if (skipShortcut(event)) return
+      const ex = current?.exercise
+      const spellingSubmit = phase === 'answer' && ex?.type === EXERCISE_TYPES.spelling && event.target === inputRef.current && event.key === 'Enter'
+      if (ownsKeyboard(event) && !spellingSubmit) return
       if (phase === 'feedback') {
         if (event.key === 'Enter' || event.code === 'Space') {
-          if (inField && event.key !== 'Enter') return
           event.preventDefault()
           next()
         }
         return
       }
-      const ex = current?.exercise
       if (!ex) return
-      if ((ex.type === EXERCISE_TYPES.recognition || ex.type === EXERCISE_TYPES.cloze || ex.type === EXERCISE_TYPES.listen) && !inField) {
+      if (ex.type === EXERCISE_TYPES.recognition || ex.type === EXERCISE_TYPES.cloze || ex.type === EXERCISE_TYPES.listen) {
         const n = Number(event.key)
         if (n >= 1 && n <= ex.options.length) {
           event.preventDefault()
@@ -76,8 +78,8 @@ export function useVocabularyTrainer(userId) {
   useEffect(() => {
     if (status !== 'study' && status !== 'idle') return undefined
     const onKey = (event) => {
+      if (skipShortcut(event) || ownsKeyboard(event)) return
       if (event.key === 'Enter' || event.code === 'Space') {
-        if (event.target?.tagName === 'INPUT' || event.target?.tagName === 'TEXTAREA' || event.target?.tagName === 'BUTTON') return
         event.preventDefault()
         if (status === 'idle') commencer()
         else studyNext()

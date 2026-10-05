@@ -196,8 +196,16 @@ export function buildExercise(word, deck = [], { type, rng = Math.random, ambigu
 /**
  * Build a match exercise from N words (default 4): pair French ↔ Chinese.
  */
-export function buildMatchExercise(words, { rng = Math.random } = {}) {
-  const cards = words.map((w) => ({ id: w.id, french: w.french, chinese: w.chinese }))
+export function buildMatchExercise(words, { rng = Math.random, limit = 4 } = {}) {
+  const cards = [], leftLabels = new Set(), rightLabels = new Set()
+  const label = (text) => text.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase()
+  for (const word of words) {
+    const left = label(word.french), right = label(word.chinese)
+    if (leftLabels.has(left) || rightLabels.has(right)) continue
+    cards.push({ id: word.id, french: word.french, chinese: word.chinese })
+    leftLabels.add(left); rightLabels.add(right)
+    if (cards.length >= limit) break
+  }
   return {
     type: EXERCISE_TYPES.match,
     cards,

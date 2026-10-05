@@ -18,6 +18,19 @@ const snapshot = (userId) => ({
   queue: [{ id: VALID_DECK[0].id }],
 })
 describe('study snapshot storage', () => {
+  it('热身去重不改变后续题号，也不漏掉任何待复习词', () => {
+    const words = ['cependant', 'toutefois', 'bonjour', 'voyage', 'voyager']
+      .map((french) => VALID_DECK.find((word) => word.french === french))
+    const steps = buildSession(words.map((word) => ({ word })), VALID_DECK)
+    expect(steps).toHaveLength(words.length + 1)
+    expect(steps[0].kind).toBe('match')
+    expect(steps.slice(1).map(({ word }) => word.id)).toEqual(words.map(({ id }) => id))
+    // 即使只有一种释义，旧记录 i=2 仍对应原来的第二个单词。
+    const sameGloss = words.slice(0, 4).map((word) => ({ ...word, chinese: '同一释义' }))
+    const reduced = buildSession(sameGloss.map((word) => ({ word })), sameGloss)
+    expect(reduced[0].exercise.cards).toHaveLength(1)
+    expect(reduced[2].word.id).toBe(sameGloss[1].id)
+  })
   it('avoids ambiguous spelling across CEFR levels while keeping distractors in the selected level', () => {
     const deck = VALID_DECK.filter((word) => word.level === 'B1')
     const word = deck.find((entry) => entry.french === 'cependant')

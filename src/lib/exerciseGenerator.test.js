@@ -128,6 +128,13 @@ describe('buildExercise', () => {
 })
 
 describe('buildMatchExercise', () => {
+  it('真实同义词和同形词不会生成无法区分的选项', () => {
+    const words = ['cependant', 'toutefois', 'pouvoir', 'bonjour', 'voyage', 'voyager']
+      .flatMap((french) => frenchVocabulary.filter((word) => word.french === french))
+    const exercise = buildMatchExercise(words, { rng: R0 })
+    expect(exercise.cards).toHaveLength(4)
+    for (const side of [exercise.left, exercise.right]) expect(new Set(side.map(({ text }) => text.trim().toLowerCase())).size).toBe(side.length)
+  })
   it('pairs french ↔ chinese across the given words', () => {
     const ex = buildMatchExercise(DECK.slice(0, 3), { rng: R0 })
     expect(ex.type).toBe('match')

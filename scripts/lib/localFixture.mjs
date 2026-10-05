@@ -12,12 +12,14 @@ export const SCENES = {
   login: { title: '登录', path: '/login', user: false },
   signup: { title: '注册', path: '/login?aux=1', user: false },
   resources: { title: '书架', path: '/resources', user: false },
+  'resources-slash': { title: '书架地址末尾带斜线', path: '/resources/', user: false },
   'resources-error': { title: '增补书目读取失败', path: '/resources', user: false, resourcesUnavailable: true },
   vocabulary: { title: '背词首页', path: '/vocabulary' },
   'vocabulary-study': { title: '背词预习', path: '/vocabulary', study: true },
   'vocabulary-empty': { title: '今日没有待学词', path: '/vocabulary', emptyReviews: true },
   'vocabulary-save-error': { title: '背词保存失败', path: '/vocabulary', answer: true, reviewStatus: 503 },
   'vocabulary-finish': { title: '背词完成', path: '/vocabulary', finish: true },
+  'vocabulary-match': { title: '配对热身', path: '/vocabulary', queue: ['fr-cependant', 'fr-toutefois', 'fr-voyage', 'fr-voyager', 'fr-bonjour', 'fr-merci'] },
   assistant: { title: '已有对话', path: '/assistant' },
   'assistant-empty': { title: '新对话', path: '/assistant', emptyHistory: true },
   'assistant-error': { title: '答疑请求失败', path: '/assistant', emptyHistory: true, chatStatus: 429 },
@@ -79,7 +81,7 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
           return response(headers.accept?.includes('vnd.pgrst.object') ? result[0] || null : result.slice(0, Number(url.searchParams.get('limit')) || 500))
         }
         if (body.user_id !== user.id) return failure('假账号不能修改别人的进度。', 403)
-        if (fault.reviewStatus) return failure('fixture save unavailable', fault.reviewStatus)
+        if (fault.reviewStatus && fault.reviewStatus !== 200) return failure('fixture save unavailable', fault.reviewStatus)
         const previous = rows.get(body.word_id)
         if (method === 'POST' && previous) return failure('duplicate key', 409, '23505')
         if (method === 'PATCH' && (!previous || url.searchParams.get('updated_at') !== `eq.${previous.updated_at}`)) return response(null)

@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
+import { normalizeRoutePath } from '../lib/routePath'
 
 // 2026-08 减法:站的核心是「读(每日定理与哲思)+ 练(背词)」,导航只留这两件。
 // 中文与法语的并置是本站身份,不做单语化;法语以斜体作衬,中文承担功能重量。
@@ -15,12 +16,8 @@ export default function Layout() {
 
   // 杂志刊页面自带角落导航/细导航条,不渲染通用页眉页脚。
   // `/` 是 100svh 翻页刊;内页与登录页同属一本书(Connexion 即杂志第 06 屏)。
-  const isMagazinePage = location.pathname === '/'
-    || location.pathname === '/vocabulary'
-    || location.pathname === '/resources'
-    || location.pathname === '/assistant'
-    || location.pathname === '/login'
-    || location.pathname === '/reset-password'
+  const pathname = normalizeRoutePath(location.pathname)
+  const isMagazinePage = ['/', '/vocabulary', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
   if (isMagazinePage) {
     return <Outlet />
   }
@@ -33,7 +30,7 @@ export default function Layout() {
     return navItems[0]
   }
 
-  const primaryNav = resolvePrimaryNav(location.pathname)
+  const primaryNav = resolvePrimaryNav(pathname)
 
   return (
     <div className="site-shell">

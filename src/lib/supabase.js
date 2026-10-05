@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { fetchAuthResponse } from './authTransport'
+import { normalizeRoutePath } from './routePath'
 
 export const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 export const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
@@ -8,7 +9,7 @@ const hasRealValue = (value = '') => value && !value.startsWith('YOUR_SUPABASE_'
 
 // Capture explicit recovery callback failures before the SDK cleans the URL.
 export const recoveryCallbackFailed = typeof window !== 'undefined'
-  && window.location.pathname === '/reset-password'
+  && normalizeRoutePath(window.location.pathname) === '/reset-password'
   && [window.location.search.slice(1), window.location.hash.slice(1)].some((value) => {
     const params = new URLSearchParams(value)
     return params.has('error') || params.has('error_code')

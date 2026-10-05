@@ -260,7 +260,6 @@ export default function Vocabulary() {
             lang="fr"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') submitSpelling() }}
             disabled={fb}
             placeholder="tapez le mot…"
             autoComplete="off"
@@ -346,7 +345,7 @@ export default function Vocabulary() {
   } else if (status === 'empty') {
     body = notice(
       <>
-        <p className="page-notice">这个范围今天没有要背的词了。换个级别、主题,或明天再来。</p>
+        <p className="page-notice">今天没有要背的词了。可以换个级别，或明天再来。</p>
         {renderFilters()}
       </>,
     )
