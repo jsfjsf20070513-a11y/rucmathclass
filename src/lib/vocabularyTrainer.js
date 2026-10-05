@@ -1,4 +1,4 @@
-import { buildStudyQueue, computeDeckStats, computeStudyStreak } from './srsScheduler'
+import { buildStudyQueue, computeDeckStats } from './srsScheduler'
 import { EXERCISE_TYPES, gradeExercise } from './exerciseGenerator'
 import { createReviewSubmission, recordSessionScore, confirmSnapshot } from './reviewSubmission'
 import { MAX_NEW, MAX_REVIEW, VALID_DECK, buildSession } from './vocabularySession'
@@ -27,7 +27,7 @@ export function createVocabularyTrainer({ userId, repository, snapshots, deck = 
   }
   const deckStats = (level) => {
     const time = now()
-    return { ...computeDeckStats({ deck: selectDeck(level), stateMap: states, now: time }), streak: computeStudyStreak(Object.values(states), time) }
+    return computeDeckStats({ deck: selectDeck(level), stateMap: states, now: time })
   }
   const snapshot = (pending = null) => ({
     userId, level: state.level, status: state.status === 'study' ? 'study' : 'ready',
@@ -94,8 +94,8 @@ export function createVocabularyTrainer({ userId, repository, snapshots, deck = 
         deckStats: deckStats(selectedLevel), errorMessage: notice,
       })
       if (status === 'done') clearSnapshot()
-    } catch (error) {
-      if (currentRun(run)) publish({ status: 'error', errorMessage: error?.message || '加载背词数据失败。' })
+    } catch {
+      if (currentRun(run)) publish({ status: 'error', errorMessage: '暂时无法加载背词进度。请稍后重试。' })
     }
   }
 

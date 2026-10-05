@@ -10,6 +10,8 @@
     "predev": "npm run portraits:check && node scripts/render-theorems.mjs && node scripts/generate-health.mjs",
     "prebuild": "npm run portraits:check && node scripts/render-theorems.mjs && node scripts/generate-health.mjs",
     "dev": "vite",
+    "demo": "node scripts/demo.mjs",
+    "compare": "node scripts/compare-pages.mjs",
     "build": "vite build",
     "health:generate": "node scripts/generate-health.mjs",
     "portraits:check": "node scripts/check-portraits.mjs",

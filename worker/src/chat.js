@@ -79,14 +79,14 @@ const SYSTEM_PROMPT = [
 ].join('\n')
 
 export async function handleChat(request, env, origin) {
-  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, origin)
-  if (!env.GEMINI_API_KEY) return json({ error: 'Server not configured' }, 500, origin)
+  if (request.method !== 'POST') return json({ error: '暂不支持这种发送方式，请刷新页面后重试。' }, 405, origin)
+  if (!env.GEMINI_API_KEY) return json({ error: '答疑暂时不可用，请稍后再试。' }, 500, origin)
 
   let body
   try {
     body = await readChatBody(request)
   } catch (error) {
-    return json({ error: error.status ? error.message : 'Invalid JSON' }, error.status || 400, origin)
+    return json({ error: error.status ? error.message : '发送的内容无法读取，请检查文字和图片后重试。' }, error.status || 400, origin)
   }
 
   const raw = Array.isArray(body && body.messages) ? body.messages.slice(-MAX_MESSAGES) : []
@@ -99,7 +99,7 @@ export async function handleChat(request, env, origin) {
       throw new Error('图片格式无效，请重新选择图片。')
     }
     imageBytes += img.data.length
-    if (imageBytes > MAX_IMAGE_B64) throw new Error('本轮图片总量过大，请清空对话后重新上传需要的图片。')
+    if (imageBytes > MAX_IMAGE_B64) throw new Error('本次发送的图片总量过大。请先保留需要的内容，刷新页面后再上传本次需要的图片。')
     return { inlineData: { mimeType: img.mimeType, data: img.data } }
   }
   try {
@@ -125,7 +125,7 @@ export async function handleChat(request, env, origin) {
   } catch (error) {
     return json({ error: error.message }, 400, origin)
   }
-  if (!contents.length) return json({ error: 'No messages' }, 400, origin)
+  if (!contents.length) return json({ error: '请先填写问题或选择图片。' }, 400, origin)
 
   // 组装上游模型请求；调度和错误归因独立于前端对话状态。
   const buildBody = (model) => {
@@ -146,7 +146,7 @@ export async function handleChat(request, env, origin) {
 
   let chatModels
   try { chatModels = await getChatModels(env, request.signal) } catch {
-    return json({ error: 'Request cancelled' }, 499, origin)
+    return json({ error: '请求已取消。' }, 499, origin)
   }
 
   const failures = []
@@ -184,14 +184,14 @@ export async function handleChat(request, env, origin) {
   }
 
   let win = await race(chatModels.slice(0, 3), 18000)
-  if (request.signal.aborted) return json({ error: 'Request cancelled' }, 499, origin)
+  if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
   if (!win && chatModels.length > 3) win = await race(chatModels.slice(3, 6), 15000)
-  if (request.signal.aborted) return json({ error: 'Request cancelled' }, 499, origin)
+  if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
   if (win) return json(win, 200, origin)
 
   const limited = failures.length > 0 && failures.every((error) => error.status === 429)
   return json(
-    { error: limited ? 'AI 服务暂时限流，请稍后再试。' : 'AI 服务暂时不可用，请稍后重试；你的问题可以重新发送。' },
+    { error: limited ? '请求太频繁，请稍后再试。' : '答疑暂时不可用，请稍后再试。' },
     limited ? 429 : 503,
     origin,
   )

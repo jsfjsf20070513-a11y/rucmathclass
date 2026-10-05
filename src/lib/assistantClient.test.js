@@ -42,4 +42,14 @@ describe('assistant HTTP client', () => {
     await expect(requestAssistant([{ role: 'user', content: 'question' }], { userId: 'a', signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' })
     expect(fetch).not.toHaveBeenCalled()
   })
+  it.each([
+    [500, 'Server not configured', '答疑暂时不可用，请稍后再试。'],
+    [429, 'Trop de requêtes', '请求太频繁，请稍后再试。'],
+    [413, 'Request body too large', '发送的内容过大，请减少文字或图片后重试。'],
+    [400, 'internal parse failure', '发送的内容无法读取，请检查文字和图片后重试。'],
+    [400, '图片格式无效，请重新选择图片。', '图片格式无效，请重新选择图片。'],
+  ])('shows actionable errors for HTTP %s', async (status, error, expected) => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error }, { status })))
+    await expect(requestAssistant([{ role: 'user', content: 'question' }], { userId: 'a' })).rejects.toThrow(expected)
+  })
 })

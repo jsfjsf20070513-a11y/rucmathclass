@@ -27,7 +27,7 @@ export async function checkRequestAccess(request, env, origin) {
     const result = await scope.run(() => env.RATE_LIMITER.limit({
       key: request.headers.get('CF-Connecting-IP') || 'anon',
     }))
-    if (result?.success === false) return json({ error: 'Trop de requêtes — réessaie dans un instant.' }, 429, origin)
+    if (result?.success === false) return json({ error: '请求太频繁，请稍后再试。' }, 429, origin)
     if (result?.success !== true) return unavailable(origin)
 
     const response = await scope.run(() => fetch(authUrl, {
@@ -42,7 +42,7 @@ export async function checkRequestAccess(request, env, origin) {
     return null
   } catch {
     return request.signal.aborted
-      ? json({ error: 'Request cancelled' }, 499, origin)
+      ? json({ error: '请求已取消。' }, 499, origin)
       : unavailable(origin)
   } finally { scope.close() }
 }

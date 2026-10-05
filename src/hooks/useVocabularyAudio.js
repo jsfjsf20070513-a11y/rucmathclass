@@ -1,14 +1,25 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export function useVocabularyAudio() {
   const audioRef = useRef(null)
+  const pendingSpeech = useRef(null)
+  const cancelSpeech = useCallback(() => {
+    pendingSpeech.current?.()
+    pendingSpeech.current = null
+    try { window.speechSynthesis?.cancel() } catch { /* 朗读不可用不影响练习。 */ }
+  }, [])
+  useEffect(() => () => {
+    cancelSpeech()
+    audioRef.current?.close().catch(() => {})
+    audioRef.current = null
+  }, [cancelSpeech])
   // ── audio: WebAudio verdict cue + speechSynthesis for the listen format ──
   const tone = useCallback((ok) => {
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext
       if (!Ctx) return
       const ac = audioRef.current || (audioRef.current = new Ctx())
-      if (ac.state === 'suspended') ac.resume()
+      if (ac.state === 'suspended') ac.resume().catch(() => {})
       const t = ac.currentTime
       const notes = ok ? [587.33, 880] : [392, 261.63]
       notes.forEach((f, k) => {
@@ -31,17 +42,23 @@ export function useVocabularyAudio() {
   }, [])
 
   const speak = useCallback((text) => {
+    cancelSpeech()
     try {
       const synth = window.speechSynthesis
       if (!synth || !text) return
-      synth.cancel()
       let done = false
+      let timer
+      const clear = () => {
+        done = true
+        clearTimeout(timer)
+        synth.removeEventListener('voiceschanged', speakWith)
+      }
       // Speak with a FRENCH voice. getVoices() is often empty on first call until
       // the engine loads — wait once for `voiceschanged`, with a timed safety. The
       // `done` flag guarantees exactly one utterance (never English + French double).
       const speakWith = () => {
         if (done) return
-        done = true
+        clear()
         const u = new SpeechSynthesisUtterance(text)
         u.lang = 'fr-FR'
         u.rate = 0.9
@@ -49,16 +66,17 @@ export function useVocabularyAudio() {
         if (fr) u.voice = fr
         synth.speak(u)
       }
+      pendingSpeech.current = clear
       if ((synth.getVoices() || []).length) {
         speakWith()
       } else {
         synth.addEventListener('voiceschanged', speakWith, { once: true })
-        setTimeout(speakWith, 300)
+        timer = setTimeout(speakWith, 300)
       }
     } catch {
       // speech is optional
     }
-  }, [])
+  }, [cancelSpeech])
 
-  return { tone, speak }
+  return { tone, speak, cancelSpeech }
 }

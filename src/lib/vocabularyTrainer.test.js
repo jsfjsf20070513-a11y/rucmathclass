@@ -56,6 +56,18 @@ function pendingSnapshot(correct) {
 }
 
 describe('vocabulary lesson lifecycle', () => {
+  it.each(['fetchReviewStateMap', 'saveReviewState'])('hides technical errors from %s without discarding a pending answer', async (method) => {
+    const saved = pendingSnapshot(true)
+    const h = harness({ saved })
+    h.repository[method].mockRejectedValueOnce(new Error('SQL service failure'))
+    await h.trainer.initialize()
+    expect(h.trainer.getSnapshot()).toMatchObject({ status: 'error', i: 0, stats: score, errorMessage: '暂时无法加载背词进度。请稍后重试。' })
+    expect(h.local.get('a')).toEqual(saved)
+    expect(h.snapshots.clear).not.toHaveBeenCalled()
+    h.trainer.next()
+    expect(h.trainer.getSnapshot().i).toBe(0)
+  })
+
   it('freezes the first answer synchronously and prevents progression before confirmation', async () => {
     const h = harness(), pending = deferred()
     h.repository.saveReviewState.mockReturnValueOnce(pending.promise)

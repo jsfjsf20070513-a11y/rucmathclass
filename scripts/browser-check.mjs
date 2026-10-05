@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
+import { checkRegressions } from './browser-regressions.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, 'output/playwright')
@@ -111,6 +112,7 @@ try {
   server = await preview({ root, build: { outDir: buildDir }, preview: { host: '127.0.0.1', port: 0, strictPort: true } })
   baseUrl = `http://127.0.0.1:${server.httpServer.address().port}`
   browser = await chromium.launch()
+  await checkRegressions({ scenario, baseUrl, rendered })
   for (const [size, viewport] of [['mobile', { width: 390, height: 844 }], ['desktop', { width: 1280, height: 800 }]]) {
     await scenario(`${size}-home`, viewport, async (page) => {
       await page.goto(baseUrl)

@@ -55,8 +55,8 @@ export function writeSessionSnapshot(snapshot) {
 export function buildSession(queue, deck) {
   const steps = []
   if (queue.length >= 4) {
-    const four = queue.slice(0, 4)
-    steps.push({ kind: 'match', exercise: buildMatchExercise(four.map((q) => q.word)) })
+    // 只减少热身里的重复标签，不删热身步骤，以免旧练习记录的题号错位。
+    steps.push({ kind: 'match', exercise: buildMatchExercise(queue.map((q) => q.word)) })
   }
   queue.forEach((item, idx) => {
     let type = TYPE_ROTATION[idx % TYPE_ROTATION.length]

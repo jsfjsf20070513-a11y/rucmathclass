@@ -186,42 +186,6 @@ export function computeDeckStats({ deck = [], stateMap = {}, now, masteredStage 
   return { total: deck.length, newCount, learning, mastered, due }
 }
 
-/**
- * Consecutive-day study streak ending today (or yesterday, if today's study is
- * not in yet). Derived from each state's `updated_at` (one row written per graded
- * answer), so distinct UTC dates ≈ days studied. Returns 0 if the most recent
- * studied day is older than yesterday (streak broken). Pure.
- */
-export function computeStudyStreak(states = [], now) {
-  const days = new Set()
-  for (const state of states) {
-    if (state?.updated_at) {
-      days.add(startOfUtcDay(state.updated_at).toISOString())
-    }
-  }
-  if (!days.size) return 0
-
-  const today = startOfUtcDay(now)
-  const yesterday = startOfUtcDay(now)
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1)
-
-  let cursor
-  if (days.has(today.toISOString())) {
-    cursor = today
-  } else if (days.has(yesterday.toISOString())) {
-    cursor = yesterday
-  } else {
-    return 0
-  }
-
-  let streak = 0
-  while (days.has(cursor.toISOString())) {
-    streak += 1
-    cursor.setUTCDate(cursor.getUTCDate() - 1)
-  }
-  return streak
-}
-
 // ---- French domain validation ----------------------------------------------
 
 export const FRENCH_GENDERS = new Set(['m', 'f'])

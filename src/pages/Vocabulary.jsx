@@ -260,7 +260,6 @@ export default function Vocabulary() {
             lang="fr"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') submitSpelling() }}
             disabled={fb}
             placeholder="tapez le mot…"
             autoComplete="off"
@@ -331,7 +330,7 @@ export default function Vocabulary() {
   } else if (status === 'loading' || (sessionOwnerId !== userId && !['disabled', 'compat', 'error'].includes(status))) {
     body = notice(<p className="page-notice">正在加载你的背词进度…</p>)
   } else if (status === 'disabled') {
-    body = notice(<p className="page-notice">站点尚未配置 Supabase,背词功能暂不可用。</p>)
+    body = notice(<p className="page-notice">背词功能暂时不可用。</p>)
   } else if (status === 'compat') {
     body = notice(
       <p className="page-notice">背词进度服务暂不可用，请稍后再来。</p>,
@@ -339,14 +338,14 @@ export default function Vocabulary() {
   } else if (status === 'error') {
     body = notice(
       <>
-        <p className="page-notice">出错了:{errorMessage}</p>
+        <p className="page-notice">{errorMessage}</p>
         <button type="button" className="text-action" onClick={() => load()}>Réessayer&nbsp;&nbsp;→</button>
       </>,
     )
   } else if (status === 'empty') {
     body = notice(
       <>
-        <p className="page-notice">这个范围今天没有要背的词了。换个级别、主题,或明天再来。</p>
+        <p className="page-notice">今天没有要背的词了。可以换个级别，或明天再来。</p>
         {renderFilters()}
       </>,
     )
@@ -399,7 +398,7 @@ export default function Vocabulary() {
         <p className="vpl-done-score">答对 {stats.correct} / {stats.attempts} · 正确率 {acc} · 最高连击 ×{stats.maxCombo}</p>
         {deckStats ? (
           <p className="vpl-deckstats">
-            已掌握 {deckStats.mastered} · 学习中 {deckStats.learning} · 新词 {deckStats.newCount} · 连续 {deckStats.streak} 天
+            已掌握 {deckStats.mastered} · 学习中 {deckStats.learning} · 新词 {deckStats.newCount}
           </p>
         ) : null}
         <div className="vpl-done-rule" aria-hidden="true" />

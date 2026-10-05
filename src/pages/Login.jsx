@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
+import { UserFacingError } from '../lib/userFacingError'
 import { signIn, signUp, requestEmailCode, verifyEmailCode, requestPasswordReset, authErrorMessage } from '../lib/authBackend'
 import { markFlipNav } from '../lib/flipNav'
 
@@ -52,7 +53,6 @@ const ERRORS = {
   passwordMismatch: '两次输入的密码不一致。',
   emailRequired: '请输入邮箱地址。',
   otpCodeRequired: '请输入邮箱收到的 6 位验证码。',
-  generic: '操作失败,请稍后重试。',
 }
 
 export default function Login() {
@@ -105,7 +105,7 @@ function LoginForm() {
 
   const requestOtp = async () => {
     if (!email.trim()) {
-      throw new Error(ERRORS.emailRequired)
+      throw new UserFacingError(ERRORS.emailRequired)
     }
     await requestEmailCode(email)
   }
@@ -145,10 +145,10 @@ function LoginForm() {
       }
 
       if (mode === 'signup') {
-        if (!realName.trim()) throw new Error(ERRORS.realNameRequired)
-        if (!nickname.trim()) throw new Error(ERRORS.nicknameRequired)
-        if (password.length < 6) throw new Error(ERRORS.passwordTooShort)
-        if (password !== confirmPassword) throw new Error(ERRORS.passwordMismatch)
+        if (!realName.trim()) throw new UserFacingError(ERRORS.realNameRequired)
+        if (!nickname.trim()) throw new UserFacingError(ERRORS.nicknameRequired)
+        if (password.length < 6) throw new UserFacingError(ERRORS.passwordTooShort)
+        if (password !== confirmPassword) throw new UserFacingError(ERRORS.passwordMismatch)
 
         const data = await signUp(email, password, nickname, realName)
         setPassword('')
@@ -156,7 +156,7 @@ function LoginForm() {
         if (data.session) return
         setMessage({
           type: 'success',
-          text: '注册完成。若启用了邮箱确认,请先前往邮箱验证。',
+          text: '注册请求已提交。请查看邮箱，按邮件提示完成注册。',
         })
         return
       }
@@ -173,7 +173,7 @@ function LoginForm() {
           return
         }
         if (!otpCode.trim()) {
-          throw new Error(ERRORS.otpCodeRequired)
+          throw new UserFacingError(ERRORS.otpCodeRequired)
         }
         await verifyEmailCode(email, otpCode)
         setOtpCode('')
@@ -182,7 +182,7 @@ function LoginForm() {
 
       // mode === 'forgot'
       if (!email.trim()) {
-        throw new Error(ERRORS.emailRequired)
+        throw new UserFacingError(ERRORS.emailRequired)
       }
 
       await requestPasswordReset(email, window.location.origin)

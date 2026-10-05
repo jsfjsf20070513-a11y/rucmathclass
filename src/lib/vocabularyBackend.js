@@ -99,7 +99,7 @@ export async function saveReviewState(state, expectedUpdatedAt = null) {
     .eq('user_id', row.user_id).eq('word_id', row.word_id).abortSignal(signal).maybeSingle())
   if (readError) throw readError
   if (sameReviewState(current, row)) return { mode: 'official', state: current }
-  throw Object.assign(new Error('这道词的进度已在其他页面更新。本次没有覆盖，请重新加载进度。'), {
+  throw Object.assign(new Error('这个词的进度已在其他页面更新。本次没有覆盖，请重新加载进度。'), {
     code: 'REVIEW_CONFLICT', currentState: current,
   })
 }
