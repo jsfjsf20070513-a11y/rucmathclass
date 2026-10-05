@@ -142,7 +142,7 @@ export default function Assistant() {
       return
     }
     if (file.size > 12 * 1024 * 1024) {
-      setError('图片太大,请小于 12MB。')
+      setError('图片过大。请选择不超过 12 MB 的图片。')
       return
     }
     try {

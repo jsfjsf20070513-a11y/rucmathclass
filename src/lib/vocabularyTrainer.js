@@ -94,8 +94,8 @@ export function createVocabularyTrainer({ userId, repository, snapshots, deck = 
         deckStats: deckStats(selectedLevel), errorMessage: notice,
       })
       if (status === 'done') clearSnapshot()
-    } catch (error) {
-      if (currentRun(run)) publish({ status: 'error', errorMessage: error?.message || '加载背词数据失败。' })
+    } catch {
+      if (currentRun(run)) publish({ status: 'error', errorMessage: '暂时无法加载背词进度。请稍后重试。' })
     }
   }
 

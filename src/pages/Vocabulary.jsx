@@ -330,7 +330,7 @@ export default function Vocabulary() {
   } else if (status === 'loading' || (sessionOwnerId !== userId && !['disabled', 'compat', 'error'].includes(status))) {
     body = notice(<p className="page-notice">正在加载你的背词进度…</p>)
   } else if (status === 'disabled') {
-    body = notice(<p className="page-notice">站点尚未配置 Supabase,背词功能暂不可用。</p>)
+    body = notice(<p className="page-notice">背词功能暂时不可用。</p>)
   } else if (status === 'compat') {
     body = notice(
       <p className="page-notice">背词进度服务暂不可用，请稍后再来。</p>,
@@ -338,7 +338,7 @@ export default function Vocabulary() {
   } else if (status === 'error') {
     body = notice(
       <>
-        <p className="page-notice">出错了:{errorMessage}</p>
+        <p className="page-notice">{errorMessage}</p>
         <button type="button" className="text-action" onClick={() => load()}>Réessayer&nbsp;&nbsp;→</button>
       </>,
     )

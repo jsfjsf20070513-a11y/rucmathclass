@@ -378,7 +378,7 @@ export const resourceCategories = [
       {
         title: 'Cornell CS4780 — Machine Learning',
         url: 'https://www.cs.cornell.edu/courses/cs4780/2024sp/',
-        desc: 'notes、作业、项目。',
+        desc: '讲义、作业和项目。',
         tag: '机器学习',
       },
       {
@@ -420,7 +420,7 @@ export const resourceCategories = [
       {
         title: 'Stanford EE364A — Convex Optimization I',
         url: 'https://stanford.edu/class/ee364a/',
-        desc: 'syllabus、notes、assignments。',
+        desc: '课程大纲、讲义和作业。',
         tag: '优化',
       },
       {

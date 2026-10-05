@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getAccessToken, requestEmailCode, signIn, updatePassword } from './authBackend'
+import { authErrorMessage, getAccessToken, requestEmailCode, signIn, updatePassword } from './authBackend'
+import { UserFacingError } from './userFacingError'
 
 const h = vi.hoisted(() => ({ auth: {} }))
 vi.mock('./supabase', () => ({
@@ -14,6 +15,32 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
 describe('authentication API boundary', () => {
+  it.each([
+    ['invalid_credentials', '邮箱或密码不正确。'],
+    ['email_not_confirmed', '请先打开邮箱中的确认邮件，完成验证后再登录。'],
+    ['otp_expired', '验证码或链接已失效，请重新获取。'],
+    ['same_password', '新密码不能与原密码相同。'],
+    ['over_request_rate_limit', '操作太频繁，请稍后再试。'],
+  ])('translates auth code %s without exposing service text', (code, expected) => {
+    expect(authErrorMessage({ code, message: 'technical service detail' })).toBe(expected)
+  })
+
+  it('handles legacy credentials errors and hides unknown service details', () => {
+    expect(authErrorMessage(new Error('Invalid login credentials'))).toBe('邮箱或密码不正确。')
+    expect(authErrorMessage({ message: '数据库 SQL failed', status: 400 })).toBe('账号操作未完成，请稍后再试。')
+    expect(authErrorMessage(new UserFacingError('两次输入的密码不一致。'))).toBe('两次输入的密码不一致。')
+    expect(authErrorMessage({ name: 'AuthRetryableFetchError' })).toContain('结果尚未确认')
+    expect(authErrorMessage({ name: 'AuthApiError', status: 500 })).toContain('结果尚未确认')
+    expect(authErrorMessage({ name: 'AuthUnknownError' })).toContain('结果尚未确认')
+    expect(authErrorMessage(new Error('Failed to fetch'))).toContain('结果尚未确认')
+  })
+
+  it.each(['code', 'error_code'])('preserves password rejection code from %s for the page', async (field) => {
+    fetch.mockResolvedValueOnce(Response.json({ [field]: 'same_password', msg: 'New password should be different.' }, { status: 422 }))
+    const failure = await updatePassword('a', 'example-password').catch((error) => error)
+    expect(authErrorMessage(failure)).toBe('新密码不能与原密码相同。')
+    expect(failure.code).not.toBe('AUTH_WRITE_UNCONFIRMED')
+  })
   it('returns only the current conversation account token', async () => {
     await expect(getAccessToken('a')).resolves.toBe('token-a')
     h.auth.getSession.mockResolvedValueOnce({ data: { session: { user: { id: 'b' }, access_token: 'token-b' } } })
@@ -77,6 +104,12 @@ describe('authentication API boundary', () => {
     fetch.mockRejectedValueOnce(new Error('response lost'))
     await expect(updatePassword('a', 'example-password')).rejects.toMatchObject({ code: 'AUTH_WRITE_UNCONFIRMED' })
     fetch.mockResolvedValueOnce(new Response('unavailable', { status: 503 }))
+    await expect(updatePassword('a', 'example-password')).rejects.toMatchObject({ code: 'AUTH_WRITE_UNCONFIRMED' })
+    fetch.mockRejectedValueOnce(new Error('response lost'))
+    expect(authErrorMessage(await updatePassword('a', 'example-password').catch((error) => error))).toContain('请勿重复提交')
+  })
+  it.each([null, {}, { id: 'other-account' }])('does not claim a password update succeeded for ambiguous data %j', async (data) => {
+    fetch.mockResolvedValueOnce(Response.json(data))
     await expect(updatePassword('a', 'example-password')).rejects.toMatchObject({ code: 'AUTH_WRITE_UNCONFIRMED' })
   })
 })

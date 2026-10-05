@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { fixtureSession } from './lib/localFixture.mjs'
+import { fixtureSession, FIXTURE_PASSWORD, FIXTURE_USERS } from './lib/localFixture.mjs'
 
 export async function checkRegressions({ scenario, baseUrl, rendered }) {
   const viewport = { width: 390, height: 844 }
@@ -12,6 +12,38 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
       stats: { correct: 0, attempts: 0, combo: 0, maxCombo: 0 }, wrongIds: [],
     }))
   }, { userId: session.user.id, status, ids, i })
+
+  await scenario('readable-account-messages', viewport, async (page) => {
+    await page.goto(`${baseUrl}/login`)
+    await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)
+    await page.getByPlaceholder('Mot de passe', { exact: true }).fill('wrong-password')
+    await page.locator('button[type="submit"]').click()
+    await page.getByText('邮箱或密码不正确。', { exact: true }).waitFor()
+    await page.goto(`${baseUrl}/login?aux=1`)
+    await page.getByRole('textbox', { name: '真实姓名', exact: true }).fill('演示同学')
+    await page.getByRole('textbox', { name: '昵称', exact: true }).fill('本地演示')
+    await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)
+    await page.getByPlaceholder('Mot de passe', { exact: true }).fill(FIXTURE_PASSWORD)
+    await page.getByPlaceholder('确认密码 · Confirmer', { exact: true }).fill(FIXTURE_PASSWORD)
+    await page.locator('button[type="submit"]').click()
+    await page.getByText('注册请求已提交。请查看邮箱，按邮件提示完成注册。', { exact: true }).waitFor()
+    assert.equal(await page.getByPlaceholder('Mot de passe', { exact: true }).inputValue(), '')
+  })
+
+  await scenario('readable-assistant-error', viewport, async (page, fault) => {
+    await signIn(page)
+    fault.chatStatus = 500
+    fault.chatError = 'Server not configured'
+    await page.goto(`${baseUrl}/assistant`)
+    const input = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
+    await input.fill('解释一下导数。')
+    await input.press('Enter')
+    await page.getByText('答疑暂时不可用，请稍后再试。', { exact: true }).waitFor()
+    assert.equal(await input.inputValue(), '解释一下导数。', '失败后应保留问题')
+    fault.chatStatus = 200
+    await input.press('Enter')
+    await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
+  })
 
   await scenario('chinese-input', viewport, async (page) => {
     await signIn(page)

@@ -10,7 +10,9 @@ export const FIXTURE_USERS = ['browser', 'other'].map((name, index) => ({
 export const SCENES = {
   home: { title: '首页', path: '/', user: false },
   login: { title: '登录', path: '/login', user: false },
+  'login-error': { title: '邮箱或密码错误', path: '/login', user: false, loginError: true },
   signup: { title: '注册', path: '/login?aux=1', user: false },
+  'signup-submitted': { title: '注册请求已提交', path: '/login?aux=1', user: false, signupSubmitted: true },
   resources: { title: '书架', path: '/resources', user: false },
   'resources-slash': { title: '书架地址末尾带斜线', path: '/resources/', user: false },
   'resources-error': { title: '增补书目读取失败', path: '/resources', user: false, resourcesUnavailable: true },
@@ -23,6 +25,7 @@ export const SCENES = {
   assistant: { title: '已有对话', path: '/assistant' },
   'assistant-empty': { title: '新对话', path: '/assistant', emptyHistory: true },
   'assistant-error': { title: '答疑请求失败', path: '/assistant', emptyHistory: true, chatStatus: 429 },
+  'assistant-unavailable': { title: '答疑服务不可用', path: '/assistant', emptyHistory: true, chatStatus: 500, chatError: 'Server not configured' },
   'reset-password': { title: '设置密码', path: '/reset-password' },
 }
 
@@ -68,7 +71,7 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
       if (path === '/rest/v1/resources') return fault.resourcesUnavailable ? failure('fixture unavailable', 503) : response([])
       if (!user) return failure('登录状态已失效，请刷新页面并重新登录后再试。', 401)
       if (path === '/api/chat') {
-        if (fault.chatStatus && fault.chatStatus !== 200) return failure(fault.chatStatus === 401 ? '登录状态已失效，请刷新页面并重新登录后再试。' : '请求太频繁，请稍后再试。', fault.chatStatus)
+        if (fault.chatStatus && fault.chatStatus !== 200) return failure(fault.chatError || (fault.chatStatus === 401 ? '登录状态已失效，请刷新页面并重新登录后再试。' : '请求太频繁，请稍后再试。'), fault.chatStatus)
         return response({ text: '导数描述函数在某一点的变化率。' })
       }
       const owner = url.searchParams.get('user_id')

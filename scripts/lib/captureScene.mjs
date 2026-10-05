@@ -1,4 +1,4 @@
-import { FIXTURE_TIME } from './localFixture.mjs'
+import { FIXTURE_TIME, FIXTURE_PASSWORD, FIXTURE_USERS } from './localFixture.mjs'
 
 export async function captureScene(browser, demo, viewport, path) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, locale: 'zh-CN', timezoneId: 'Asia/Shanghai', reducedMotion: 'reduce', serviceWorkers: 'block' })
@@ -22,6 +22,17 @@ export async function captureScene(browser, demo, viewport, path) {
     await page.goto(demo.url)
     await page.locator('#root > :not(.boot-overlay)').first().waitFor()
     await page.waitForFunction(() => !document.querySelector('.boot-overlay'))
+    if (demo.scene.loginError || demo.scene.signupSubmitted) {
+      if (demo.scene.signupSubmitted) {
+        await page.getByRole('textbox', { name: '真实姓名', exact: true }).fill('演示同学')
+        await page.getByRole('textbox', { name: '昵称', exact: true }).fill('本地演示')
+        await page.getByPlaceholder('确认密码 · Confirmer', { exact: true }).fill(FIXTURE_PASSWORD)
+      }
+      await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)
+      await page.getByPlaceholder('Mot de passe', { exact: true }).fill(demo.scene.loginError ? 'wrong-password' : FIXTURE_PASSWORD)
+      await page.locator('button[type="submit"]').click()
+      await page.locator('.status-line').waitFor()
+    }
     if (demo.scene.answer || demo.scene.finish) {
       const options = page.locator('.vpl-option')
       await options.first().waitFor()

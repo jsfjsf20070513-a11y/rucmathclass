@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createAssistantConversation } from './assistantConversation'
+import { UserFacingError } from './userFacingError'
 
 function deferred() {
   let resolve, reject
@@ -36,11 +37,20 @@ describe('assistant conversation lifecycle', () => {
     const image = { mimeType: 'image/jpeg', data: 'aGVsbG8=', preview: 'data:image/jpeg;base64,aGVsbG8=' }
     expect(await conversation.send('看图', image)).toBe(false)
     expect(conversation.getSnapshot().messages).toEqual([])
+    expect(conversation.getSnapshot().error).toBe('答疑请求未完成，请检查网络后重试。')
     expect(history.saveTurn).not.toHaveBeenCalled()
     expect(await conversation.send('看图', image)).toBe(true)
     await conversation.send('第二问呢')
     expect(request.mock.calls[2][0][0].imageData).toEqual({ mimeType: image.mimeType, data: image.data })
     expect(conversation.getSnapshot().messages.map((m) => m.content)).toEqual(['看图', 'answer', '第二问呢', 'answer'])
+  })
+  it('preserves the account-switch instruction without saving or showing the failed question', async () => {
+    const { conversation, request, history } = setup()
+    await conversation.initialize()
+    request.mockRejectedValueOnce(new UserFacingError('账号已退出或切换，请重新打开答疑页面。'))
+    expect(await conversation.send('问题')).toBe(false)
+    expect(conversation.getSnapshot()).toMatchObject({ messages: [], error: '账号已退出或切换，请重新打开答疑页面。' })
+    expect(history.saveTurn).not.toHaveBeenCalled()
   })
   it('blocks duplicate sends and clear until the answer has been saved', async () => {
     const saved = deferred()

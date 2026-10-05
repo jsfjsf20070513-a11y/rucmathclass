@@ -1,5 +1,7 @@
 // Conversation lifecycle, independent of React and page layout. All operations
 // share one busy state so loading, sending, persistence and clearing cannot race.
+import { userErrorMessage } from './userFacingError'
+
 export function createAssistantConversation({ userId, history, request }) {
   let state = { messages: [], busy: !!userId, loading: false, error: '', notice: '' }
   const listeners = new Set()
@@ -57,7 +59,7 @@ export function createAssistantConversation({ userId, history, request }) {
         }
         return token === generation
       } catch (error) {
-        if (token === generation) emit({ messages: previous, error: error.message || '请求失败，请重试。' })
+        if (token === generation) emit({ messages: previous, error: userErrorMessage(error, '答疑请求未完成，请检查网络后重试。') })
         return false
       } finally {
         if (token === generation) emit({ busy: false, loading: false })
