@@ -65,11 +65,15 @@ SQL 按用途放在 `sql/`，没有脚本会自动执行它们。这些文件是
 
 ## 发布前的本地检查
 
-`npm run deploy:check` 或 `bash deploy.sh` 默认只检查本地，不执行 SSH 或 rsync。入口从脚本路径确定仓库根，要求 origin 是班级站仓库、分支是 `mathclass/main`、工作区干净；目标固定为 `/var/www/MathClassWebsite/dist`，拒绝用环境变量改到其他目录。
+`npm run deploy:check` 或 `bash deploy.sh` 只做本地检查，可在工作分支运行，不需要服务器配置。工作区必须没有未提交的改动。首次依次运行 lint、测试、构建、Worker 离线打包和浏览器检查。
 
-需要提供 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER` 和密钥的绝对路径 `MATHCLASS_DEPLOY_SSH_KEY`。检查依次运行 lint、测试、新构建，只还原生成的 `public/health.json`，再次检查工作区与提交未变，并核对新构建标记。它不会读取密钥内容、连接服务器或确认远端版本。
+源码、依赖文件和构建配置未变时，直接使用上次检查通过的文件。只改普通说明文档也可沿用；修改 `CLAUDE.md` 会重新检查。记录和发布文件保存在本机 `.cache/mathclass-release/`，不复用另一台机器的检查结果。检查脚本会恢复构建生成的 health 时间戳。
 
-只有用户明确授权部署后，才可按部署流程执行 `bash deploy.sh --publish`。这会重复相同检查，然后远端建目录并执行 `rsync --delete`；原先不带参数就发布的行为已经取消。发布前后的线上 health 与页面仍需另行核对，本地检查成功不是上线授权。
+发布前设置 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER` 和 `MATHCLASS_DEPLOY_SSH_KEY`。密钥必须使用绝对路径。获得明确上线授权后，运行 `bash deploy.sh --publish`。发布仅允许 `mathclass/main`，且本地提交必须与远端一致；上传前会再次核对。
+
+上传后核对用户平时访问的首页、版本文件、脚本和样式。记录保存在 `.cache/mathclass-release/records/`，失败也会记录停止位置。文件核对通过不能代替真实账号和 AI 验证。上传失败可能只更新了部分文件，脚本不会自动回滚，也不会把失败记为成功。
+
+发布目录固定为 `/var/www/MathClassWebsite/dist`。此命令不发布 Worker，不改服务器配置，不操作同机的青协网站和代理服务。构建中的 `health.json` 会另加源码摘要，用来核对检查结果和发布文件是否对应；它仍不检查数据库或 AI。
 
 [deployment/nginx/](../deployment/nginx/) 是仓库里的服务器配置，不能据此宣称已在生产生效。Worker 独立构建和部署，见它的 [接口说明](../worker/README.md)。
 
