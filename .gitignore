@@ -96,7 +96,7 @@ setup_admin_v2.sql
 !public/og/*
 
 # Public cover portraits; the offline asset check rejects files outside the manifest.
-!public/portraits/*.jpg
+!public/portraits/*.webp
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

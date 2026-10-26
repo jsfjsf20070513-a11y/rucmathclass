@@ -5,7 +5,7 @@
     "slug": "pythagoras",
     "birthYear": -570,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pythagoras_in_the_Roman_Forum%2C_Colosseum.jpg",
-    "file": "portraits/pythagoras.jpg"
+    "file": "portraits/pythagoras.webp"
   },
   {
     "order": 2,
@@ -13,7 +13,7 @@
     "slug": "euclid",
     "birthYear": -325,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Euklid-von-Alexandria_1.jpg",
-    "file": "portraits/euclid.jpg"
+    "file": "portraits/euclid.webp"
   },
   {
     "order": 3,
@@ -21,7 +21,7 @@
     "slug": "archimedes",
     "birthYear": -287,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Domenico-Fetti_Archimedes_1620.jpg",
-    "file": "portraits/archimedes.jpg"
+    "file": "portraits/archimedes.webp"
   },
   {
     "order": 4,
@@ -29,7 +29,7 @@
     "slug": "hypatia",
     "birthYear": 360,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hypatia_portrait.png",
-    "file": "portraits/hypatia.jpg"
+    "file": "portraits/hypatia.webp"
   },
   {
     "order": 5,
@@ -37,7 +37,7 @@
     "slug": "fibonacci",
     "birthYear": 1170,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Leonardo_Fibonacci.JPG",
-    "file": "portraits/fibonacci.jpg"
+    "file": "portraits/fibonacci.webp"
   },
   {
     "order": 6,
@@ -45,7 +45,7 @@
     "slug": "luca-pacioli",
     "birthYear": 1447,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pacioli.jpg",
-    "file": "portraits/luca-pacioli.jpg"
+    "file": "portraits/luca-pacioli.webp"
   },
   {
     "order": 7,
@@ -53,7 +53,7 @@
     "slug": "niccolo-tartaglia",
     "birthYear": 1499,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Portret_van_Niccolo_Tartaglia_Nicolavs_Tartaglia_Brixianvs_%28titel_op_object%29_Portretten_van_beroemde_Europese_geleerden_%28serietitel%29_Virorum_doctorum_de_Disciplinis_benemerentium_effigies_%28serietitel%29%2C_RP-P-1909-4459.jpg",
-    "file": "portraits/niccolo-tartaglia.jpg"
+    "file": "portraits/niccolo-tartaglia.webp"
   },
   {
     "order": 8,
@@ -61,7 +61,7 @@
     "slug": "gerolamo-cardano",
     "birthYear": 1501,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Girolamo_Cardano._Stipple_engraving_by_R._Cooper._Wellcome_V0001004.jpg",
-    "file": "portraits/gerolamo-cardano.jpg"
+    "file": "portraits/gerolamo-cardano.webp"
   },
   {
     "order": 9,
@@ -69,7 +69,7 @@
     "slug": "francois-viete",
     "birthYear": 1540,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Francois_Viete.jpg",
-    "file": "portraits/francois-viete.jpg"
+    "file": "portraits/francois-viete.webp"
   },
   {
     "order": 10,
@@ -77,7 +77,7 @@
     "slug": "john-napier",
     "birthYear": 1550,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/John_Napier_of_Merchiston%2C_1616.jpg",
-    "file": "portraits/john-napier.jpg"
+    "file": "portraits/john-napier.webp"
   },
   {
     "order": 11,
@@ -85,7 +85,7 @@
     "slug": "marin-mersenne",
     "birthYear": 1588,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/MarinMersenneDuflos.jpg",
-    "file": "portraits/marin-mersenne.jpg"
+    "file": "portraits/marin-mersenne.webp"
   },
   {
     "order": 12,
@@ -93,7 +93,7 @@
     "slug": "rene-descartes",
     "birthYear": 1596,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Frans_Hals_-_Portret_van_Ren%C3%A9_Descartes.jpg",
-    "file": "portraits/rene-descartes.jpg"
+    "file": "portraits/rene-descartes.webp"
   },
   {
     "order": 13,
@@ -101,7 +101,7 @@
     "slug": "pierre-de-fermat",
     "birthYear": 1607,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pierre_de_Fermat.jpg",
-    "file": "portraits/pierre-de-fermat.jpg"
+    "file": "portraits/pierre-de-fermat.webp"
   },
   {
     "order": 14,
@@ -109,7 +109,7 @@
     "slug": "blaise-pascal",
     "birthYear": 1623,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Blaise_Pascal_Versailles.JPG",
-    "file": "portraits/blaise-pascal.jpg"
+    "file": "portraits/blaise-pascal.webp"
   },
   {
     "order": 15,
@@ -117,7 +117,7 @@
     "slug": "christiaan-huygens",
     "birthYear": 1629,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Christiaan_Huygens-painting.jpeg",
-    "file": "portraits/christiaan-huygens.jpg"
+    "file": "portraits/christiaan-huygens.webp"
   },
   {
     "order": 16,
@@ -125,7 +125,7 @@
     "slug": "isaac-newton",
     "birthYear": 1643,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/GodfreyKneller-IsaacNewton-1689.jpg",
-    "file": "portraits/isaac-newton.jpg"
+    "file": "portraits/isaac-newton.webp"
   },
   {
     "order": 17,
@@ -133,7 +133,7 @@
     "slug": "gottfried-wilhelm-leibniz",
     "birthYear": 1646,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Gottfried_Wilhelm_von_Leibniz.jpg",
-    "file": "portraits/gottfried-wilhelm-leibniz.jpg"
+    "file": "portraits/gottfried-wilhelm-leibniz.webp"
   },
   {
     "order": 18,
@@ -141,7 +141,7 @@
     "slug": "jacob-bernoulli",
     "birthYear": 1655,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jakob_Bernoulli.jpg",
-    "file": "portraits/jacob-bernoulli.jpg"
+    "file": "portraits/jacob-bernoulli.webp"
   },
   {
     "order": 19,
@@ -149,7 +149,7 @@
     "slug": "johann-bernoulli",
     "birthYear": 1667,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Johann_Bernoulli2.jpg",
-    "file": "portraits/johann-bernoulli.jpg"
+    "file": "portraits/johann-bernoulli.webp"
   },
   {
     "order": 20,
@@ -157,7 +157,7 @@
     "slug": "leonhard-euler",
     "birthYear": 1707,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Leonhard_Euler.jpg",
-    "file": "portraits/leonhard-euler.jpg"
+    "file": "portraits/leonhard-euler.webp"
   },
   {
     "order": 21,
@@ -165,7 +165,7 @@
     "slug": "jean-le-rond-d-alembert",
     "birthYear": 1717,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Jean_Le_Rond_d%27Alembert%2C_by_French_school.jpg",
-    "file": "portraits/jean-le-rond-d-alembert.jpg"
+    "file": "portraits/jean-le-rond-d-alembert.webp"
   },
   {
     "order": 22,
@@ -173,7 +173,7 @@
     "slug": "joseph-louis-lagrange",
     "birthYear": 1736,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Joseph_Louis_Lagrange.jpg",
-    "file": "portraits/joseph-louis-lagrange.jpg"
+    "file": "portraits/joseph-louis-lagrange.webp"
   },
   {
     "order": 23,
@@ -181,7 +181,7 @@
     "slug": "gaspard-monge",
     "birthYear": 1746,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Gaspard_monge_litho_delpech.jpg",
-    "file": "portraits/gaspard-monge.jpg"
+    "file": "portraits/gaspard-monge.webp"
   },
   {
     "order": 24,
@@ -189,7 +189,7 @@
     "slug": "pierre-simon-laplace",
     "birthYear": 1749,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pierre-Simon_Laplace.jpg",
-    "file": "portraits/pierre-simon-laplace.jpg"
+    "file": "portraits/pierre-simon-laplace.webp"
   },
   {
     "order": 25,
@@ -197,7 +197,7 @@
     "slug": "joseph-fourier",
     "birthYear": 1768,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Fourier2.jpg",
-    "file": "portraits/joseph-fourier.jpg"
+    "file": "portraits/joseph-fourier.webp"
   },
   {
     "order": 26,
@@ -205,7 +205,7 @@
     "slug": "sophie-germain",
     "birthYear": 1776,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Germain_-_%C5%92uvres_philosophiques%2C_1896_%28Illustration_page_4%29.jpg",
-    "file": "portraits/sophie-germain.jpg"
+    "file": "portraits/sophie-germain.webp"
   },
   {
     "order": 27,
@@ -213,7 +213,7 @@
     "slug": "carl-friedrich-gauss",
     "birthYear": 1777,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Carl_Friedrich_Gauss.jpg",
-    "file": "portraits/carl-friedrich-gauss.jpg"
+    "file": "portraits/carl-friedrich-gauss.webp"
   },
   {
     "order": 28,
@@ -221,7 +221,7 @@
     "slug": "augustin-louis-cauchy",
     "birthYear": 1789,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Augustin-Louis_Cauchy_1901.jpg",
-    "file": "portraits/augustin-louis-cauchy.jpg"
+    "file": "portraits/augustin-louis-cauchy.webp"
   },
   {
     "order": 29,
@@ -229,7 +229,7 @@
     "slug": "charles-babbage",
     "birthYear": 1791,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charles_Babbage_-_1860.jpg",
-    "file": "portraits/charles-babbage.jpg"
+    "file": "portraits/charles-babbage.webp"
   },
   {
     "order": 30,
@@ -237,7 +237,7 @@
     "slug": "niels-henrik-abel",
     "birthYear": 1802,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Niels_Henrik_Abel_(detail).jpeg",
-    "file": "portraits/niels-henrik-abel.jpg"
+    "file": "portraits/niels-henrik-abel.webp"
   },
   {
     "order": 31,
@@ -245,7 +245,7 @@
     "slug": "carl-gustav-jacobi",
     "birthYear": 1804,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Carl_Jacobi.jpg",
-    "file": "portraits/carl-gustav-jacobi.jpg"
+    "file": "portraits/carl-gustav-jacobi.webp"
   },
   {
     "order": 32,
@@ -253,7 +253,7 @@
     "slug": "william-rowan-hamilton",
     "birthYear": 1805,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/William_Rowan_Hamilton_portrait_oval_combined.png",
-    "file": "portraits/william-rowan-hamilton.jpg"
+    "file": "portraits/william-rowan-hamilton.webp"
   },
   {
     "order": 33,
@@ -261,7 +261,7 @@
     "slug": "peter-gustav-lejeune-dirichlet",
     "birthYear": 1805,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Peter_Gustav_Lejeune_Dirichlet.jpg",
-    "file": "portraits/peter-gustav-lejeune-dirichlet.jpg"
+    "file": "portraits/peter-gustav-lejeune-dirichlet.webp"
   },
   {
     "order": 34,
@@ -269,7 +269,7 @@
     "slug": "evariste-galois",
     "birthYear": 1811,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Evariste_galois.jpg",
-    "file": "portraits/evariste-galois.jpg"
+    "file": "portraits/evariste-galois.webp"
   },
   {
     "order": 35,
@@ -277,7 +277,7 @@
     "slug": "george-boole",
     "birthYear": 1815,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Portrait_of_George_Boole.png",
-    "file": "portraits/george-boole.jpg"
+    "file": "portraits/george-boole.webp"
   },
   {
     "order": 36,
@@ -285,7 +285,7 @@
     "slug": "karl-weierstrass",
     "birthYear": 1815,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Karl_Weierstrass.jpg",
-    "file": "portraits/karl-weierstrass.jpg"
+    "file": "portraits/karl-weierstrass.webp"
   },
   {
     "order": 37,
@@ -293,7 +293,7 @@
     "slug": "ada-lovelace",
     "birthYear": 1815,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ada_Lovelace_daguerreotype_by_Antoine_Claudet_1843_-_cropped.png",
-    "file": "portraits/ada-lovelace.jpg"
+    "file": "portraits/ada-lovelace.webp"
   },
   {
     "order": 38,
@@ -301,7 +301,7 @@
     "slug": "pafnuty-chebyshev",
     "birthYear": 1821,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/M._Tchebycheef_-_btv1b53181332k_%28cropped%29.jpg",
-    "file": "portraits/pafnuty-chebyshev.jpg"
+    "file": "portraits/pafnuty-chebyshev.webp"
   },
   {
     "order": 39,
@@ -309,7 +309,7 @@
     "slug": "arthur-cayley",
     "birthYear": 1821,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Arthur_Cayley.jpg",
-    "file": "portraits/arthur-cayley.jpg"
+    "file": "portraits/arthur-cayley.webp"
   },
   {
     "order": 40,
@@ -317,7 +317,7 @@
     "slug": "charles-hermite",
     "birthYear": 1822,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Charles_Hermite_circa_1901_edit.jpg",
-    "file": "portraits/charles-hermite.jpg"
+    "file": "portraits/charles-hermite.webp"
   },
   {
     "order": 41,
@@ -325,7 +325,7 @@
     "slug": "bernhard-riemann",
     "birthYear": 1826,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Georg_Friedrich_Bernhard_Riemann.jpeg",
-    "file": "portraits/bernhard-riemann.jpg"
+    "file": "portraits/bernhard-riemann.webp"
   },
   {
     "order": 42,
@@ -333,7 +333,7 @@
     "slug": "richard-dedekind",
     "birthYear": 1831,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Richard_Dedekind_1900s.jpg",
-    "file": "portraits/richard-dedekind.jpg"
+    "file": "portraits/richard-dedekind.webp"
   },
   {
     "order": 43,
@@ -341,7 +341,7 @@
     "slug": "georg-cantor",
     "birthYear": 1845,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Georg_Cantor2.jpg",
-    "file": "portraits/georg-cantor.jpg"
+    "file": "portraits/georg-cantor.webp"
   },
   {
     "order": 44,
@@ -349,7 +349,7 @@
     "slug": "felix-klein",
     "birthYear": 1849,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Felix_Klein%2C_ante_1897_-_Accademia_delle_Scienze_di_Torino_0078_B.jpg",
-    "file": "portraits/felix-klein.jpg"
+    "file": "portraits/felix-klein.webp"
   },
   {
     "order": 45,
@@ -357,7 +357,7 @@
     "slug": "sofia-kovalevskaya",
     "birthYear": 1850,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sofja_Wassiljewna_Kowalewskaja_1.jpg",
-    "file": "portraits/sofia-kovalevskaya.jpg"
+    "file": "portraits/sofia-kovalevskaya.webp"
   },
   {
     "order": 46,
@@ -365,7 +365,7 @@
     "slug": "henri-poincare",
     "birthYear": 1854,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Henri_Poincar%C3%A9-2.jpg",
-    "file": "portraits/henri-poincare.jpg"
+    "file": "portraits/henri-poincare.webp"
   },
   {
     "order": 47,
@@ -373,7 +373,7 @@
     "slug": "andrey-markov",
     "birthYear": 1856,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Andrei_Markov.jpg",
-    "file": "portraits/andrey-markov.jpg"
+    "file": "portraits/andrey-markov.webp"
   },
   {
     "order": 48,
@@ -381,7 +381,7 @@
     "slug": "giuseppe-peano",
     "birthYear": 1858,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Giuseppe_Peano.jpg",
-    "file": "portraits/giuseppe-peano.jpg"
+    "file": "portraits/giuseppe-peano.webp"
   },
   {
     "order": 49,
@@ -389,7 +389,7 @@
     "slug": "david-hilbert",
     "birthYear": 1862,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/David_Hilbert_1886.jpg",
-    "file": "portraits/david-hilbert.jpg"
+    "file": "portraits/david-hilbert.webp"
   },
   {
     "order": 50,
@@ -397,7 +397,7 @@
     "slug": "henri-lebesgue",
     "birthYear": 1875,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lebesgue_2.jpeg",
-    "file": "portraits/henri-lebesgue.jpg"
+    "file": "portraits/henri-lebesgue.webp"
   },
   {
     "order": 51,
@@ -405,7 +405,7 @@
     "slug": "g-h-hardy",
     "birthYear": 1877,
     "sourceUrl": "https://upload.wikimedia.org/wikipedia/commons/3/35/Ghhardy%4072.jpg",
-    "file": "portraits/g-h-hardy.jpg"
+    "file": "portraits/g-h-hardy.webp"
   },
   {
     "order": 52,
@@ -413,7 +413,7 @@
     "slug": "emmy-noether",
     "birthYear": 1882,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Emmy_noether_postcard_1915.jpg",
-    "file": "portraits/emmy-noether.jpg"
+    "file": "portraits/emmy-noether.webp"
   },
   {
     "order": 53,
@@ -421,7 +421,7 @@
     "slug": "srinivasa-ramanujan",
     "birthYear": 1887,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Srinivasa_Ramanujan_-_OPC_-_1.jpg",
-    "file": "portraits/srinivasa-ramanujan.jpg"
+    "file": "portraits/srinivasa-ramanujan.webp"
   },
   {
     "order": 54,
@@ -429,7 +429,7 @@
     "slug": "stefan-banach",
     "birthYear": 1892,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Stefana_Banach_-_%D8%B3%D8%AA%D9%8A%D9%81%D8%A7%D9%86_%D8%A8%D9%86%D8%A7%D8%AE.jpg",
-    "file": "portraits/stefan-banach.jpg"
+    "file": "portraits/stefan-banach.webp"
   },
   {
     "order": 55,
@@ -437,7 +437,7 @@
     "slug": "norbert-wiener",
     "birthYear": 1894,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Norbert_Wiener.png",
-    "file": "portraits/norbert-wiener.jpg"
+    "file": "portraits/norbert-wiener.webp"
   },
   {
     "order": 56,
@@ -445,7 +445,7 @@
     "slug": "andrey-kolmogorov",
     "birthYear": 1903,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Andrej_Nikolajewitsch_Kolmogorov.jpg",
-    "file": "portraits/andrey-kolmogorov.jpg"
+    "file": "portraits/andrey-kolmogorov.webp"
   },
   {
     "order": 57,
@@ -453,7 +453,7 @@
     "slug": "john-von-neumann",
     "birthYear": 1903,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/JohnvonNeumann-LosAlamos.gif",
-    "file": "portraits/john-von-neumann.jpg"
+    "file": "portraits/john-von-neumann.webp"
   },
   {
     "order": 58,
@@ -461,7 +461,7 @@
     "slug": "kurt-godel",
     "birthYear": 1906,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Kurt_g%C3%B6del.jpg",
-    "file": "portraits/kurt-godel.jpg"
+    "file": "portraits/kurt-godel.webp"
   },
   {
     "order": 59,
@@ -469,7 +469,7 @@
     "slug": "alan-turing",
     "birthYear": 1912,
     "sourceUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Alan_Turing_Aged_16.jpg",
-    "file": "portraits/alan-turing.jpg"
+    "file": "portraits/alan-turing.webp"
   },
   {
     "order": 60,
@@ -477,6 +477,6 @@
     "slug": "paul-erdos",
     "birthYear": 1913,
     "sourceUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2f/Erdos_budapest_fall_1992_%28cropped%29.jpg",
-    "file": "portraits/paul-erdos.jpg"
+    "file": "portraits/paul-erdos.webp"
   }
 ]
