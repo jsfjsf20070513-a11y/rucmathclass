@@ -29,7 +29,7 @@ npm run compare -- --base mathclass/main --scene vocabulary-study
 npm run dev
 ```
 
-封面的 60 张肖像和统一清单已经随 Git 入库。开发和构建会先离线检查素材，正常启动不需要临时下载图片。
+封面的 60 张 WebP 肖像和统一清单已经随 Git 入库。图片总量约 670 KB。照片按可见区域加载。开发和构建会先离线检查素材，正常启动不需要临时下载图片。
 
 需要登录时，把 `.env.example` 复制成 `.env.local`，填写 Supabase URL 和公开的 anon key。不要填 service-role key。没有这两个配置时，公开页面仍能打开，账号功能不可用。
 
