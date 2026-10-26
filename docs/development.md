@@ -9,7 +9,7 @@
 | 首页定理和引语 | [siteContent.js](../src/data/siteContent.js) | 定理运行 `npm run theorems:render`；引语直接读取 |
 | 法语词库 | [vocab-source.json](../scripts/vocab-source.json) | `npm run vocab:import -- 文件路径` 先看报告；加 `--out` 才写文件 |
 | 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取 |
-| 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查；明确执行 `npm run portraits:fetch` 才联网补图 |
+| 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查。运行 `npm run portraits:fetch` 才联网补图。补图会转为 WebP，并去掉色彩配置等附加数据。 |
 
 词条 ID 用来对应已有学习进度，不能因整理词库而重排。导入有错误时停止写入。不要手改生成的 `frenchVocabulary.js` 和 `dailyTheoremNotes.generated.js`。
 

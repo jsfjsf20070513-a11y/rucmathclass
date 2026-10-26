@@ -1,5 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import sharp from 'sharp'
 
 export function validatePortraitManifest(manifest) {
   if (!Array.isArray(manifest) || !manifest.length) throw new Error('肖像清单不能为空。')
@@ -13,7 +14,7 @@ export function validatePortraitManifest(manifest) {
     if (portrait.order !== index + 1 || !portrait.name?.trim() || !Number.isFinite(portrait.birthYear)) {
       throw new Error(`肖像元数据或顺序无效：${portrait.slug}`)
     }
-    if (portrait.file !== `portraits/${portrait.slug}.jpg`) {
+    if (portrait.file !== `portraits/${portrait.slug}.webp`) {
       throw new Error(`肖像路径与 slug 不一致：${portrait.slug}`)
     }
     const source = new URL(portrait.sourceUrl)
@@ -26,11 +27,20 @@ export function validatePortraitManifest(manifest) {
 
 // Reject error pages and obviously truncated downloads. This is a signature
 // check, not a replacement for decoding/rendering images in a browser.
-export function validatePortraitJpeg(bytes, label) {
-  if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff
-    || bytes.at(-2) !== 0xff || bytes.at(-1) !== 0xd9) {
-    throw new Error(`肖像不是完整的 JPEG 文件：${label}`)
+export function validatePortraitWebp(bytes, label) {
+  if (bytes.length < 20 || bytes.toString('ascii', 0, 4) !== 'RIFF'
+    || bytes.toString('ascii', 8, 12) !== 'WEBP'
+    || bytes.readUInt32LE(4) !== bytes.length - 8
+    || !['VP8 ', 'VP8L', 'VP8X'].includes(bytes.toString('ascii', 12, 16))) {
+    throw new Error(`肖像不是完整的 WebP 文件：${label}`)
   }
+}
+
+// Convert to sRGB and omit source metadata, including oversized ICC profiles.
+// Keep the cover's existing 280 px width; smaller sources are not enlarged.
+export function encodePortraitWebp(bytes) {
+  return sharp(bytes).rotate().resize({ width: 280, withoutEnlargement: true })
+    .webp({ quality: 80, effort: 6 }).toBuffer()
 }
 
 export async function readPortraitManifest(root) {
@@ -46,11 +56,11 @@ export async function checkPortraitAssets(root) {
     try { bytes = await readFile(path) } catch (error) {
       throw new Error(`无法读取肖像 ${portrait.file}；请恢复仓库素材或运行 npm run portraits:fetch。`, { cause: error })
     }
-    validatePortraitJpeg(bytes, portrait.file)
+    validatePortraitWebp(bytes, portrait.file)
   }
   // Vite copies all of public, including ignored files. Do not ship retired
   // local images merely because a developer still has them in this directory.
-  const expected = new Set(manifest.map(({ slug }) => `${slug}.jpg`))
+  const expected = new Set(manifest.map(({ slug }) => `${slug}.webp`))
   const extras = (await readdir(join(root, 'public/portraits')))
     .filter((name) => name !== '.DS_Store' && !expected.has(name))
   if (extras.length) throw new Error(`肖像目录有清单外文件，请移到 public 之外：${extras.join(', ')}`)
