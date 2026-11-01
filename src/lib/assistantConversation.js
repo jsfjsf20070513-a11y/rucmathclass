@@ -33,7 +33,7 @@ export function createAssistantConversation({ userId, history, request }) {
       }
       if (token === generation) emit({ busy: false })
     },
-    async send(content, image) {
+    async send(content, image, { hint } = {}) {
       if (!userId || state.busy || (!content.trim() && !image)) return false
       const token = generation
       const previous = state.messages
@@ -44,7 +44,7 @@ export function createAssistantConversation({ userId, history, request }) {
       controller = new AbortController()
       emit({ messages: [...previous, userMessage], busy: true, loading: true, error: '' })
       try {
-        const reply = await request([...previous, userMessage], { signal: controller.signal })
+        const reply = await request([...previous, userMessage], { signal: controller.signal, hint })
         if (token !== generation) return false
         emit({ messages: [...previous, userMessage, reply], loading: false })
         if (mode === 'official') {

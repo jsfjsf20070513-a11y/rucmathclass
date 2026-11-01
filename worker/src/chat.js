@@ -1,7 +1,7 @@
 import { json } from './http.js'
 import { readChatBody } from './requestBody.js'
 import { createRequestScope } from './requestScope.js'
-import { estimateInputTokens, openaiModel, requestOpenAI, worstCaseCost } from './openai.js'
+import { estimateInputTokens, openaiModel, reasoningEffort, requestOpenAI, worstCaseCost } from './openai.js'
 import { reserveOpenAI } from './openaiBudget.js'
 
 // 动态查询聊天模型，失败时使用下面的候选列表。
@@ -157,7 +157,7 @@ export async function handleChat(request, env, origin, { userId, ctx } = {}) {
       let cost = worstCase
       try {
         const answer = await scope.run(() => requestOpenAI({
-          env, model, instructions: SYSTEM_PROMPT, contents, userId, signal: scope.signal,
+          env, model, instructions: SYSTEM_PROMPT, contents, userId, effort: reasoningEffort(env, body?.hint), signal: scope.signal,
         }))
         cost = answer.cost
         return json({ text: answer.text, model: answer.model }, 200, origin)

@@ -22,14 +22,14 @@ const HTTP_MESSAGES = {
   499: '请求已取消。',
 }
 
-export async function requestAssistant(messages, { signal, userId } = {}) {
+export async function requestAssistant(messages, { signal, userId, hint } = {}) {
   // A complete recent turn starts with a user message, including for Gemma.
   const context = messages.slice(-MAX_CONTEXT)
   while (context.length && context[0].role !== 'user') context.shift()
   const body = { messages: context.map((message) => ({
     role: message.role, content: message.content,
     ...(message.imageData ? { image: message.imageData } : {}),
-  })) }
+  })), ...(hint === 'vocabulary' ? { hint } : {}) }
   return withRequestDeadline(async (requestSignal) => {
     const token = await getAccessToken(userId, { signal: requestSignal })
     requestSignal.throwIfAborted()

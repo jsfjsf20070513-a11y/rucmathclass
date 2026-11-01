@@ -12,6 +12,7 @@ TTS_VOICE = "Kore"
 # 思考强度可选 none/minimal/low/medium/high；越高越准也越慢。OpenAI 最多等 90 秒，前端最多等 120 秒。
 OPENAI_MODEL = "gpt-6.1-terra"
 OPENAI_REASONING = "high"
+# 例外：从背词“请助手解释”发出的第一问固定用 low（网页只能调低，不能调高）。
 # 不限个人次数，只限全站花费（美元，按用量估算，偏高）。
 # 每天上限防一天内被刷光（北京时间零点重置）；周期上限按订阅续费日（1–28）切分。
 OPENAI_DAILY_BUDGET_USD = "3"

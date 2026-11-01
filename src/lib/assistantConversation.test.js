@@ -20,6 +20,12 @@ function setup(overrides = {}) {
 }
 
 describe('assistant conversation lifecycle', () => {
+  it('passes the vocabulary hint through to the request', async () => {
+    const { conversation, request } = setup()
+    await conversation.initialize()
+    await conversation.send('请解释法语词 « mot »。', null, { hint: 'vocabulary' })
+    expect(request.mock.calls[0][1]).toMatchObject({ hint: 'vocabulary' })
+  })
   it('locks sending until history is loaded', async () => {
     const loaded = deferred()
     const { conversation, request } = setup({ fetchMessages: () => loaded.promise })

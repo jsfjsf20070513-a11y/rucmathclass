@@ -55,8 +55,13 @@ export function toOpenAIInput(contents) {
   })
 }
 
-export async function requestOpenAI({ env, model, instructions, contents, userId, signal }) {
-  const effort = REASONING_EFFORTS.has(env.OPENAI_REASONING) ? env.OPENAI_REASONING : 'high'
+// 网页只能把强度往低调（背词查词），不能调高，避免借此多花钱。
+export function reasoningEffort(env, hint) {
+  if (hint === 'vocabulary') return 'low'
+  return REASONING_EFFORTS.has(env.OPENAI_REASONING) ? env.OPENAI_REASONING : 'high'
+}
+
+export async function requestOpenAI({ env, model, instructions, contents, userId, effort, signal }) {
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` },

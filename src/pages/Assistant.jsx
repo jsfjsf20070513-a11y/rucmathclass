@@ -105,6 +105,8 @@ export default function Assistant() {
   const inputRef = useRef(null)
   const fileRef = useRef(null)
   const imageGeneration = useRef(0)
+  // 从背词跳来的第一问是查词，Worker 用低强度思考；之后的追问照常。
+  const fromVocabulary = useRef(false)
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -117,6 +119,7 @@ export default function Assistant() {
     setError('')
     const params = new URLSearchParams(window.location.search)
     const term = params.get('term')
+    fromVocabulary.current = Boolean(term)
     if (!term) { setInput(''); return }
     const answer = params.get('answer')
     setInput(`请解释法语词 « ${term} »${answer ? `,并分析我刚才的答案「${answer}」为什么不对` : ''}。`)
@@ -125,12 +128,14 @@ export default function Assistant() {
   const send = useCallback(async (text) => {
     imageGeneration.current += 1
     setError('')
-    if (await sendMessage(`${text}`, image)) {
+    const hint = fromVocabulary.current && !image && text === input ? 'vocabulary' : undefined
+    if (await sendMessage(`${text}`, image, { hint })) {
+      fromVocabulary.current = false
       setInput('')
       setImage(null)
       inputRef.current?.focus()
     }
-  }, [sendMessage, image])
+  }, [sendMessage, image, input])
 
   const onPickImage = useCallback(async (event) => {
     const generation = ++imageGeneration.current

@@ -19,6 +19,13 @@ describe('assistant HTTP client', () => {
     expect(body.messages.at(-3).image).toEqual(messages[20].imageData)
     expect(messages).toHaveLength(23)
   })
+  it('sends only the vocabulary hint, never other effort hints', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ text: 'ok' })))
+    await requestAssistant([{ role: 'user', content: 'mot' }], { userId: 'a', hint: 'vocabulary' })
+    await requestAssistant([{ role: 'user', content: 'maths' }], { userId: 'a', hint: 'high' })
+    expect(JSON.parse(fetch.mock.calls[0][1].body).hint).toBe('vocabulary')
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).not.toHaveProperty('hint')
+  })
   it('bounds an unresponsive connection and reports retryable timeout', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('fetch', vi.fn((_, { signal }) => new Promise((_, reject) => {

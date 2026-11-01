@@ -122,6 +122,15 @@ describe('OpenAI first, Gemini as fallback', () => {
     expect(Number(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`))).toBeGreaterThanOrEqual(32000 * 5)
   })
 
+  it.each([
+    [{ hint: 'vocabulary' }, 'low'], [{ hint: 'math' }, 'high'], [{ effort: 'max' }, 'high'], [{}, 'high'],
+  ])('lets the page only lower the reasoning effort: %j → %s', async (extra, effort) => {
+    let payload
+    upstream({ openaiReply: async (_, options) => { payload = JSON.parse(options.body); return openai('ok') } })
+    await ask(environment(), { messages: [{ role: 'user', content: '请解释法语词 « dérivée »。' }], ...extra })
+    expect(payload.reasoning).toEqual({ effort })
+  })
+
   it('marks an answer cut by the output limit', async () => {
     upstream({ openaiReply: async () => openai('前半段', { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }) })
     expect((await (await ask(environment())).json()).text).toContain('后面的内容没有显示')
