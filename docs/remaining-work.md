@@ -8,15 +8,14 @@
 
 ## Cloudflare 检测与统计脚本
 
-2026-11-01 通过 Cloudflare API 确认，班级站已开启 Bot Fight Mode 的 JavaScript 检测和 Web Analytics 自动注入。两类脚本仍被线上 CSP 拦截。当前已测的登录、背词和 AI 流程可用，但检测和统计脚本尚未正常运行。
+2026-11-01 通过 Cloudflare API 确认，班级站已开启 Bot Fight Mode 的 JavaScript 检测和 Web Analytics 自动注入。当前已测的登录、背词和 AI 流程可用。本次浏览器检查中，两类注入脚本均被 CSP 阻止执行。
 
-修正方向是为检测脚本使用每次响应独立的 nonce，并明确允许统计脚本的来源。先在测试环境核对注入后的 HTML、CSP 和发布核验器，再安排线上配置变更。实现依据见 [Cloudflare 检测脚本与 CSP](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/#if-you-have-a-content-security-policy-csp) 和 [统计脚本的 CSP 要求](https://developers.cloudflare.com/web-analytics/faq/#what-do-i-need-to-add-to-my-content-security-policy-csp)。本次未修改线上配置。
+候选修正方案是在 CSP 响应头中使用每次响应独立的 nonce，并允许统计脚本来源。先在测试环境核对注入后的 HTML、CSP 和发布核验器，再安排线上配置变更。实现依据见 [Cloudflare 检测脚本与 CSP](https://developers.cloudflare.com/cloudflare-challenges/challenge-types/javascript-detections/#if-you-have-a-content-security-policy-csp) 和 [统计脚本的 CSP 要求](https://developers.cloudflare.com/web-analytics/faq/#what-do-i-need-to-add-to-my-content-security-policy-csp)。本次未修改线上配置。
 
 ## 需要继续验证
 
 - 真实账号：新注册、邮件确认、找回密码，以及两个不同账号之间的切换隔离。
-- 跨设备：同一账号在另一台设备读取背词进度和对话。
-- 真实手机：登录后的页面操作和朗读。首页、翻页、当日公式、未登录答疑入口及登录页已在 iPhone Safari 检查。
+- 真实手机：朗读实际出声。首页、翻页、当日公式、登录、背词预习和答疑页已在 iPhone Safari 检查。
 - Worker 语音：带有效身份的线上音频缓存和连接中断。背词朗读使用浏览器，不经过该接口。
 
-2026-11-01 已实测 macOS Safari 登录、背词保存后刷新继续、真实 AI 回答和刷新读取对话。上述结果不代替跨设备、账号切换或语音接口验证，也不保证模型以后仍有额度。
+2026-11-01 已实测 macOS Safari 登录、背词保存后刷新继续、真实 AI 回答和刷新读取对话。同一账号在 iPhone Safari 读到了电脑保存的测试问答；新建学习队列也未再从刚保存的 `bonjour` 开始。这次只核对了一题背词保存和一轮对话读取，不代替两个账号之间的切换或语音接口验证，也不保证模型以后仍有额度。
