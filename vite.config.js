@@ -10,6 +10,10 @@ const bootTag = '<script src="/boot-start.js"></script>'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // 线上只允许本站字体；小字体也输出为文件，避免 data: 地址被 CSP 拦截。
+  build: {
+    assetsInlineLimit: (filePath) => /\.(woff2?|ttf|otf)$/i.test(filePath) ? false : undefined,
+  },
   plugins: [react(), {
     name: 'version-boot-script',
     apply: 'build',

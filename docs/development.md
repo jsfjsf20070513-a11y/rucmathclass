@@ -45,18 +45,30 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 ## 最近一次发布核验
 
-以下是 2026-10-05 的现场记录。用户明确授权合并、部署 PR #56；没有读取或修改个人记录。
+最近一次前端发布是 2026-10-26，PR #58 的首页肖像优化。2026-11-01 重新只读核对了公网文件。
 
-| 项目 | 当次结果 |
+| 项目 | 结果 |
 | --- | --- |
-| 前端源码 | `0539f6f8a0c87e69cfe00eb313b8446cea3ea005`，PR #56 |
-| 公网 health | `2026-10-05T10:37:50.635Z`，应用标记 `MathClassWebsite` |
-| Worker | `mathclass-ai`，版本 `8780d6b7-4d6c-420d-a368-04cba2d6e70e`，100% 流量 |
-| 身份服务 | 前端仍使用班级站项目 `xfwkjhajrqxsakzovcwx`；Worker 的已有密钥配置保留 |
-| 文件与备份 | 发布目录 `/var/www/MathClassWebsite/dist`；旧网页备份在 `/var/backups/mathclass-release-20261005T103818Z/`，备份已逐文件核对 |
-| 已核对 | 服务器上 161 个文件与构建一致；公网首页去掉已确认的 Cloudflare 检测脚本后相同，其余 13 个版本文件、脚本和样式完全一致 |
-| 接口 | 未登录和失效令牌返回 401，错误方法 405，未知语音路径 404，预检 204 |
+| 已发布前端源码 | `67a3eb698c75b97b429ac23aba08d0015e00d1a8`，PR #58 |
+| 公网 health | 构建时间 `2026-10-26T05:53:49.276Z`，应用标记 `MathClassWebsite` |
+| 源码校验值 | `c5c1f4eb800769729cbce6c022beef8392207879b129f4f01d0233d8140a57b5` |
+| 发布时检查 | lint、311 项测试、构建、Worker 离线检查、21 个浏览器场景及 GitHub CI 通过 |
+| 发布时文件核对 | 服务器 161 个文件与构建一致；公网桌面加载 60 张肖像，手机尺寸加载 20 张，均与发布素材一致 |
+| 发布备份 | `/var/backups/mathclass-release-20261026T060547Z/` |
+| 11 月 1 日公网复核 | 首页、版本文件、脚本和样式共 14 个文件通过核对；首页仅去掉已核实的 Cloudflare 检测脚本后比较 |
 
-首次自动核对因 Cloudflare 插入脚本而报错。原失败记录保留；修正后的检查已通过。补充结果见 `.cache/mathclass-release/public-verified-0539f6f.json` 和 `manual-files-0539f6f.json`。本次未改服务器或 Cloudflare 配置，也未操作同机服务和 Raccord。
+2026-11-01 的首页检测脚本与 10 月 5 日的模板不同，原核验脚本因此报错。逐字比对确认，首页只有这一处注入差异。核验器现同时识别这两个完整模板，并核对响应、脚本参数和新版脚本 URL 中的 ray。未知脚本、正文变化和重复注入仍不能通过。
 
-[上一版现场记录](https://github.com/jsfjsf20070513-a11y/rucmathclass/blob/0539f6f8a0c87e69cfe00eb313b8446cea3ea005/docs/development.md#最近一次发布核验)保留在 Git 历史中。真实账号、模型回答和历史保存仍未验证，见 [剩余问题](remaining-work.md)。
+本地证据保存在 `.cache/mathclass-release/release-67a3eb6.json`、`public-portraits-67a3eb6.json`、`records/2026-10-26T06-12-09.111Z-cb5ff186.json` 和 `public-reverified-20261101.json`。这些是本机核验记录，不随 Git 分发。
+
+10 月 26 日未发布 Worker。2026-11-01 通过 Cloudflare API 核实，`mathclass-ai` 仍由版本 `8780d6b7-4d6c-420d-a368-04cba2d6e70e` 承接 100% 流量，部署时间为 2026-10-05。此前的数据库和接口核验见 [10 月 5 日记录](https://github.com/jsfjsf20070513-a11y/rucmathclass/blob/67a3eb698c75b97b429ac23aba08d0015e00d1a8/docs/development.md#最近一次发布核验)。
+
+### 2026-11-01 真实使用核验
+
+使用一个真实账号，在 macOS Safari 中验证了登录。背词作答时，保存期间不能进入下一题，保存成功后按钮恢复。刷新后从下一题继续。AI 测试问题得到回答，刷新后仍能读到这轮对话。匿名和无效令牌调用聊天接口均返回 401，匿名语音请求返回 401，预检返回 204，错误方法返回 405。上述结果只覆盖这个账号和这次请求，不证明其他账号或未来模型额度可用。
+
+公式字体 `KaTeX_Size3` 的内嵌 WOFF2 被线上 CSP 拦截，本站 WOFF 备用文件可正常加载。本次修正让字体始终输出为本站文件，不调整 CSP。桌面与手机尺寸共 12 组未登录页面对比，每组前后截图逐像素一致；截图保存在 `output/playwright/20261101-audit/`。此修正尚未部署，线上仍使用 10 月 26 日构建。
+
+真 iPhone 的 Safari 已检查首页、翻页、当日公式、未登录答疑入口和登录页。以上页面未见文字裁切或内容溢出。登录后的手机操作、朗读与跨设备记录仍待验证。
+
+尚未验证的范围继续保留在 [剩余问题](remaining-work.md)。
