@@ -9,6 +9,7 @@ const files = Object.fromEntries(Object.entries(bodies).map(([path, body]) => [p
 const build = { files, health: JSON.parse(bodies['health.json']) }
 const respond = (url) => new Response(bodies[new URL(url).pathname.slice(1) || 'index.html'])
 const jsd = readFileSync(new URL('./fixtures/cloudflare-jsd.html', import.meta.url), 'utf8')
+const jsdNovember = readFileSync(new URL('./fixtures/cloudflare-jsd-20261101.html', import.meta.url), 'utf8')
 const cfHeaders = { server: 'cloudflare', 'cf-ray': '0123456789abcdef-LAX', 'content-type': 'text/html; charset=utf-8' }
 const injected = (script = jsd) => bodies['index.html'].replace('</body>', script + '</body>')
 const withHomepage = (body, headers = cfHeaders) => createReleaseHttp(async (url) => new URL(url).pathname === '/' ? new Response(body, { headers }) : respond(url))
@@ -56,6 +57,24 @@ describe('发布后的线上验收', () => {
   it.each(['server', 'cf-ray', 'content-type'])('缺少 %s 时不识别注入脚本', async (missing) => {
     const headers = { ...cfHeaders }; delete headers[missing]
     await expect(withHomepage(injected(), headers).verify(build)).rejects.toThrow('与本次构建不同')
+  })
+  it('识别新版脚本，并同时核对参数和脚本 URL 中的 ray', async () => {
+    const script = jsdNovember.replaceAll('0123456789abcdef', 'fedcba9876543210')
+    const headers = { ...cfHeaders, 'cf-ray': 'fedcba9876543210-SJC' }
+    const result = await withHomepage(injected(script), headers).verify(build)
+    expect(result.files.find(({ path }) => path === 'index.html')).toMatchObject({
+      check: 'known-cloudflare-jsd', originalHash: files['index.html'],
+    })
+  })
+  it.each([
+    ['URL 的 ray 不一致', jsdNovember.replace('main.js?ray=0123456789abcdef', 'main.js?ray=fedcba9876543210')],
+    ['URL 多了参数', jsdNovember.replace('main.js?ray=0123456789abcdef', 'main.js?ray=0123456789abcdef&other=1')],
+    ['参数的 ray 不一致', jsdNovember.replace("r:'0123456789abcdef'", "r:'fedcba9876543210'")],
+    ['来源计算改变', jsdNovember.replace('l.origin', 'l.host')],
+    ['加入额外语句', jsdNovember.replace('</script>', 'alert(1)</script>')],
+    ['重复注入', jsdNovember + jsdNovember],
+  ])('新版 Cloudflare 例外不能放过：%s', async (_, script) => {
+    await expect(withHomepage(injected(script)).verify(build)).rejects.toThrow('与本次构建不同')
   })
   it('不跟随重定向到其他站点', async () => {
     const request = vi.fn(async () => new Response(null, { status: 302, headers: { Location: 'https://other.invalid' } }))

@@ -2,9 +2,12 @@ import { createHash } from 'node:crypto'
 
 const SITE = 'https://rucmathclass.com'
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex')
-// 2026-10-05 公网实测的 Cloudflare JSD 完整脚本，只将 r/t 换成固定占位符。
+// 公网实测的 Cloudflare JSD 完整脚本，只替换请求中的 ray 和时间。
 // 模板改变就停止验收；不能宽泛删除 script 或只凭 /cdn-cgi/ 路径放行。
-const CLOUDFLARE_JSD_HASH = '6d6461bd4913a7ca818f91936d4eac138eba3a8fd68f90a74203f65c7f4b29cf'
+const CLOUDFLARE_JSD_HASHES = new Set([
+  '6d6461bd4913a7ca818f91936d4eac138eba3a8fd68f90a74203f65c7f4b29cf', // 2026-10-05
+  'cc88e56a4704e7be304b6f3978ed268eabc5df1b510e3f296ea0ab5ddaa20f55', // 2026-11-01
+])
 
 function withoutKnownCloudflareScript(bytes, headers) {
   if (headers.get('server') !== 'cloudflare' || !headers.get('content-type')?.startsWith('text/html')) return null
@@ -21,8 +24,10 @@ function withoutKnownCloudflareScript(bytes, headers) {
   if (!parameters || parameters[1] !== ray) return null
   const time = Buffer.from(parameters[2], 'base64').toString('latin1')
   if (!/^\d{10}$/.test(time) || Buffer.from(time).toString('base64') !== parameters[2]) return null
-  const template = script.replace(parameters[0], "window.__CF$cv$params={r:'<ray>',t:'<time>'};")
-  if (hash(Buffer.from(template, 'latin1')) !== CLOUDFLARE_JSD_HASH) return null
+  const template = script
+    .replace(parameters[0], "window.__CF$cv$params={r:'<ray>',t:'<time>'};")
+    .replace(`/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=${ray}`, '/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=<ray>')
+  if (!CLOUDFLARE_JSD_HASHES.has(hash(Buffer.from(template, 'latin1')))) return null
   return Buffer.from(html.slice(0, start) + html.slice(closing.index), 'latin1')
 }
 
