@@ -1,9 +1,11 @@
 import { createRequestScope } from './requestScope.js'
 
-// OpenAI 的次数与花费计数，存在 Cloudflare KV（绑定名 AI_QUOTA）。
-// 每个账号每天限次数；每个计费周期限总花费。超出、未配置或读写失败时
-// 不用 OpenAI，改由 Gemini 回答，不让同学看到报错。
-// KV 跨机房同步有延迟，计数是软上限；OpenAI 后台不绑卡才是硬上限。
+// OpenAI 花费计数，存在 Cloudflare KV（绑定名 AI_QUOTA）。不限个人次数，
+// 只限全站花费：每天一道、每个计费周期一道。发请求前先按最坏情况占额，
+// 回答后按实际用量多退少补，同时在路上的请求也算进账里。
+// 超额、未配置或读写失败时不用 OpenAI，改由 Gemini 回答，不让同学看到报错。
+// KV 没有原子加减：同一实例内的占额和结账排队执行；不同实例、不同机房之间
+// 仍可能同时放行，所以计数是软上限。OpenAI 后台不绑卡才是硬上限。
 
 const DAY_MS = 24 * 3600 * 1000
 const SHANGHAI_OFFSET_MS = 8 * 3600 * 1000
@@ -31,35 +33,43 @@ export function billingPeriod(now, resetDay) {
   return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
-export function openaiLimits(env) {
-  return {
-    daily: Math.floor(positive(env.OPENAI_DAILY_PER_USER, 20)),
-    budgetMicros: Math.round(positive(env.OPENAI_PERIOD_BUDGET_USD, 80) * 1e6),
-    resetDay: env.OPENAI_BUDGET_RESET_DAY,
-  }
+// 同一实例内的读写排成一队，避免并发请求读到同一个旧数。
+let ledgerQueue = Promise.resolve()
+function serialized(operation) {
+  const result = ledgerQueue.then(operation)
+  ledgerQueue = result.catch(() => {})
+  return result
 }
 
-const readCount = async (kv, key) => Number(await kv.get(key)) || 0
+const micros = (usd) => Math.ceil(usd * 1e6)
+const readMicros = async (kv, key) => Number(await kv.get(key)) || 0
 
-// 名额够就先占一次并返回记账函数；不够或出错返回 null。
-export async function reserveOpenAI({ env, userId, signal, now = Date.now() }) {
+// 两道上限都够就占额并返回结账函数；不够或出错返回 null。
+export async function reserveOpenAI({ env, userId, reserveUsd, signal, now = Date.now() }) {
   const kv = env.AI_QUOTA
   if (!kv || typeof kv.get !== 'function' || !userId) return null
-  const { daily, budgetMicros, resetDay } = openaiLimits(env)
-  const dayKey = `day:${shanghaiDate(now)}:${userId}`
-  const spendKey = `spend:${billingPeriod(now, resetDay)}`
+  const reserved = micros(reserveUsd)
+  const ledgers = [
+    { key: `spend-day:${shanghaiDate(now)}`, limit: micros(positive(env.OPENAI_DAILY_BUDGET_USD, 3)), ttl: 2 * DAY_MS },
+    { key: `spend:${billingPeriod(now, env.OPENAI_BUDGET_RESET_DAY)}`, limit: micros(positive(env.OPENAI_PERIOD_BUDGET_USD, 20)), ttl: 40 * DAY_MS },
+  ]
+  const add = (delta, spent) => Promise.all(ledgers.map(({ key, ttl }, index) => (
+    kv.put(key, String(Math.max(0, spent[index] + delta)), { expirationTtl: ttl / 1000 }))))
+  const read = () => Promise.all(ledgers.map(({ key }) => readMicros(kv, key)))
   const scope = createRequestScope(signal, 2000)
   try {
-    const [used, spent] = await scope.run(() => Promise.all([readCount(kv, dayKey), readCount(kv, spendKey)]))
-    if (used >= daily || spent >= budgetMicros) return null
-    await scope.run(() => kv.put(dayKey, String(used + 1), { expirationTtl: 2 * DAY_MS / 1000 }))
+    const allowed = await scope.run(() => serialized(async () => {
+      const spent = await read()
+      if (ledgers.some(({ limit }, index) => spent[index] + reserved > limit)) return false
+      await add(reserved, spent)
+      return true
+    }))
+    if (!allowed) return null
   } catch {
     return null
   } finally { scope.close() }
-  return async function recordSpend(costUsd) {
-    const micros = Math.ceil(costUsd * 1e6)
-    if (!(micros > 0)) return
-    const spent = await readCount(kv, spendKey)
-    await kv.put(spendKey, String(spent + micros), { expirationTtl: 40 * DAY_MS / 1000 })
+  return async function settle(actualUsd) {
+    const delta = micros(Math.max(0, actualUsd)) - reserved
+    if (delta) await serialized(async () => add(delta, await read()))
   }
 }

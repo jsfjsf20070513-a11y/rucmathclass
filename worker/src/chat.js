@@ -148,12 +148,13 @@ export async function handleChat(request, env, origin, { userId, ctx } = {}) {
   const model = openaiModel(env)
   let triedOpenAI = false
   if (model) {
-    const recordSpend = await reserveOpenAI({ env, userId, signal: request.signal })
+    const worstCase = worstCaseCost(model, estimateInputTokens(SYSTEM_PROMPT, contents))
+    const settle = await reserveOpenAI({ env, userId, reserveUsd: worstCase, signal: request.signal })
     if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
-    if (recordSpend) {
+    if (settle) {
       triedOpenAI = true
       const scope = createRequestScope(request.signal, OPENAI_TIMEOUT_MS)
-      let cost = 0
+      let cost = worstCase
       try {
         const answer = await scope.run(() => requestOpenAI({
           env, model, instructions: SYSTEM_PROMPT, contents, userId, signal: scope.signal,
@@ -161,11 +162,12 @@ export async function handleChat(request, env, origin, { userId, ctx } = {}) {
         cost = answer.cost
         return json({ text: answer.text, model: answer.model }, 200, origin)
       } catch (error) {
-        // 上游明确报错不计费；超时或断开时拿不到用量，按最坏情况记账。
-        if (error.billed !== false) cost = error.cost ?? worstCaseCost(model, estimateInputTokens(SYSTEM_PROMPT, contents))
+        // 上游明确报错不计费；超时或断开时拿不到用量，保留最坏情况的占额。
+        if (error.billed === false) cost = 0
+        else if (error.cost !== undefined) cost = error.cost
       } finally {
         scope.close()
-        const pending = recordSpend(cost).catch(() => {})
+        const pending = settle(cost).catch(() => {})
         ctx?.waitUntil?.(pending)
       }
       if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)

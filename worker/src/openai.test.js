@@ -19,7 +19,7 @@ function memoryKV(initial = {}) {
 }
 const environment = (patch = {}) => ({
   GEMINI_API_KEY: 'gemini-key', OPENAI_API_KEY: 'openai-key', OPENAI_MODEL: 'gpt-6.1-terra',
-  OPENAI_DAILY_PER_USER: '2', OPENAI_PERIOD_BUDGET_USD: '80', AI_QUOTA: memoryKV(), ...patch,
+  OPENAI_DAILY_BUDGET_USD: '3', OPENAI_PERIOD_BUDGET_USD: '20', AI_QUOTA: memoryKV(), ...patch,
 })
 let handleChat
 beforeEach(async () => {
@@ -57,27 +57,40 @@ describe('OpenAI first, Gemini as fallback', () => {
     expect(payload.input[1]).toEqual({ role: 'assistant', content: '好' })
     expect(payload.safety_identifier).toMatch(/^[0-9a-f]{64}$/)
     expect(JSON.stringify(payload)).not.toContain(userId)
-    const spend = [...env.AI_QUOTA.store].find(([key]) => key.startsWith('spend:'))
-    expect(Number(spend[1])).toBe(Math.ceil(estimateCost('gpt-6.1-terra', { input_tokens: 1000, output_tokens: 2000 }) * 1e6))
+    const actual = String(Math.ceil(estimateCost('gpt-6.1-terra', { input_tokens: 1000, output_tokens: 2000 }) * 1e6))
+    expect(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`)).toBe(actual)
+    expect(env.AI_QUOTA.store.get(`spend-day:${shanghaiDate(Date.now())}`)).toBe(actual)
   })
 
-  it('falls back to Gemini once the daily count is used up', async () => {
+  it('does not limit how often one account asks while the budget lasts', async () => {
     const openaiReply = vi.fn(async () => openai('gpt'))
     upstream({ openaiReply })
     const env = environment()
-    expect((await (await ask(env)).json()).text).toBe('gpt')
-    expect((await (await ask(env)).json()).text).toBe('gpt')
-    expect((await (await ask(env)).json()).text).toBe('gemini answer')
-    expect(openaiReply).toHaveBeenCalledTimes(2)
+    for (let i = 0; i < 30; i += 1) expect((await (await ask(env)).json()).text).toBe('gpt')
   })
 
-  it('falls back to Gemini when the period budget is spent', async () => {
+  it.each([
+    ['daily', () => `spend-day:${shanghaiDate(Date.now())}`, 3e6],
+    ['period', () => `spend:${billingPeriod(Date.now(), 1)}`, 20e6],
+  ])('falls back to Gemini when the %s budget would be exceeded', async (_, key, limit) => {
     const openaiReply = vi.fn(async () => openai('gpt'))
     upstream({ openaiReply })
-    const key = `spend:${billingPeriod(Date.now(), 1)}`
-    const env = environment({ AI_QUOTA: memoryKV({ [key]: String(80e6) }) })
+    const env = environment({ AI_QUOTA: memoryKV({ [key()]: String(limit - 1000) }) })
     expect((await (await ask(env)).json()).text).toBe('gemini answer')
     expect(openaiReply).not.toHaveBeenCalled()
+  })
+
+  it('counts requests still in flight against the budget', async () => {
+    const releases = []
+    const openaiReply = vi.fn(() => new Promise((resolve) => releases.push(() => resolve(openai('gpt')))))
+    upstream({ openaiReply })
+    // 每次最坏约 0.03 美元；0.1 美元的日上限最多同时放行三个。
+    const env = environment({ OPENAI_DAILY_BUDGET_USD: '0.1' })
+    const pending = Array.from({ length: 6 }, () => ask(env))
+    await vi.waitFor(() => expect(openaiReply).toHaveBeenCalledTimes(3))
+    releases.forEach((release) => release())
+    const texts = await Promise.all(pending.map(async (p) => (await (await p).json()).text))
+    expect(texts.filter((text) => text === 'gpt')).toHaveLength(3)
   })
 
   it.each([
@@ -96,7 +109,7 @@ describe('OpenAI first, Gemini as fallback', () => {
     upstream({ openaiReply: async () => new Response('{}', { status: 429 }) })
     const env = environment()
     expect((await (await ask(env)).json()).text).toBe('gemini answer')
-    expect([...env.AI_QUOTA.store.keys()].some((key) => key.startsWith('spend:'))).toBe(false)
+    expect(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`)).toBe('0')
   })
 
   it('charges the worst case when OpenAI times out, then answers with Gemini', async () => {
@@ -106,8 +119,7 @@ describe('OpenAI first, Gemini as fallback', () => {
     const pending = ask(env)
     await vi.advanceTimersByTimeAsync(24000)
     expect((await (await pending).json()).text).toBe('gemini answer')
-    const spend = [...env.AI_QUOTA.store].find(([key]) => key.startsWith('spend:'))
-    expect(Number(spend[1])).toBeGreaterThanOrEqual(6000 * 5)
+    expect(Number(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`))).toBeGreaterThanOrEqual(6000 * 5)
   })
 
   it('marks an answer cut by the output limit', async () => {
