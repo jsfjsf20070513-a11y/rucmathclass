@@ -52,7 +52,7 @@ describe('OpenAI first, Gemini as fallback', () => {
     const env = environment()
     const response = await ask(env, { messages: [{ role: 'user', content: '看图', image }, { role: 'model', content: '好' }, { role: 'user', content: '继续' }] })
     expect(await response.json()).toEqual({ text: '2x', model: 'gpt-6.1-terra' })
-    expect(payload).toMatchObject({ model: 'gpt-6.1-terra', store: false, max_output_tokens: 6000, reasoning: { effort: 'low' } })
+    expect(payload).toMatchObject({ model: 'gpt-6.1-terra', store: false, max_output_tokens: 32000, reasoning: { effort: 'high' } })
     expect(payload.input[0].content[1]).toEqual({ type: 'input_image', image_url: 'data:image/jpeg;base64,aGVsbG8=' })
     expect(payload.input[1]).toEqual({ role: 'assistant', content: '好' })
     expect(payload.safety_identifier).toMatch(/^[0-9a-f]{64}$/)
@@ -84,8 +84,8 @@ describe('OpenAI first, Gemini as fallback', () => {
     const releases = []
     const openaiReply = vi.fn(() => new Promise((resolve) => releases.push(() => resolve(openai('gpt')))))
     upstream({ openaiReply })
-    // 每次最坏约 0.03 美元；0.1 美元的日上限最多同时放行三个。
-    const env = environment({ OPENAI_DAILY_BUDGET_USD: '0.1' })
+    // 每次最坏约 0.16 美元；0.5 美元的日上限最多同时放行三个。
+    const env = environment({ OPENAI_DAILY_BUDGET_USD: '0.5' })
     const pending = Array.from({ length: 6 }, () => ask(env))
     await vi.waitFor(() => expect(openaiReply).toHaveBeenCalledTimes(3))
     releases.forEach((release) => release())
@@ -117,9 +117,9 @@ describe('OpenAI first, Gemini as fallback', () => {
     upstream({ openaiReply: (_, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason))) })
     const env = environment()
     const pending = ask(env)
-    await vi.advanceTimersByTimeAsync(24000)
+    await vi.advanceTimersByTimeAsync(90000)
     expect((await (await pending).json()).text).toBe('gemini answer')
-    expect(Number(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`))).toBeGreaterThanOrEqual(6000 * 5)
+    expect(Number(env.AI_QUOTA.store.get(`spend:${billingPeriod(Date.now(), 1)}`))).toBeGreaterThanOrEqual(32000 * 5)
   })
 
   it('marks an answer cut by the output limit', async () => {

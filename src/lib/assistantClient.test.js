@@ -25,7 +25,7 @@ describe('assistant HTTP client', () => {
       signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
     })))
     const result = expect(requestAssistant([{ role: 'user', content: 'question' }], { userId: 'a' })).rejects.toThrow('超时')
-    await vi.advanceTimersByTimeAsync(45000)
+    await vi.advanceTimersByTimeAsync(120000)
     await result
     expect(vi.getTimerCount()).toBe(0)
   })

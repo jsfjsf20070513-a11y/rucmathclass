@@ -4,6 +4,8 @@ import { UserFacingError } from './userFacingError'
 
 const AI_ENDPOINT = import.meta.env.VITE_AI_ENDPOINT || 'https://rucmathclass.com/api/chat'
 const MAX_CONTEXT = 20
+// 高强度思考的难题可能要一分多钟；Worker 端 OpenAI 90 秒加 Gemini 后备 15 秒。
+const REPLY_TIMEOUT_MS = 120000
 const INVALID_CONTENT_MESSAGES = new Set([
   '图片格式无效，请重新选择图片。',
   '本次发送的图片总量过大。请先保留需要的内容，刷新页面后再上传本次需要的图片。',
@@ -45,7 +47,7 @@ export async function requestAssistant(messages, { signal, userId } = {}) {
     const text = `${data?.text || ''}`.trim()
     if (!text) throw new UserFacingError('没有收到有效回复，请重试。')
     return { role: 'model', content: text }
-  }, { signal, timeoutMs: 45000 }).catch((error) => {
+  }, { signal, timeoutMs: REPLY_TIMEOUT_MS }).catch((error) => {
     if (error.name === 'AbortError' && !signal?.aborted) throw new UserFacingError('等待回复超时，请重试。问题和图片仍保留在输入区。')
     throw error
   })

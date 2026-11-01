@@ -75,8 +75,8 @@ export const SYSTEM_PROMPT = [
   'Write math in LaTeX delimited by $...$ (inline) or $$...$$ (display); do not use \\( \\) or \\[ \\].',
   'Do not use tables or code blocks.',
 ].join('\n')
-// 前端最多等 45 秒：OpenAI 24 秒，失败后 Gemini 只跑第一组 15 秒。
-const OPENAI_TIMEOUT_MS = 24000
+// 前端最多等 120 秒：OpenAI 90 秒，失败后 Gemini 只跑第一组 15 秒。
+const OPENAI_TIMEOUT_MS = 90000
 
 export async function handleChat(request, env, origin, { userId, ctx } = {}) {
   if (request.method !== 'POST') return json({ error: '暂不支持这种发送方式，请刷新页面后重试。' }, 405, origin)

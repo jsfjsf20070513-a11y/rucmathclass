@@ -10,7 +10,8 @@ export const OPENAI_PRICES = {
 }
 // 5.6 及以后的模型写入缓存按未缓存输入的 1.25 倍计费；估算时全部按这个上限算。
 const CACHE_WRITE_FACTOR = 1.25
-export const MAX_OUTPUT_TOKENS = 6000
+// 思考也算在输出里；高强度思考的难题要留足，否则想到一半被截断、拿不到答案。
+export const MAX_OUTPUT_TOKENS = 32000
 const REASONING_EFFORTS = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'])
 
 export function openaiModel(env) {
@@ -55,7 +56,7 @@ export function toOpenAIInput(contents) {
 }
 
 export async function requestOpenAI({ env, model, instructions, contents, userId, signal }) {
-  const effort = REASONING_EFFORTS.has(env.OPENAI_REASONING) ? env.OPENAI_REASONING : 'low'
+  const effort = REASONING_EFFORTS.has(env.OPENAI_REASONING) ? env.OPENAI_REASONING : 'high'
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` },
