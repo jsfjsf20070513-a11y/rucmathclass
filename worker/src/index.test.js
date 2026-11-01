@@ -111,7 +111,7 @@ it('verifies with the configured auth server before either handler and never sen
     method: 'GET', redirect: 'manual', signal: expect.any(AbortSignal),
     headers: { apikey: 'fixture-key', Authorization: 'Bearer fixture-token' },
   })
-  expect(handleChat).toHaveBeenCalledWith(input, env, origin)
+  expect(handleChat).toHaveBeenCalledWith(input, env, origin, { userId: user.id, ctx: {} })
   expect(input.bodyUsed).toBe(false)
   expect((await worker.fetch(request('/api/speak?text=bonjour'), env, {})).status).toBe(200)
   expect(fetch).toHaveBeenCalledTimes(2)

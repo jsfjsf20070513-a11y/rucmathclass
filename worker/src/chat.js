@@ -1,6 +1,8 @@
 import { json } from './http.js'
 import { readChatBody } from './requestBody.js'
 import { createRequestScope } from './requestScope.js'
+import { estimateInputTokens, openaiModel, requestOpenAI, worstCaseCost } from './openai.js'
+import { reserveOpenAI } from './openaiBudget.js'
 
 // 动态查询聊天模型，失败时使用下面的候选列表。
 // 每小时从 ListModels 拉一次当前可用模型,自动排序(flash 新版本优先 → pro →
@@ -67,18 +69,16 @@ const MAX_CHARS = 4000
 const ALLOWED_IMAGE = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_IMAGE_B64 = 7000000 // ≈5MB 二进制
 
-const SYSTEM_PROMPT = [
-  "Tu es l'assistant bilingue (中文 / français) de la classe de mathématiques 2025 du campus sino-français.",
-  'Public : des élèves qui apprennent les mathématiques ET le français (du niveau A1 au C2).',
-  'Règles :',
-  "- Réponds dans la langue de la question ; si on te le demande, donne le terme dans l'autre langue.",
-  '- Pour les maths : sois rigoureux, montre les étapes clés, utilise la notation LaTeX entre $...$ quand c\'est utile.',
-  '- Pour le français : explique le sens, le genre des noms, et donne un exemple court.',
-  '- Reste concis et bienveillant. Si tu n\'es pas sûr, dis-le.',
-  '- Refuse poliment ce qui sort du cadre scolaire (maths / français / méthode d\'étude).',
+// 不设角色，只交代页面能显示的格式：页面只认 $...$ 和 $$...$$，不渲染表格和代码块。
+export const SYSTEM_PROMPT = [
+  'Reply in the language of the question.',
+  'Write math in LaTeX delimited by $...$ (inline) or $$...$$ (display); do not use \\( \\) or \\[ \\].',
+  'Do not use tables or code blocks.',
 ].join('\n')
+// 前端最多等 45 秒：OpenAI 24 秒，失败后 Gemini 只跑第一组 15 秒。
+const OPENAI_TIMEOUT_MS = 24000
 
-export async function handleChat(request, env, origin) {
+export async function handleChat(request, env, origin, { userId, ctx } = {}) {
   if (request.method !== 'POST') return json({ error: '暂不支持这种发送方式，请刷新页面后重试。' }, 405, origin)
   if (!env.GEMINI_API_KEY) return json({ error: '答疑暂时不可用，请稍后再试。' }, 500, origin)
 
@@ -144,6 +144,34 @@ export async function handleChat(request, env, origin) {
     })
   }
 
+  // OpenAI 先答；没启用、名额用完或失败时交给下面的 Gemini。
+  const model = openaiModel(env)
+  let triedOpenAI = false
+  if (model) {
+    const recordSpend = await reserveOpenAI({ env, userId, signal: request.signal })
+    if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
+    if (recordSpend) {
+      triedOpenAI = true
+      const scope = createRequestScope(request.signal, OPENAI_TIMEOUT_MS)
+      let cost = 0
+      try {
+        const answer = await scope.run(() => requestOpenAI({
+          env, model, instructions: SYSTEM_PROMPT, contents, userId, signal: scope.signal,
+        }))
+        cost = answer.cost
+        return json({ text: answer.text, model: answer.model }, 200, origin)
+      } catch (error) {
+        // 上游明确报错不计费；超时或断开时拿不到用量，按最坏情况记账。
+        if (error.billed !== false) cost = error.cost ?? worstCaseCost(model, estimateInputTokens(SYSTEM_PROMPT, contents))
+      } finally {
+        scope.close()
+        const pending = recordSpend(cost).catch(() => {})
+        ctx?.waitUntil?.(pending)
+      }
+      if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
+    }
+  }
+
   let chatModels
   try { chatModels = await getChatModels(env, request.signal) } catch {
     return json({ error: '请求已取消。' }, 499, origin)
@@ -183,9 +211,9 @@ export async function handleChat(request, env, origin) {
     }
   }
 
-  let win = await race(chatModels.slice(0, 3), 18000)
+  let win = await race(chatModels.slice(0, 3), triedOpenAI ? 15000 : 18000)
   if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
-  if (!win && chatModels.length > 3) win = await race(chatModels.slice(3, 6), 15000)
+  if (!win && !triedOpenAI && chatModels.length > 3) win = await race(chatModels.slice(3, 6), 15000)
   if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
   if (win) return json(win, 200, origin)
 

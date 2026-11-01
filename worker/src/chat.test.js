@@ -125,6 +125,6 @@ describe('chat handler contract after access verification', () => {
       return answer('ok')
     }))
     await request({ messages: [{ role: 'model', content: 'previous' }, { role: 'user', content: '继续' }] })
-    expect(payload.contents[1].parts[0].text).toContain('assistant bilingue')
+    expect(payload.contents[1].parts[0].text).toContain('$...$')
   })
 })

@@ -8,6 +8,22 @@ workers_dev = false
 # TTS_VOICE(代码 env.TTS_VOICE 优先,缓存按声音区分)。
 [vars]
 TTS_VOICE = "Kore"
+# 答疑先用 OpenAI，失败或超额时换 Gemini。模型必须在 src/openai.js 的价目表里。
+# 思考强度可选 none/minimal/low/medium/high；越高越慢，前端最多等 45 秒。
+OPENAI_MODEL = "gpt-6.1-terra"
+OPENAI_REASONING = "low"
+# 每个账号每天最多用 OpenAI 的次数（北京时间零点重置）。
+OPENAI_DAILY_PER_USER = "20"
+# 每个计费周期的花费上限（美元，按用量估算，偏高），和周期开始日（订阅续费日，1–28）。
+OPENAI_PERIOD_BUDGET_USD = "80"
+OPENAI_BUDGET_RESET_DAY = "1"
+
+# OpenAI 计数存在 KV。没有这个绑定时不调用 OpenAI，全部由 Gemini 回答。
+# 启用：npx wrangler kv namespace create AI_QUOTA --config worker/wrangler.toml，
+# 把返回的 id 填进下面再取消注释。
+# [[kv_namespaces]]
+# binding = "AI_QUOTA"
+# id = ""
 
 # 路由:生产域名下的 /api/chat 绑到本 Worker(同域,前端同源调用)。
 # 静态站其余路径仍由源站提供，聊天和语音请求走 Worker。
@@ -30,6 +46,7 @@ simple = { limit = 30, period = 60 }
 
 # ⚠️ API key 绝不写进本文件。它们是 secret:
 #   wrangler secret put GEMINI_API_KEY
+#   wrangler secret put OPENAI_API_KEY（可不配；不配时只用 Gemini）
 # 登录校验还需 SUPABASE_URL 和 SUPABASE_ANON_KEY；使用与前端相同的
 # Supabase 项目及公开客户端 key，均作为 Worker secret 单独配置。
 # 不使用 service_role，也不复用用户的 access token 作为服务配置。

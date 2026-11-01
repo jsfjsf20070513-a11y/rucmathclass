@@ -6,6 +6,7 @@ const unauthorized = (origin) => json({ error: '登录状态已失效，请刷�
 
 // Both endpoints use the same boundary. A verified session is required even
 // for cached audio; browser CORS and a frontend login screen are not proof.
+// Returns a rejection Response, or { userId } for a verified session.
 export async function checkRequestAccess(request, env, origin) {
   const authorization = request.headers.get('Authorization') || ''
   if (!/^Bearer [^\s]{1,8192}$/i.test(authorization)) return unauthorized(origin)
@@ -39,7 +40,7 @@ export async function checkRequestAccess(request, env, origin) {
     if (!response.ok) return unavailable(origin)
     const user = await scope.run(() => response.json())
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(user?.id || '')) return unavailable(origin)
-    return null
+    return { userId: user.id }
   } catch {
     return request.signal.aborted
       ? json({ error: '请求已取消。' }, 499, origin)
