@@ -10,7 +10,7 @@
   overflow: hidden;
   background: #f4efe6;
   color: var(--mag-ink-2);
-  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-family: "Cormorant Garamond", "EB Garamond", var(--font-cjk), serif;
   font-variant-numeric: lining-nums tabular-nums;
 }
 
@@ -247,7 +247,7 @@
 }
 .mag-theorem-title {
   margin: 0 0 12px;
-  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-family: "Cormorant Garamond", var(--font-cjk), serif;
   font-size: 26px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -305,7 +305,7 @@
   flex-shrink: 0;
 }
 .mag-biblio-label {
-  font-family: "Cormorant Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-family: "Cormorant Garamond", var(--font-cjk), serif;
   font-size: 17px;
   color: var(--mag-ink-2);
   transition: color 0.15s ease;
@@ -429,7 +429,7 @@
   border: none;
   border-bottom: 1px solid rgba(34, 29, 24, 0.28);
   border-radius: 0;
-  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-family: "Cormorant Garamond", var(--font-cjk), serif;
   font-size: 16px;
   color: var(--mag-ink-2);
   outline: none;

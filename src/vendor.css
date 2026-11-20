@@ -1,4 +1,5 @@
 @import "katex/dist/katex.min.css";
+@import "./fonts/noto-serif-sc/index.css";
 
 @font-face {
   font-family: "EB Garamond";
@@ -334,30 +335,6 @@
     U+2215,
     U+FEFF,
     U+FFFD;
-}
-
-@font-face {
-  font-family: "Noto Serif SC";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/noto-serif-sc-site-400.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Noto Serif SC";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/fonts/noto-serif-sc-site-500.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Noto Serif SC";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/fonts/noto-serif-sc-site-600.woff2") format("woff2");
 }
 
 /* ── 2026-08 杂志刊三族(自托管,禁热链;family 名对齐设计稿) ──

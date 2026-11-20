@@ -16,7 +16,7 @@
   flex-direction: column;
   background: #fdfcf8;
   color: var(--mag-ink-2);
-  font-family: "Cormorant Garamond", "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  font-family: "Cormorant Garamond", "EB Garamond", var(--font-cjk), serif;
   font-variant-numeric: lining-nums tabular-nums;
   overflow: hidden;
 }
@@ -182,7 +182,7 @@
   max-width: 100%;
 }
 .cor-figure figcaption {
-  font-family: "Bodoni Moda", serif;
+  font-family: "Bodoni Moda", var(--font-cjk), serif;
   font-size: 8px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -252,7 +252,7 @@
   border-bottom: 1px solid rgba(34, 29, 24, 0.28);
   border-radius: 0;
   padding: 8px 2px;
-  font-family: "Cormorant Garamond", "Songti SC", "SimSun", serif;
+  font-family: "Cormorant Garamond", var(--font-cjk), serif;
   font-size: 16px;
   color: var(--mag-ink-2);
   outline: none;
@@ -300,7 +300,7 @@
 .cor-h {
   display: inline-block;
   margin-top: 8px;
-  font-family: "Bodoni Moda", serif;
+  font-family: "Bodoni Moda", var(--font-cjk), serif;
   font-weight: 500;
   font-size: 0.82em;
   letter-spacing: 0.12em;

@@ -10,7 +10,8 @@
   --header-width: 920px;
   --section-gap: 80px;
   --paragraph-gap: 24px;
-  font-family: "EB Garamond", "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif;
+  --font-cjk: "Songti SC", "SimSun", "STSong", "Noto Serif SC";
+  font-family: "EB Garamond", var(--font-cjk), serif;
   color: var(--ink);
   background: var(--paper);
   font-size: 18px;
