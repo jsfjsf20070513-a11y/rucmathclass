@@ -41,12 +41,22 @@ export async function captureScene(browser, demo, viewport, path) {
       if (demo.scene.finish) await page.getByRole('button', { name: /Terminer/ }).click()
       else await page.getByRole('button', { name: '重试保存 →' }).waitFor()
     }
+    if (demo.scene.verso) {
+      const sheet = page.locator('.lec-page').last()
+      const groups = sheet.locator('.lec-options')
+      await groups.first().waitFor()
+      await groups.nth(0).locator('.lec-option').nth(1).click()
+      await groups.nth(1).locator('.lec-option').nth(0).click()
+      await sheet.getByRole('button', { name: /Verso/ }).click()
+      await sheet.locator('.lec-verso').waitFor()
+    }
     if (demo.scene.chatStatus) {
       await page.getByRole('textbox', { name: '向 AI 助手提问' }).fill('解释一下导数。')
       await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
       await page.getByRole('alert').waitFor()
     }
     const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.queue ? '.vpl-match' : demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
+      : demo.scene.path.startsWith('/lecture') ? (demo.scene.verso ? '.lec-verso:visible' : demo.scene.path === '/lecture' ? '.lec-entry' : '.lec-option:visible')
       : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'

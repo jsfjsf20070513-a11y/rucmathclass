@@ -7,6 +7,7 @@ export const pageLoaders = {
   '/reset-password': () => import('../pages/ResetPassword'),
   '/404': () => import('../pages/NotFound'),
   '/vocabulary': () => import('../pages/Vocabulary'),
+  '/lecture': () => import('../pages/Lecture'),
   '/assistant': () => import('../pages/Assistant'),
 }
 

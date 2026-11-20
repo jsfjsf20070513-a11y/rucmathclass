@@ -3,6 +3,7 @@
 @media (max-width: 480px) {
   .mag,
   .vpl,
+  .lec,
   .bib,
   .cor {
     margin-left: -16px;

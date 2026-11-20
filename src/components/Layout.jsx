@@ -17,7 +17,8 @@ export default function Layout() {
   // 杂志刊页面自带角落导航/细导航条,不渲染通用页眉页脚。
   // `/` 是 100svh 翻页刊;内页与登录页同属一本书(Connexion 即杂志第 06 屏)。
   const pathname = normalizeRoutePath(location.pathname)
-  const isMagazinePage = ['/', '/vocabulary', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
+  const isMagazinePage = ['/', '/vocabulary', '/lecture', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
+    || pathname.startsWith('/lecture/')
   if (isMagazinePage) {
     return <Outlet />
   }

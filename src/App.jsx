@@ -12,6 +12,7 @@ const Login = lazy(pageLoaders['/login'])
 const ResetPassword = lazy(pageLoaders['/reset-password'])
 const NotFound = lazy(pageLoaders['/404'])
 const Vocabulary = lazy(pageLoaders['/vocabulary'])
+const Lecture = lazy(pageLoaders['/lecture'])
 const Assistant = lazy(pageLoaders['/assistant'])
 
 function AppRoutes() {
@@ -32,6 +33,8 @@ function AppRoutes() {
           <Route path="timeline/*" element={<Navigate to="/" replace />} />
           <Route path="announcements/*" element={<Navigate to="/" replace />} />
           <Route path="vocabulary" element={<Vocabulary />} />
+          <Route path="lecture" element={<Lecture />} />
+          <Route path="lecture/:date" element={<Lecture />} />
           <Route path="assistant" element={<Assistant />} />
           <Route path="resources" element={<Resources />} />
           {/* 资源详情与推荐已下线；旧 /resources/:id（含 curate）统一回书架。 */}
