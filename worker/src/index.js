@@ -7,8 +7,8 @@ import { generateLectures } from './lectureGeneration.js'
 import { readLecture } from './lectureRoute.js'
 
 export default {
-  scheduled(controller, env, ctx) {
-    ctx.waitUntil(generateLectures(env, controller.scheduledTime))
+  scheduled(controller, env) {
+    return generateLectures(env, controller.scheduledTime)
   },
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || ''

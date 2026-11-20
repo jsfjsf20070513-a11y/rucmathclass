@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import worker from './index.js'
 import { lectureSamples } from '../../src/data/lectureSamples.js'
 import { bannedLecturePhrases } from '../../src/lib/lectureContent.js'
-import { lectureAssignment } from './lecturePrompt.js'
+import { lectureAssignment, lectureFormat } from './lecturePrompt.js'
 import { dayMs, lectureIndex, lectureSummary } from './lectureStore.js'
 
 const now = Date.parse('2026-11-20T15:55:00Z')
@@ -29,11 +29,7 @@ function fixtureKV() {
     },
   }
 }
-const tick = (time = now) => {
-  let work
-  worker.scheduled({ scheduledTime: time }, env, { waitUntil: (promise) => { work = promise } })
-  return work
-}
+const tick = (time = now) => worker.scheduled({ scheduledTime: time }, env)
 const reply = (json, status = 200) => upstream.mockResolvedValueOnce(Response.json(json, { status }))
 const store = (article) => kv.put('day:' + article.date, JSON.stringify(article), { metadata: lectureSummary(article) })
 const read = (suffix = '', options = {}) => worker.fetch(new Request('https://rucmathclass.com/api/lecture' + suffix, options), env, {})
@@ -156,4 +152,51 @@ it('public GETs show published dates through Beijing today with CORS, pagination
   expect((await read('/' + date)).status).toBe(503)
   expect(env.RATE_LIMITER.limit).not.toHaveBeenCalled()
   expect(upstream).not.toHaveBeenCalled()
+})
+
+it('reserves a paid attempt before POST, including overlapping ticks and a lost KV receipt', async () => {
+  const put = kv.put.getMockImplementation()
+  kv.put.mockImplementation(async (key, value, options) => {
+    if (key === 'pending:' + date && JSON.parse(value).id === 'lost') throw new Error('receipt lost')
+    return put(key, value, options)
+  })
+  reply({ status: 'queued', id: 'lost' })
+  const concurrent = await Promise.allSettled([tick(), tick()])
+  expect(concurrent.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected'])
+  await tick(now + 60_000)
+  expect(upstream).toHaveBeenCalledTimes(1)
+  await tick(now + 125_000)
+  expect(await kv.get('pending:' + date, 'json')).toMatchObject({ failures: [
+    { model: 'gpt-6.2-astra', problems: ['上次提交未能确认 response id'] },
+  ] })
+  expect(upstream).toHaveBeenCalledTimes(1)
+  reply(completed(day))
+  await tick(now + 180_000)
+  expect(await kv.get('day:' + date, 'json')).toEqual(day)
+})
+
+it('reports missing configuration without sending a model request', async () => {
+  delete env.OPENAI_API_KEY
+  await tick()
+  expect(upstream).not.toHaveBeenCalled()
+  expect(await kv.get('pending:' + date, 'json')).toMatchObject({ failures: [{ problems: ['未配置 OPENAI_API_KEY'] }] })
+})
+
+it('uses the exact sample fields, including both shapes of optional notes and stars', () => {
+  function matches(schema, value) {
+    if (schema.anyOf) return schema.anyOf.some((branch) => matches(branch, value))
+    if (schema.type === 'array') return Array.isArray(value) && value.every((item) => matches(schema.items, item))
+    if (schema.type !== 'object') return typeof value === schema.type && (!schema.enum || schema.enum.includes(value))
+    expect(schema.additionalProperties).toBe(false)
+    expect(schema.required).toEqual(Object.keys(schema.properties))
+    return value && typeof value === 'object' && Object.keys(value).length === schema.required.length &&
+      schema.required.every((k) => matches(schema.properties[k], value[k]))
+  }
+  for (const seed of lectureSamples) expect(matches(lectureFormat.schema, seed)).toBe(true)
+  const extra = structuredClone(lectureSamples[0])
+  extra.takeaways[0].extra = 'absent from template'
+  expect(matches(lectureFormat.schema, extra)).toBe(false)
+  const exams = Array.from({ length: 8 }, (_, i) => lectureAssignment(`2026-11-${10 + i}`))
+  expect(new Set(exams.map((item) => item.exam)).size).toBe(4)
+  expect(exams.filter(({ level }) => level === 'B2')).toHaveLength(5)
 })

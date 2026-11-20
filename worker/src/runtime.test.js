@@ -2,6 +2,9 @@ import { afterEach, beforeEach, expect, it } from 'vitest'
 import { createFetchMock, fetch as mockFetch, Miniflare } from 'miniflare'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { lectureSamples } from '../../src/data/lectureSamples.js'
+import { lectureAssignment } from './lecturePrompt.js'
+import { lectureSummary } from './lectureStore.js'
 
 const compatibilityDate = readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8')
   .match(/^compatibility_date = "([^"]+)"/m)[1]
@@ -16,11 +19,11 @@ beforeEach(async () => {
     modules: true,
     modulesRules: [{ type: 'ESModule', include: ['**/*.js'] }],
     scriptPath: fileURLToPath(new URL('./index.js', import.meta.url)),
-    compatibilityDate,
+    compatibilityDate, kvNamespaces: ['LECTURE'], unsafeTriggerHandlers: true,
     // Return raw 3xx responses from the Node transport; workerd decides whether to follow them.
     outboundService: (request) => mockFetch(request, { dispatcher: upstream, redirect: 'manual' }),
     bindings: {
-      SUPABASE_URL: authOrigin, SUPABASE_ANON_KEY: 'fixture-key', GEMINI_API_KEY: 'fixture-model-key',
+      SUPABASE_URL: authOrigin, SUPABASE_ANON_KEY: 'fixture-key', GEMINI_API_KEY: 'fixture-model-key', OPENAI_API_KEY: 'fixture-openai',
     },
     ratelimits: { RATE_LIMITER: { simple: { limit: 30, period: 60 } } },
   })
@@ -57,4 +60,30 @@ it('rejects an auth redirect without forwarding the session to another host', as
   })
   expect((await chat()).status).toBe(503)
   expect(followed).toBe(false)
+})
+
+it('runs the cron against local KV and serves only public metadata through the Workers cache', async () => {
+  const date = '2026-11-19'
+  const article = { ...lectureSamples[0], date, ...lectureAssignment(date) }
+  const kv = await runtime.getKVNamespace('LECTURE')
+  const model = upstream.get('https://api.openai.com')
+  model.intercept({ method: 'POST', path: '/v1/responses', headers: { authorization: 'Bearer fixture-openai' } })
+    .reply(200, { id: 'resp_fixture', status: 'queued' })
+  model.intercept({ method: 'GET', path: '/v1/responses/resp_fixture' })
+    .reply(200, { status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(article) }] }] })
+  const tick = (time) => runtime.dispatchFetch('http://localhost/cdn-cgi/handler/scheduled?time=' + Date.parse(time))
+  expect((await tick('2026-11-18T04:00:00Z')).ok).toBe(true)
+  expect(await kv.get('pending:' + date, 'json')).toMatchObject({ id: 'resp_fixture' })
+  expect((await tick('2026-11-18T04:05:00Z')).ok).toBe(true)
+  expect(await kv.get('day:' + date, 'json')).toEqual(article)
+  upstream.assertNoPendingInterceptors()
+
+  // 上线时间由运行时的北京时间决定。即使本机时钟早于样稿，也不能提前公开。
+  const published = Date.now() >= Date.parse(date + 'T00:00:00+08:00')
+  for (const origin of ['https://rucmathclass.com', 'https://www.rucmathclass.com']) {
+    const index = await runtime.dispatchFetch('https://rucmathclass.com/api/lecture?noise=' + origin.length, { headers: { Origin: origin } })
+    expect(index.headers.get('Access-Control-Allow-Origin')).toBe(origin)
+    expect(await index.json()).toEqual(published ? [lectureSummary(article)] : [])
+  }
+  expect((await runtime.dispatchFetch('https://rucmathclass.com/api/lecture/pending:' + date)).status).toBe(404)
 })

@@ -3,6 +3,7 @@ import { lectureAssignment, lectureRequest } from './lecturePrompt.js'
 import { beijingDate, dayMs, lectureIndex, lectureSummary, listLectureKeys } from './lectureStore.js'
 
 const api = 'https://api.openai.com/v1/responses'
+const processing = new Set()
 const modelAt = (index) => index < 3 ? 'gpt-6.2-astra' : 'gpt-6.2-sol'
 
 async function openai(env, id, body) {
@@ -16,8 +17,9 @@ async function openai(env, id, body) {
 }
 
 function extractDay(response, date, recentTitles) {
-  const text = response.output?.filter((item) => item.type === 'message')
-    .flatMap((message) => message.content || []).filter((part) => part.type === 'output_text')
+  const output = Array.isArray(response.output) ? response.output : []
+  const text = output.filter((item) => item?.type === 'message')
+    .flatMap((message) => message.content || []).filter((part) => part?.type === 'output_text')
     .map((part) => part.text).join('')
   let day
   try { day = JSON.parse(text) } catch { return { problems: ['未收到可解析的文章 JSON'] } }
@@ -38,13 +40,17 @@ async function advance(env, date, now) {
   const kv = env.LECTURE
   const key = `pending:${date}`
   const pending = await kv.get(key, 'json')
+  const reservationKey = key + ':submission'
+  const reservation = await kv.get(reservationKey, 'json')
   if (await kv.get(`day:${date}`)) {
     // 上次可能已发布正文，但尚未收好诊断记录。
     if (pending) await finish(kv, date, 'published', pending.failures)
+    if (reservation) await kv.delete(reservationKey)
     return
   }
   if (await kv.get(`result:${date}`)) {
     if (pending) await kv.delete(key)
+    if (reservation) await kv.delete(reservationKey)
     return
   }
   const failures = pending?.failures || []
@@ -57,8 +63,17 @@ async function advance(env, date, now) {
   }
   const started = id ? pending.started : now
   let response, problems
+  // 先占用这次尝试。POST 成功后若写 id 时中断，下次也不会重发同一次 POST。
+  if (!id && reservation?.attempt === failures.length + 1) {
+    if (now - reservation.started < 120_000) return
+    problems = ['上次提交未能确认 response id']
+  } else if (!env.OPENAI_API_KEY) {
+    problems = ['未配置 OPENAI_API_KEY']
+  } else if (!id) {
+    await kv.put(reservationKey, JSON.stringify({ attempt: failures.length + 1, started }))
+  }
   try {
-    response = await openai(env, id, id ? undefined : lectureRequest(date, model, titles))
+    if (!problems) response = await openai(env, id, id ? undefined : lectureRequest(date, model, titles))
   } catch (error) {
     const reason = error.status ? error.message : 'Responses 请求未取得有效响应'
     // 短暂断网或限流后继续查原 id，避免重复创建。一天后仍无结果才换一次尝试。
@@ -93,7 +108,11 @@ async function advance(env, date, now) {
 
 export async function generateLectures(env, now) {
   const pending = await listLectureKeys(env.LECTURE, 'pending:')
-  const dates = new Set([beijingDate(now + dayMs), ...pending.map(({ name }) => name.slice('pending:'.length))])
+  const dates = new Set([beijingDate(now + dayMs), ...pending.map(({ name }) => name.split(':')[1])])
   // 凌晨先开明天的任务，也继续查昨天已经提交的任务。
-  for (const date of dates) await advance(env, date, now)
+  for (const date of dates) {
+    if (processing.has(date)) continue
+    processing.add(date)
+    try { await advance(env, date, now) } finally { processing.delete(date) }
+  }
 }

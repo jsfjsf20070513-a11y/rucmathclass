@@ -44,6 +44,7 @@
 | --- | --- |
 | `day:日期` | 通过检查的文章。KV metadata 同时保存索引项，一次写入就能发布两者。 |
 | `pending:日期` | 进行中的 response id 和本轮此前的失败原因。 |
+| `pending:日期:submission` | 发请求前记录本次尝试的序号。提交后丢失回执时仍计入重试上限。 |
 | `result:日期` | 发生过重试或最终放弃的日期、结果和问题清单。 |
 
 公开路由只接受从首篇到今天的日期。查询参数共用同一份边缘缓存。全文可缓存一天，索引最多五分钟，到北京时间零点即过期。阅读请求不会提交生成任务，也不占用聊天和语音的 IP 配额。KV 是最终一致的，新文章在各地出现的时间可能稍有差异。
@@ -52,10 +53,10 @@
 
 以下命令均从仓库根目录执行。生产操作由有权限的维护者在获准后执行。
 
-1. 在已核对的班级站 Supabase 项目创建答案表。若已配置该项目的 psql 连接，运行 `psql "$CLASS_DATABASE_URL" -v ON_ERROR_STOP=1 -f sql/schema/setup_lecture_answers.sql`。
+1. 在已核对的班级站 Supabase 项目创建答案表。将 `CLASS_DATABASE_URL` 设为已核对的班级站数据库连接串。运行 `psql "${CLASS_DATABASE_URL:?请先设置班级站数据库连接串}" -v ON_ERROR_STOP=1 -f sql/schema/setup_lecture_answers.sql`。
 2. 运行 `npx wrangler kv namespace create LECTURE --config worker/wrangler.toml`。把返回的 id 填入 `worker/wrangler.toml` 的 `LECTURE` 绑定，并保存这项配置。
 3. 运行 `npx wrangler secret put OPENAI_API_KEY --config worker/wrangler.toml`，在交互提示中输入密钥。原有聊天和语音继续使用各自的配置。
-4. 运行 `node scripts/seed-lecture.mjs --remote` 写入 11 月 18 至 20 日三篇样稿及其索引。平时本地演示使用 `--local`。
+4. 运行 `node scripts/seed-lecture.mjs --remote` 写入 11 月 18 至 20 日三篇样稿及其索引。验证本地 KV 时使用 `--local`。`npm run demo` 直接读取样稿。
 5. 获准发布 Worker 后运行 `npx wrangler deploy --config worker/wrangler.toml`。部署后的首次 cron 会为北京时间明天创建任务。用 `npx wrangler tail --config worker/wrangler.toml` 观察触发情况。
 6. 用 `curl -fsS https://rucmathclass.com/api/lecture` 核对公开索引，再用 `curl -fsS https://rucmathclass.com/api/lecture/2026-11-20` 核对种子正文。前端按[项目发布手册](../docs/development.md#发布前的本地检查)单独发布。
 
@@ -73,7 +74,7 @@ npx wrangler dev --local --test-scheduled --config worker/wrangler.toml --port 8
 curl -fsS 'http://127.0.0.1:8787/__scheduled'
 ```
 
-以上手动触发使用本地 KV。若首次启用时需要手动提交到生产 KV，可在第 4 步之后、部署 cron 之前，用临时配置显式选中远端绑定。此操作会写入远端 KV，并按真实模型用量计费。开发机需有该项目的 Cloudflare 权限和开发会话可用的 OpenAI 密钥。保持原终端目录，在另一终端照上面的方法调用一次 curl。停止开发服务后再执行第 5 步，线上 cron 会接着轮询。
+以上手动触发使用本地 KV。若首次启用时需要手动提交到生产 KV，可在第 4 步之后、部署 cron 之前，用临时配置显式选中远端绑定。此操作会写入远端 KV，并按真实模型用量计费。开发机需有该项目的 Cloudflare 权限和开发会话可用的 OpenAI 密钥。保持原终端目录，在另一终端照上面的方法调用一次 curl。停止开发服务后再执行第 5 步，线上 cron 会接着轮询。KV 的写入需要时间传播，手动首发和生产 cron 应错开。
 
 ```bash
 awk '{print} /^binding = "LECTURE"$/ {print "remote = true"}' worker/wrangler.toml > worker/.lecture-first-run.toml
