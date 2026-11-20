@@ -9,16 +9,19 @@ import { useLectureLibrary } from '../hooks/useLectureLibrary'
 // 正面像一张试卷：文章 + 题目，选项可点；翻到背面是逐句讲解和题目讲解。
 const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 
+// 法语标点前后的空格换成不换行空格，« 和 ? 不会单独落到行首或行尾。
+const nb = (text) => text.replace(/« /g, '«\u00a0').replace(/ ([»?!:;])/g, '\u00a0$1')
+
 function Recto({ day, chosen, onChoose, onTurn }) {
   return (
     <article className="lec-sheet" lang="fr">
-      <h2 className="lec-title">{day.title}</h2>
-      {day.paragraphs.map((text) => <p key={text} className="lec-p">{text}</p>)}
+      <h2 className="lec-title">{nb(day.title)}</h2>
+      {day.paragraphs.map((text) => <p key={text} className="lec-p">{nb(text)}</p>)}
       <hr className="lec-rule" />
       <ol className="lec-questions">
         {day.questions.map((question, index) => (
           <li key={question.stem} className="lec-q">
-            <p className="lec-stem">{`${index + 1}. ${question.stem}`}</p>
+            <p className="lec-stem">{`${index + 1}. ${nb(question.stem)}`}</p>
             <div className="lec-options" role="radiogroup" aria-label={`第 ${index + 1} 题`}>
               {question.options.map((option) => {
                 const selected = chosen[index]?.key === option.key
@@ -32,7 +35,7 @@ function Recto({ day, chosen, onChoose, onTurn }) {
                     onClick={() => onChoose(index, option.key)}
                   >
                     {option.key === option.text ? option.text : (
-                      <><span className="lec-key">{option.key}.</span><span>{option.text}</span></>
+                      <><span className="lec-key">{option.key}.</span><span>{nb(option.text)}</span></>
                     )}
                   </button>
                 )
@@ -80,13 +83,13 @@ function Verso({ day, chosen, onTurn }) {
       <div className="lec-verso-top">
         <button type="button" className="lec-link" lang="fr" onClick={onTurn}>←&nbsp;&nbsp;Recto</button>
       </div>
-      <h2 className="lec-title" lang="fr">{day.title}</h2>
+      <h2 className="lec-title" lang="fr">{nb(day.title)}</h2>
       <p className="lec-zh lec-title-zh">{day.titleNote.zh}</p>
       <Points items={day.titleNote.points} />
       <ol className="lec-sentences">
         {day.sentences.map((sentence, index) => (
           <li key={sentence.fr} className="lec-sentence">
-            <p className="lec-fr" lang="fr">{`${CIRCLED[index] || `${index + 1}.`} ${sentence.fr}`}</p>
+            <p className="lec-fr" lang="fr">{`${CIRCLED[index] || `${index + 1}.`} ${nb(sentence.fr)}`}</p>
             <p className="lec-zh">{sentence.zh}</p>
             <Points items={sentence.points} />
           </li>
@@ -109,7 +112,7 @@ function Verso({ day, chosen, onTurn }) {
                   {mine ? <span className={`lec-mine${right ? ' is-right' : ''}`}>{right ? '✓' : `你选了 ${mine}`}</span> : null}
                 </p>
                 {question.evidence.map((quote) => (
-                  <p key={quote} className="lec-quote" lang="fr">{`« ${quote} »`}</p>
+                  <p key={quote} className="lec-quote" lang="fr">{nb(`« ${quote} »`)}</p>
                 ))}
               </li>
             )

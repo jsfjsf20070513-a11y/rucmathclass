@@ -56,7 +56,7 @@
 1. 在已核对的班级站 Supabase 项目创建答案表。将 `CLASS_DATABASE_URL` 设为已核对的班级站数据库连接串。运行 `psql "${CLASS_DATABASE_URL:?请先设置班级站数据库连接串}" -v ON_ERROR_STOP=1 -f sql/schema/setup_lecture_answers.sql`。
 2. 运行 `npx wrangler kv namespace create LECTURE --config worker/wrangler.toml`。把返回的 id 填入 `worker/wrangler.toml` 的 `LECTURE` 绑定，并保存这项配置。
 3. 运行 `npx wrangler secret put OPENAI_API_KEY --config worker/wrangler.toml`，在交互提示中输入密钥。原有聊天和语音继续使用各自的配置。
-4. 运行 `node scripts/seed-lecture.mjs --remote` 写入 11 月 18 至 20 日三篇样稿及其索引。验证本地 KV 时使用 `--local`。`npm run demo` 直接读取样稿。
+4. 运行 `node scripts/seed-lecture.mjs --remote` 写入 11 月 18 至 20 日三篇样稿、`scripts/lecture-seed/` 里已审过的生成稿（目前是 11 月 21 日）及其索引。验证本地 KV 时使用 `--local`。`npm run demo` 直接读取样稿。
 5. 获准发布 Worker 后运行 `npx wrangler deploy --config worker/wrangler.toml`。部署后的首次 cron 会为北京时间明天创建任务。用 `npx wrangler tail --config worker/wrangler.toml` 观察触发情况。
 6. 用 `curl -fsS https://rucmathclass.com/api/lecture` 核对公开索引，再用 `curl -fsS https://rucmathclass.com/api/lecture/2026-11-20` 核对种子正文。前端按[项目发布手册](../docs/development.md#发布前的本地检查)单独发布。
 
