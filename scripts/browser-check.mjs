@@ -61,6 +61,7 @@ async function scenario(name, viewport, run) {
   // Supabase/AI configuration, and no real account is created or signed in.
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url())
+    if (await account.handle(route, baseUrl)) return
     if (url.origin === baseUrl) {
       if (fault.chunk && url.pathname.includes(fault.chunk) && url.pathname.endsWith('.js')) {
         if (fault.kind === 'fail') return route.fulfill({ status: 503, body: 'fixture unavailable' })
@@ -71,7 +72,6 @@ async function scenario(name, viewport, run) {
     if (url.hostname === 'fixture.invalid' && url.pathname === '/rest/v1/resources') {
       return route.fulfill({ status: fault.resourcesUnavailable ? 503 : 200, contentType: 'application/json', body: fault.resourcesUnavailable ? '{"message":"fixture unavailable"}' : '[]' })
     }
-    if (await account.handle(route)) return
     if (url.hostname === 'api.open-meteo.com') {
       return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: name.endsWith('-home') ? 61 : 0, is_day: 1 } } })
     }
@@ -211,6 +211,7 @@ try {
       const day = await path()
       await rendered(page, `${current} .lec-title`)
       await page.locator(`${current} .lec-option`).first().click()
+      await page.locator(`${current} .lec-option[aria-checked="true"]`).waitFor()
       assert.equal(await page.locator(`${current} .lec-option[aria-checked="true"]`).count(), 1)
       // 选项上的方向键不能换天。
       await page.keyboard.press('ArrowRight')

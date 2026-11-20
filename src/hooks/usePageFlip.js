@@ -7,7 +7,7 @@ import { createPageFlipRenderer } from '../lib/pageFlipRenderer'
 // 页内滚动优先:当前页内 [data-flip-scroll] 未滚到边缘时,滚轮不翻页。
 // prefers-reduced-motion:翻页降级为淡入淡出(transform 直落,过渡只走 opacity)。
 
-export function usePageFlip({ count, sides = [], durationMs = 900, enabled = true, initialPage = 0, wheel = true }) {
+export function usePageFlip({ count, sides = [], durationMs = 900, enabled = true, initialPage = 0, wheel = true, onPageChange }) {
   const [page, setPage] = useState(initialPage)
   const pagesRef = useRef([])
   const pageStateRef = useRef(initialPage)
@@ -34,7 +34,8 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
     if (next === pageStateRef.current) return
     pageStateRef.current = next
     setPage(next)
-  }, [count])
+    onPageChange?.(next)
+  }, [count, onPageChange])
 
   useEffect(() => {
     rendererRef.current.apply({ pages: pagesRef.current, cur: page, sides, durationMs, instant: instantRef.current, enabled })

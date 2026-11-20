@@ -4,9 +4,10 @@ import { createLocalFixture } from './lib/localFixture.mjs'
 export function createAccountFixture(fault) {
   const fixture = createLocalFixture(fault)
   return {
-    async handle(route) {
+    async handle(route, localOrigin) {
       const request = route.request()
-      if (new URL(request.url()).hostname !== 'fixture.invalid') return false
+      const url = new URL(request.url())
+      if (url.hostname !== 'fixture.invalid' && !(url.origin === localOrigin && /^\/api\/lecture(?:\/|$)/.test(url.pathname))) return false
       const result = fixture.handle({
         url: request.url(), method: request.method(), headers: request.headers(),
         body: request.postData() ? request.postDataJSON() : {},

@@ -1,5 +1,8 @@
+import { lectureSamples } from '../../src/data/lectureSamples.js'
+import { lectureSummary } from '../../worker/src/lectureStore.js'
+
 // 本地演示、浏览器检查和截图共用。所有写入只保存在这个进程内。
-export const FIXTURE_TIME = '2026-10-05T04:00:00.000Z'
+export const FIXTURE_TIME = '2026-11-20T04:00:00.000Z'
 export const FIXTURE_PASSWORD = 'local-fixture-only'
 export const FIXTURE_USERS = ['browser', 'other'].map((name, index) => ({
   id: `${index + 1}`.repeat(8) + `-${`${index + 1}`.repeat(4)}-4111-8111-111111111111`,
@@ -51,6 +54,8 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
   const histories = new Map(FIXTURE_USERS.map((user) => [user.id, fault.emptyHistory ? [] : initialHistory()]))
   const reviews = new Map(FIXTURE_USERS.map((user) => [user.id, new Map(fault.emptyReviews
     ? wordIds.map((word_id) => [word_id, { user_id: user.id, word_id, proficiency_level: 1, streak_count: 1, next_review_at: '2099-01-01T00:00:00Z', updated_at: FIXTURE_TIME, last_result: 'correct' }]) : [])]))
+  const lectureDays = fault.lectureDays || lectureSamples
+  const answers = new Map(FIXTURE_USERS.map((user) => [user.id, new Map()]))
   let nextId = 3
   return {
     handle({ url: input, method = 'GET', headers = {}, body = {} }) {
@@ -71,6 +76,14 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
         if (method === 'PUT' && body.password) passwords.set(user.id, body.password)
         return response(user)
       }
+      if (path === '/api/lecture' || path.startsWith('/api/lecture/')) {
+        if (method !== 'GET') return response(null, 405)
+        if (fault.lectureStatus) return response(null, fault.lectureStatus)
+        const published = lectureDays.filter((item) => item.date <= FIXTURE_TIME.slice(0, 10))
+        if (path === '/api/lecture') return response(published.map(lectureSummary))
+        const article = published.find((day) => path === '/api/lecture/' + day.date)
+        return article ? response(article) : response(null, 404)
+      }
       if (path === '/rest/v1/resources') return fault.resourcesUnavailable ? failure('fixture unavailable', 503) : response([])
       if (!user) return failure('登录状态已失效，请刷新页面并重新登录后再试。', 401)
       if (path === '/api/chat') {
@@ -79,6 +92,24 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
       }
       const owner = url.searchParams.get('user_id')
       if (owner && owner !== `eq.${user.id}`) return failure('假账号只能读取自己的记录。', 403)
+      if (path === '/rest/v1/lecture_answers') {
+        if (fault.answersStatus) return failure('lecture_answers unavailable', fault.answersStatus)
+        const rows = answers.get(user.id)
+        const date = url.searchParams.get('day')?.slice(3) || body.day
+        const previous = rows.get(date)
+        const single = headers.accept?.includes('vnd.pgrst.object')
+        const result = (row, status) => response(single ? row || null : row ? [row] : [], status)
+        if (method === 'GET') return result(previous)
+        if (method === 'POST') {
+          if (body.user_id !== user.id) return failure('账号不符', 403)
+          if (previous) return failure('duplicate key', 409, '23505')
+        } else if (method === 'PATCH') {
+          if (!previous || url.searchParams.get('updated_at') !== 'eq.' + previous.updated_at) return result(null)
+        } else return failure('本地演示不支持此操作。', 405)
+        const row = { ...previous, ...body }
+        rows.set(date, row)
+        return result(row, method === 'POST' ? 201 : 200)
+      }
       if (path === '/rest/v1/review_states') {
         const rows = reviews.get(user.id)
         const wordFilter = url.searchParams.get('word_id')
