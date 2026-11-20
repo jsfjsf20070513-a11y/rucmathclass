@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageNav from '../components/PageNav'
 import { usePageFlip } from '../hooks/usePageFlip'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
@@ -12,13 +12,28 @@ import { lectureSamples } from '../data/lectureSamples'
 const ANSWERS_KEY = 'mcw_lecture_answers_v1'
 const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
 
+const isRecord = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+
+// 本机记录可能被别的版本或手工改坏：只留「日期 → 题号 → 选项键」这种形状。
 function readAnswers() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(ANSWERS_KEY) || '{}')
-    return saved && typeof saved === 'object' ? saved : {}
-  } catch {
-    return {}
+  let saved
+  try { saved = JSON.parse(window.localStorage.getItem(ANSWERS_KEY) || '{}') } catch { return {} }
+  if (!isRecord(saved)) return {}
+  const clean = {}
+  for (const [date, picks] of Object.entries(saved)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isRecord(picks)) continue
+    const kept = Object.entries(picks).filter(([index, key]) => /^\d+$/.test(index) && typeof key === 'string' && key.length <= 8)
+    if (kept.length) clean[date] = Object.fromEntries(kept)
   }
+  return clean
+}
+
+// 每次只写这一题：先读最新记录再合并，另一个标签页刚选的答案不会被覆盖。
+function saveAnswer(date, index, key) {
+  const saved = readAnswers()
+  saved[date] = { ...saved[date], [index]: key }
+  try { window.localStorage.setItem(ANSWERS_KEY, JSON.stringify(saved)) } catch { /* 存不下时只影响本机记录 */ }
+  return saved
 }
 
 function Recto({ day, chosen, onChoose, onTurn }) {
@@ -112,7 +127,7 @@ function Verso({ day, chosen, onTurn }) {
         <h3 className="lec-sec">题目</h3>
         <ol className="lec-answers">
           {day.questions.map((question, index) => {
-            const mine = chosen[index]
+            const mine = question.options.some((option) => option.key === chosen[index]) ? chosen[index] : undefined
             const right = mine === question.answer
             return (
               <li key={question.stem} className="lec-answer">
@@ -157,19 +172,34 @@ function Archive({ days, onOpen, onHome, arrive }) {
 }
 
 // 阅读：一天一页，左右翻到相邻的日子，地址随当前这一天更新。
-function Reader({ days, startIndex, answers, onChoose, onArchive }) {
+function Reader({ days, date, answers, onChoose }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [turned, setTurned] = useState({})
   const scrollers = useRef({})
   // 只在打开时定位；之后左右翻只改地址，不重建页面栈。
-  const [initial] = useState(startIndex)
+  const [initial] = useState(() => days.findIndex((day) => day.date === date))
   const sides = useMemo(() => days.map((_, index) => (index === 0 ? 'none' : 'right')), [days])
-  const { page, setPageEl } = usePageFlip({ count: days.length, sides, durationMs: 500, initialPage: initial })
+  // 阅读时只认横向手势和方向键换天，读到页底继续滚不翻页。
+  const { page, goTo, setPageEl } = usePageFlip({ count: days.length, sides, durationMs: 500, initialPage: initial, wheel: false })
 
+  // 翻到哪天，地址就换成哪天（替换当前记录，后退仍回到档案）。
+  const fromArchive = Boolean(location.state?.fromArchive)
   useEffect(() => {
-    const date = days[page]?.date
-    if (date) navigate(`/lecture/${date}`, { replace: true })
-  }, [page, days, navigate])
+    const current = days[page]?.date
+    if (current) navigate(`/lecture/${current}`, { replace: true, state: fromArchive ? { fromArchive } : null })
+  }, [page, days, navigate, fromArchive])
+
+  // 浏览器前进、后退改了地址时，翻到对应那天。
+  useEffect(() => {
+    const target = days.findIndex((day) => day.date === date)
+    if (target >= 0) goTo(target)
+  }, [date, days, goTo])
+
+  const onArchive = useCallback(() => {
+    if (fromArchive) navigate(-1)
+    else navigate('/lecture')
+  }, [fromArchive, navigate])
 
   const turn = useCallback((date) => {
     setTurned((current) => ({ ...current, [date]: !current[date] }))
@@ -212,13 +242,14 @@ export default function Lecture() {
   const days = lectureSamples
   const [answers, setAnswers] = useState(readAnswers)
 
+  // 另一个标签页答了题，这里同步显示。
   useEffect(() => {
-    try { window.localStorage.setItem(ANSWERS_KEY, JSON.stringify(answers)) } catch { /* 存不下时只影响本机记录 */ }
-  }, [answers])
-
-  const choose = useCallback((day, index, key) => {
-    setAnswers((current) => ({ ...current, [day]: { ...current[day], [index]: key } }))
+    const onStorage = (event) => { if (event.key === ANSWERS_KEY) setAnswers(readAnswers()) }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
+
+  const choose = useCallback((day, index, key) => setAnswers(saveAnswer(day, index, key)), [])
 
   const goHome = useCallback(() => {
     markFlipNav('/lecture')
@@ -226,17 +257,8 @@ export default function Lecture() {
   }, [navigate])
 
   if (!date) {
-    return <Archive days={days} arrive={arrive} onHome={goHome} onOpen={(day) => navigate(`/lecture/${day}`)} />
+    return <Archive days={days} arrive={arrive} onHome={goHome} onOpen={(day) => navigate(`/lecture/${day}`, { state: { fromArchive: true } })} />
   }
-  const index = days.findIndex((day) => day.date === date)
-  if (index < 0) return <Navigate to="/lecture" replace />
-  return (
-    <Reader
-      days={days}
-      startIndex={index}
-      answers={answers}
-      onChoose={choose}
-      onArchive={() => navigate('/lecture')}
-    />
-  )
+  if (!days.some((day) => day.date === date)) return <Navigate to="/lecture" replace />
+  return <Reader days={days} date={date} answers={answers} onChoose={choose} />
 }

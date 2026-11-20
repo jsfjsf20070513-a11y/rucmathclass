@@ -41,8 +41,14 @@ export async function captureScene(browser, demo, viewport, path) {
       if (demo.scene.finish) await page.getByRole('button', { name: /Terminer/ }).click()
       else await page.getByRole('button', { name: '重试保存 →' }).waitFor()
     }
-    if (demo.scene.verso) {
-      const sheet = page.locator('.lec-page').last()
+    // 改前的版本可能还没有阅读页，会落到 404：那就截 404，不再等阅读页元素。
+    let lectureMissing = false
+    if (demo.scene.path.startsWith('/lecture')) {
+      await page.locator('.lec, .notfound-code').first().waitFor()
+      lectureMissing = await page.locator('.lec').count() === 0
+    }
+    if (demo.scene.verso && !lectureMissing) {
+      const sheet = page.locator('.lec-page:not([inert])')
       const groups = sheet.locator('.lec-options')
       await groups.first().waitFor()
       await groups.nth(0).locator('.lec-option').nth(1).click()
@@ -56,7 +62,7 @@ export async function captureScene(browser, demo, viewport, path) {
       await page.getByRole('alert').waitFor()
     }
     const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.queue ? '.vpl-match' : demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
-      : demo.scene.path.startsWith('/lecture') ? (demo.scene.verso ? '.lec-verso:visible' : demo.scene.path === '/lecture' ? '.lec-entry' : '.lec-option:visible')
+      : demo.scene.path.startsWith('/lecture') ? (lectureMissing ? '.notfound-code' : demo.scene.verso ? '.lec-page:not([inert]) .lec-verso' : demo.scene.path === '/lecture' ? '.lec-entry' : '.lec-page:not([inert]) .lec-option')
       : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'

@@ -214,7 +214,7 @@ export const lectureSamples = [
           },
           {
             "term": "c’est … qui …",
-            "note": "强调句，突出是谁做这件事。",
+            "note": "把要强调的人放在中间，意思是：是……在做这件事。",
             "star": true
           },
           {
@@ -382,7 +382,7 @@ export const lectureSamples = [
       },
       {
         "term": "c’est … qui …",
-        "note": "强调是谁。"
+        "note": "把要强调的人放在中间，意思是：是……在做这件事。"
       },
       {
         "term": "il suffit de",
@@ -502,7 +502,7 @@ export const lectureSamples = [
           },
           {
             "term": "demandez（demander）",
-            "note": "索取、要。对 vous 的命令式，指南常这样写。",
+            "note": "去要。指南直接对读者说「请你去做」，所以写成 demandez。",
             "star": true
           },
           {
@@ -520,7 +520,7 @@ export const lectureSamples = [
           },
           {
             "term": "anciennes（ancien）",
-            "note": "放在名词后，意思是年代久的。跟 photos 配合成阴性复数。"
+            "note": "放在名词后，意思是年代久的。photos 是阴性复数，所以写成 anciennes。"
           }
         ]
       },
@@ -560,7 +560,7 @@ export const lectureSamples = [
           },
           {
             "term": "a été prise（prendre）",
-            "note": "被拍下。prise 跟 photo 配合，是阴性。",
+            "note": "被拍下。photo 是阴性，所以 pris 加 e。",
             "star": true
           }
         ]
@@ -601,7 +601,7 @@ export const lectureSamples = [
           },
           {
             "term": "devenue（devenir）",
-            "note": "变成了。跟 poste 配合成阴性。"
+            "note": "变成了。poste 是阴性，所以 devenu 加 e。"
           }
         ]
       },
@@ -645,7 +645,7 @@ export const lectureSamples = [
           },
           {
             "term": "numérotées（numéroter）",
-            "note": "编号。跟 étapes 配合成阴性复数。"
+            "note": "编号。étapes 是阴性复数，所以加 es。"
           },
           {
             "term": "les",
@@ -673,7 +673,7 @@ export const lectureSamples = [
         "points": [
           {
             "term": "comptez（compter）",
-            "note": "估算要花的时间。命令式。",
+            "note": "留出多少时间。直接对读者说「你要留出」。",
             "star": true
           },
           {
@@ -1065,7 +1065,7 @@ export const lectureSamples = [
           },
           {
             "term": "regroupées（regrouper）",
-            "note": "集中在一起。跟 heures 配合成阴性复数。"
+            "note": "集中在一起。heures 是阴性复数，所以加 es。"
           }
         ]
       },
