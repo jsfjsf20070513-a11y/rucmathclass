@@ -12,7 +12,7 @@ it('keeps legitimate flows and row isolation while restricting excess database g
   const admin = '33333333-3333-4333-8333-333333333333'
   const sql = async (path) => readFile(new URL(`../../${path}`, import.meta.url), 'utf8')
   const policySnapshot = async () => (await db.query("select tablename, policyname, roles, cmd, qual, with_check from pg_policies where schemaname='public' order by tablename, policyname")).rows
-  const tables = ['review_states', 'ai_messages', 'resources', 'profiles']
+  const tables = ['lecture_answers', 'review_states', 'ai_messages', 'resources', 'profiles']
   const recordSnapshot = async () => Promise.all(tables.map(async (table) =>
     (await db.query(`select to_jsonb(record) as record from public.${table} record order by to_jsonb(record)::text`)).rows))
   const asUser = async (id) => {
@@ -41,6 +41,9 @@ it('keeps legitimate flows and row isolation while restricting excess database g
     `)
     await db.exec(await sql('sql/schema/setup_vocabulary.sql'))
     await db.exec(await sql('sql/schema/setup_ai_history.sql'))
+    const lecture = await sql('sql/schema/setup_lecture_answers.sql')
+    await db.exec(lecture)
+    await db.exec(lecture)
     assert.equal((await db.query("select has_table_privilege('anon', 'public.ai_messages', 'SELECT') as allowed")).rows[0].allowed, false)
     assert.equal((await db.query("select has_table_privilege('authenticated', 'public.ai_messages', 'UPDATE') as allowed")).rows[0].allowed, false)
     assert.equal((await db.query("select has_table_privilege('authenticated', 'public.review_states', 'TRUNCATE') as allowed")).rows[0].allowed, false)
@@ -58,6 +61,8 @@ it('keeps legitimate flows and row isolation while restricting excess database g
       insert into public.resources values (1, 'fixture resource');
       insert into public.review_states (user_id, word_id) values ('${a}', 'fixture-a'), ('${b}', 'fixture-b');
       insert into public.ai_messages (user_id, role, content) values ('${a}', 'user', 'fixture-a'), ('${b}', 'user', 'fixture-b');
+      insert into public.lecture_answers (user_id, day, answers) values
+        ('${a}', '2026-11-18', '{}'), ('${b}', '2026-11-18', '{}');
       -- Reproduce the table grants observed in the production catalog.
       revoke all on public.resources, public.profiles from anon;
       grant all on public.review_states, public.ai_messages, public.resources, public.profiles to authenticated;
@@ -82,6 +87,9 @@ it('keeps legitimate flows and row isolation while restricting excess database g
     }
 
     await db.exec('set role anon;')
+    await denied('select * from public.lecture_answers')
+    await denied("insert into public.lecture_answers (day, answers) values ('2026-11-19', '{}')")
+    await denied("update public.lecture_answers set answers='{}'")
     await denied('select * from public.ai_messages')
     await denied('select * from public.review_states')
     await denied('select * from public.profiles')
@@ -89,6 +97,17 @@ it('keeps legitimate flows and row isolation while restricting excess database g
     assert.equal((await db.query('select title from public.resources')).rows.length, 1)
 
     await asUser(a)
+    await ownRows('lecture_answers')
+    await db.query("insert into public.lecture_answers (user_id, day, answers) values ($1, '2026-11-19', '{}')", [a])
+    assert.equal((await db.query("update public.lecture_answers set answers=$1 where user_id=$2 and day='2026-11-19' returning day",
+      [JSON.stringify({ 0: { key: 'A', at: 1 } }), a])).rows.length, 1)
+    assert.equal((await db.query("update public.lecture_answers set answers='{}' where user_id=$1 returning day", [b])).rows.length, 0)
+    await denied(`insert into public.lecture_answers (user_id, day, answers) values ('${b}', '2026-11-20', '{}')`)
+    await denied(`update public.lecture_answers set user_id='${b}' where day='2026-11-19'`)
+    await denied('delete from public.lecture_answers')
+    for (const answers of ['[]', JSON.stringify({ 0: '字'.repeat(6000) })]) {
+      await assert.rejects(db.query('update public.lecture_answers set answers=$1', [answers]), (error) => error.code === '23514')
+    }
     await ownRows('review_states')
     await ownRows('ai_messages')
     await db.query('insert into public.ai_messages (user_id, role, content) values ($1, $2, $3)', [a, 'user', 'new fixture'])

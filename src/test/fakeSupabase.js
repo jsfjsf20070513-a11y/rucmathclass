@@ -17,7 +17,8 @@ export function fakeSupabase(initial = []) {
         let data
         if (action === 'insert') {
           const additions = Array.isArray(payload) ? payload : [payload]
-          if (table === 'review_states' && additions.some((r) => rows.some((x) => x.user_id === r.user_id && x.word_id === r.word_id))) {
+          const uniqueField = { review_states: 'word_id', lecture_answers: 'day' }[table]
+          if (uniqueField && additions.some((r) => rows.some((x) => x.user_id === r.user_id && x[uniqueField] === r[uniqueField]))) {
             return { data: null, error: { code: '23505' } }
           }
           rows.push(...structuredClone(additions))
