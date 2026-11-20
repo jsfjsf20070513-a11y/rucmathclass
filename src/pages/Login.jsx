@@ -20,13 +20,13 @@ const TITLES = {
 const COPY = {
   login: {
     title: '登录 · Connexion',
-    summary: '登录后,背词进度跨设备同步。',
+    summary: '登录后，换台设备也能看到自己答过的题。',
     submit: 'Entrer',
     submitting: '登录中…',
   },
   signup: {
     title: '注册 · Créer un compte',
-    summary: '注册一个账号,保存你的背词进度。',
+    summary: '注册账号，保存你答过的题。',
     submit: '注册 · Créer un compte',
     submitting: '注册中…',
   },
@@ -214,7 +214,7 @@ function LoginForm() {
           <p className="lgn-summary">接下来去哪儿?</p>
         </header>
         <div className="lgn-dest">
-          <Link to="/lecture" className="text-action" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
+          <Link to="/lecture" className="text-action" lang="fr">Lecture&nbsp;&nbsp;→</Link>
           <Link to="/" className="text-action" lang="fr">Accueil&nbsp;&nbsp;→</Link>
         </div>
         <p className="status-line">

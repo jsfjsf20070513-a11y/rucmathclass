@@ -41,6 +41,9 @@ beforeEach(() => {
   vi.stubGlobal('fetch', upstream)
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(now)
+  // 今天（11-20）已有结论，下面的用例只看明天那一篇。
+  kv.put('result:2026-11-20', JSON.stringify({ status: 'fixture' }))
+  kv.put.mockClear()
 })
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers() })
 
@@ -59,11 +62,12 @@ it('creates one background response for Beijing tomorrow and resumes it across m
   expect(await kv.get('day:' + date)).toBeNull()
   reply({ status: 'in_progress' })
   await tick()
-  reply({ status: 'queued', id: 'resp_two' })
   reply(completed(day))
+  reply({ status: 'queued', id: 'resp_two' })
   await tick(now + 5 * 60_000)
+  // 过了午夜，21 日变成「今天」，先收它，再为 22 日开新任务。
   expect(upstream.mock.calls.map(([url, opts]) => [opts.method, url.split('/').at(-1)]))
-    .toEqual([['POST','responses'], ['GET','resp_one'], ['POST','responses'], ['GET','resp_one']])
+    .toEqual([['POST','responses'], ['GET','resp_one'], ['GET','resp_one'], ['POST','responses']])
   expect(await kv.get('day:' + date, 'json')).toEqual(day)
   expect(await kv.get('pending:2026-11-22', 'json')).toMatchObject({ id: 'resp_two' })
   expect(await lectureIndex(kv, date)).toEqual([...lectureSamples, day].map(lectureSummary))
@@ -199,4 +203,16 @@ it('uses the exact sample fields, including both shapes of optional notes and st
   const exams = Array.from({ length: 8 }, (_, i) => lectureAssignment(`2026-11-${10 + i}`))
   expect(new Set(exams.map((item) => item.exam)).size).toBe(4)
   expect(exams.filter(({ level }) => level === 'B2')).toHaveLength(5)
+})
+
+it('fills in today when it has no article yet', async () => {
+  await kv.delete('result:2026-11-20')
+  reply({ id: 'resp_today', status: 'queued' })
+  reply({ id: 'resp_tomorrow', status: 'queued' })
+  await tick()
+  expect(await kv.get('pending:2026-11-20', 'json')).toMatchObject({ id: 'resp_today' })
+  expect(await kv.get('pending:' + date, 'json')).toMatchObject({ id: 'resp_tomorrow' })
+  const requested = upstream.mock.calls.map(([, init]) => JSON.parse(init.body).input)
+  expect(requested[0]).toContain('2026-11-20')
+  expect(requested[1]).toContain(date)
 })

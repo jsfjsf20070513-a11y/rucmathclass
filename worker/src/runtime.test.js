@@ -66,6 +66,7 @@ it('runs the cron against local KV and serves only public metadata through the W
   const date = '2026-11-19'
   const article = { ...lectureSamples[0], date, ...lectureAssignment(date) }
   const kv = await runtime.getKVNamespace('LECTURE')
+  await kv.put('result:2026-11-18', JSON.stringify({ status: 'fixture' }))
   const model = upstream.get('https://api.openai.com')
   model.intercept({ method: 'POST', path: '/v1/responses', headers: { authorization: 'Bearer fixture-openai' } })
     .reply(200, { id: 'resp_fixture', status: 'queued' })

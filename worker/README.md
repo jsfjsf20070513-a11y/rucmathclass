@@ -36,7 +36,7 @@
 
 `GET /api/lecture` 按日期升序返回日期、难度和标题。`GET /api/lecture/YYYY-MM-DD` 返回当日全文。两条路由都允许匿名读取。每天以北京时间零点为界。未来日期、无效日期和未发布的文章返回 404。
 
-每五分钟运行一次 cron。北京时间换日后，Worker 为次日提交一个后台 Responses 请求。Astra 最多尝试三次，随后 Sol 最多尝试两次。两者都使用 high 推理强度和 8 小时窗口。Standard 档的合格请求按标准 token 价格的 60% 计费。窗口是完成时间目标。轮询会沿用 response id，也会继续处理跨过午夜的任务。[OpenAI 后台模式](https://developers.openai.com/api/docs/guides/background)
+每 15 分钟运行一次 cron。Worker 提前一天为次日提交一个后台 Responses 请求；当天若还没有文章（刚上线或前一天没写成），也补交一篇。Astra 最多尝试三次，随后 Sol 最多尝试两次。两者都使用 high 推理强度和 8 小时窗口。Standard 档的合格请求按标准 token 价格的 60% 计费。窗口是完成时间目标。轮询会沿用 response id，也会继续处理跨过午夜的任务。[OpenAI 后台模式](https://developers.openai.com/api/docs/guides/background)
 
 `LECTURE` 保存以下记录。
 

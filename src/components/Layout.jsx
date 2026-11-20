@@ -6,7 +6,7 @@ import { normalizeRoutePath } from '../lib/routePath'
 // 中文与法语的并置是本站身份,不做单语化;法语以斜体作衬,中文承担功能重量。
 const navItems = [
   { to: '/', fr: 'Accueil', zh: '扉页' },
-  { to: '/lecture', fr: 'Vocabulaire', zh: '背词' },
+  { to: '/lecture', fr: 'Lecture', zh: '阅读' },
 ]
 
 export default function Layout() {

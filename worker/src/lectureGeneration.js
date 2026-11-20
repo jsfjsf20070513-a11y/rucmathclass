@@ -108,8 +108,8 @@ async function advance(env, date, now) {
 
 export async function generateLectures(env, now) {
   const pending = await listLectureKeys(env.LECTURE, 'pending:')
-  const dates = new Set([beijingDate(now + dayMs), ...pending.map(({ name }) => name.split(':')[1])])
-  // 凌晨先开明天的任务，也继续查昨天已经提交的任务。
+  // 提前一天写明天的；今天若还没有（刚上线或昨天没写成），也补一篇。
+  const dates = new Set([beijingDate(now), beijingDate(now + dayMs), ...pending.map(({ name }) => name.split(':')[1])])
   for (const date of dates) {
     if (processing.has(date)) continue
     processing.add(date)

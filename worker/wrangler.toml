@@ -25,7 +25,7 @@ pattern = "rucmathclass.com/api/lecture*"
 zone_name = "rucmathclass.com"
 
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/15 * * * *"]
 
 [[kv_namespaces]]
 binding = "LECTURE"
