@@ -214,7 +214,7 @@ function LoginForm() {
           <p className="lgn-summary">接下来去哪儿?</p>
         </header>
         <div className="lgn-dest">
-          <Link to="/vocabulary" className="text-action" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
+          <Link to="/lecture" className="text-action" lang="fr">Vocabulaire&nbsp;&nbsp;→</Link>
           <Link to="/" className="text-action" lang="fr">Accueil&nbsp;&nbsp;→</Link>
         </div>
         <p className="status-line">

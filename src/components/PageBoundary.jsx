@@ -33,7 +33,7 @@ class Boundary extends Component {
 
 export default function PageBoundary({ children }) {
   const { pathname } = useLocation()
-  // 阅读页换天只换地址里的日期，不能因此重建整页。
-  const key = pathname.startsWith('/lecture/') ? '/lecture/:date' : pathname
+  // 档案和单日共用索引，换天或返回档案时保留已读正文与缺篇记录。
+  const key = pathname.startsWith('/lecture/') ? '/lecture' : pathname
   return <Boundary key={key}><Suspense fallback={<LoadingPage />}>{children}</Suspense></Boundary>
 }

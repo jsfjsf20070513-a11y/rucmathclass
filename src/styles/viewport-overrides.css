@@ -2,7 +2,6 @@
    用负外边距抵消(而非 body:has —— 微信老 WebView 不认 :has)。 */
 @media (max-width: 480px) {
   .mag,
-  .vpl,
   .lec,
   .bib,
   .cor {

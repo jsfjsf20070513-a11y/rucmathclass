@@ -110,16 +110,11 @@ export default function Assistant() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, loading])
 
-  // 背词答错跳转带来的上下文(?term=&answer=):预填一条解释请求,不自动发送。
   useEffect(() => {
     imageGeneration.current += 1
     setImage(null)
     setError('')
-    const params = new URLSearchParams(window.location.search)
-    const term = params.get('term')
-    if (!term) { setInput(''); return }
-    const answer = params.get('answer')
-    setInput(`请解释法语词 « ${term} »${answer ? `,并分析我刚才的答案「${answer}」为什么不对` : ''}。`)
+    setInput('')
   }, [user?.id])
 
   const send = useCallback(async (text) => {

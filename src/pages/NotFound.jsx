@@ -16,7 +16,7 @@ export default function NotFound() {
       <p className="notfound-lead">你要找的页面没有对应记录,或链接已失效。也许你在找:</p>
       <nav className="notfound-exits" aria-label="出口">
         <Link to="/resources">资源 · 书目</Link>
-        <Link to="/vocabulary">背词</Link>
+        <Link to="/lecture">背词</Link>
       </nav>
       <p className="notfound-home"><Link to="/">← 回到扉页 · Accueil</Link></p>
     </article>

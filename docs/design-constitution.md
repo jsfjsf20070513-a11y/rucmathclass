@@ -7,7 +7,7 @@
 | 全站颜色、字体、间距 | [index.css](../src/index.css)、[App.css](../src/App.css) |
 | 共用导航、翻页和文字按钮 | [shared-controls.css](../src/styles/shared-controls.css)、[PageNav](../src/components/PageNav.jsx)、[PageControls](../src/components/PageControls.jsx) |
 | 首页 | [Home.jsx](../src/pages/Home.jsx)、[magazine.css](../src/styles/magazine.css) |
-| 背词 | [Vocabulary.jsx](../src/pages/Vocabulary.jsx)、[vocabulary.css](../src/styles/vocabulary.css) |
+| 每日法语阅读 | [Lecture.jsx](../src/pages/Lecture.jsx)、[lecture.css](../src/styles/lecture.css) |
 | 书架 | [Resources.jsx](../src/pages/Resources.jsx)、[resources.css](../src/styles/resources.css) |
 | 答疑 | [Assistant.jsx](../src/pages/Assistant.jsx)、[assistant.css](../src/styles/assistant.css) |
 | 登录与重置密码 | [auth.css](../src/styles/auth.css) |

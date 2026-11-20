@@ -164,7 +164,7 @@
   background: rgba(34, 29, 24, 0.18);
 }
 
-/* ── 02 Vocabulaire(引导页,左对齐编辑排版) ── */
+/* ── 02 Lecture(引导页,左对齐编辑排版) ── */
 .mag-vocab { background: #faf6ee; }
 .mag-vocab-inner {
   max-width: 880px;
@@ -321,7 +321,7 @@
 .mag-cor-inner .mag-pageno { justify-content: flex-start; }
 .mag-cor-inner .mag-giant {
   text-align: right;
-  /* Correspondance 比 Vocabulaire 长 3 字母,同字号会溢出 */
+  /* Correspondance 标题较长，同字号会溢出 */
   font-size: min(9vw, 15vh);
   font-size: min(9vw, 15svh);
 }

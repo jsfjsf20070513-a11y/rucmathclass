@@ -26,9 +26,8 @@ const THEOREM_ROTATION_START_DAY = Math.floor(Date.UTC(2025, 8, 1) / DAY_IN_MS)
 // 未登录 5 页;登录后插入 05 Correspondance(AI 答疑之门),Parole 顺延为 06 压卷。
 const SIDES_BASE = ['none', 'right', 'left', 'top', 'bottom']
 const SIDES_FULL = ['none', 'right', 'left', 'top', 'left', 'bottom']
-// ← Accueil 按来路落页:从背词回 02、从书目回 04、从答疑回 05、从登录回压卷 Parole。
+// ← Accueil 按来路落页:从阅读回 02、从书目回 04、从答疑回 05、从登录回压卷 Parole。
 const returnPageFor = (from, hasAssistant) => ({
-  '/vocabulary': 1,
   '/lecture': 1,
   '/resources': 3,
   '/assistant': hasAssistant ? 4 : 1,

@@ -12,7 +12,6 @@ const Resources = lazy(pageLoaders['/resources'])
 const Login = lazy(pageLoaders['/login'])
 const ResetPassword = lazy(pageLoaders['/reset-password'])
 const NotFound = lazy(pageLoaders['/404'])
-const Vocabulary = lazy(pageLoaders['/vocabulary'])
 const Lecture = lazy(pageLoaders['/lecture'])
 const Assistant = lazy(pageLoaders['/assistant'])
 
@@ -34,7 +33,7 @@ function AppRoutes() {
           <Route path="class-info" element={<Navigate to="/" replace />} />
           <Route path="timeline/*" element={<Navigate to="/" replace />} />
           <Route path="announcements/*" element={<Navigate to="/" replace />} />
-          <Route path="vocabulary" element={<Vocabulary />} />
+          <Route path="vocabulary" element={<Navigate to="/lecture" replace />} />
           <Route path="lecture" element={<Lecture account={account} />} />
           <Route path="lecture/:date" element={<Lecture account={account} />} />
           <Route path="assistant" element={<Assistant />} />

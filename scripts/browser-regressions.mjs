@@ -1,3 +1,4 @@
+import { lectureSamples } from '../src/data/lectureSamples.js'
 import assert from 'node:assert/strict'
 import { fixtureSession, FIXTURE_PASSWORD, FIXTURE_USERS } from './lib/localFixture.mjs'
 
@@ -5,14 +6,6 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
   const viewport = { width: 390, height: 844 }
   const session = fixtureSession()
   const signIn = (page) => page.addInitScript((session) => localStorage.setItem('sb-fixture-auth-token', JSON.stringify(session)), session)
-  const seedStudy = (page, status, ids = ['fr-bonjour'], i = 0) => page.evaluate(({ userId, status, ids, i }) => {
-    localStorage.setItem(`mcw_vocab_session_v2:${userId}`, JSON.stringify({
-      v: 2, userId, day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai' }).format(new Date()),
-      status, level: 'all', queue: ids.map((id) => ({ id })), i, studyIdx: 0,
-      stats: { correct: 0, attempts: 0, combo: 0, maxCombo: 0 }, wrongIds: [],
-    }))
-  }, { userId: session.user.id, status, ids, i })
-
   await scenario('readable-account-messages', viewport, async (page) => {
     await page.goto(`${baseUrl}/login`)
     await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)
@@ -64,99 +57,91 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     assert.equal(sent, 1)
   })
 
-  await scenario('vocabulary-keyboard', viewport, async (page, fault) => {
-    await signIn(page)
-    await page.goto(`${baseUrl}/vocabulary`)
-    await seedStudy(page, 'ready')
-    await page.reload()
-    fault.reviewStatus = 503
-    const options = page.locator('.vpl-option')
-    await options.first().waitFor()
-    const labels = await options.allTextContents()
-    await options.nth(labels.findIndex((label) => !label.includes('你好'))).click()
-    const retry = page.getByRole('button', { name: '重试保存 →' })
-    await retry.waitFor()
-    fault.reviewStatus = 200
-    await retry.focus()
-    await page.keyboard.press('Enter')
-    await retry.waitFor({ state: 'hidden' })
-    await page.waitForFunction(() => { const button = document.querySelector('.vpl-fb-actions button'); return button && !button.disabled })
-    assert.equal(await page.getByRole('button', { name: /Terminer/ }).isEnabled(), true)
-    const explain = page.getByRole('link', { name: /请助手解释/ })
-    await explain.focus()
-    await page.keyboard.press('Enter')
-    await page.waitForURL(/\/assistant\?term=/)
-    await rendered(page, '.cor-input')
+  await scenario('lecture-account-sync', viewport, async (page) => {
+    const path = baseUrl + '/lecture/2026-11-19'
+    const selected = '.lec-page:not([inert]) [aria-checked="true"]'
+    const token = 'sb-fixture-auth-token'
+    await page.goto(path)
+    await page.locator('.lec-page:not([inert]) .lec-option').first().click()
+    await page.locator(selected).waitFor()
 
-    await seedStudy(page, 'ready')
-    await page.goto(`${baseUrl}/vocabulary`)
-    await options.first().waitFor()
-    await page.locator('.vpl-option').filter({ hasText: '你好' }).click()
-    await page.waitForFunction(() => { const button = document.querySelector('.vpl-fb-actions button'); return button && !button.disabled })
-    await page.evaluate(() => document.activeElement?.blur())
-    await page.keyboard.press('Enter')
-    await page.getByRole('heading', { name: '本节完成', exact: true }).waitFor()
-    assert.ok(!(await page.locator('.vpl-deckstats').textContent()).includes('连续'))
+    // 在登录页完成同步，然后清掉本机答案，以独立的云端重读验证归属。
+    const upload = page.waitForResponse((r) => r.url().includes('/lecture_answers') && r.request().method() === 'POST' && r.ok())
+    await page.goto(baseUrl + '/login')
+    await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)
+    await page.getByLabel('Mot de passe', { exact: true }).fill(FIXTURE_PASSWORD)
+    await page.getByRole('button', { name: 'Entrer', exact: true }).click()
+    await upload
+    await page.waitForFunction(() => Object.values(JSON.parse(localStorage.getItem('mcw_lecture_answers_v2') || '{}'))
+      .some((days) => days['2026-11-19']?.pending === false))
+    await page.evaluate(() => localStorage.removeItem('mcw_lecture_answers_v2'))
+    await page.goto(path)
+    await page.locator(selected).waitFor()
 
-    await seedStudy(page, 'ready', ['fr-bonjour', 'fr-merci'], 1)
-    await page.goto(`${baseUrl}/vocabulary`)
-    const spelling = page.getByRole('textbox', { name: '法语拼写输入', exact: true })
-    await spelling.fill('merci')
-    for (const properties of [{ isComposing: true }, { keyCode: 229 }]) {
-      await spelling.dispatchEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...properties })
-      await page.evaluate(() => new Promise(requestAnimationFrame))
-      assert.equal(await page.locator('.vpl-fb').count(), 0, '拼写题选词时不能提前作答')
-    }
-    await spelling.press('Enter')
-    await page.getByText('Juste ✓ 答对', { exact: true }).waitFor()
-    await page.waitForFunction(() => { const button = document.querySelector('.vpl-fb-actions button'); return button && !button.disabled })
+    let release, started
+    const blocked = new Promise((done) => { release = done })
+    const writing = new Promise((done) => { started = done })
+    await page.route('**/rest/v1/lecture_answers*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.fallback()
+      started()
+      await blocked
+      return route.fallback()
+    })
+    const changed = page.locator('.lec-page:not([inert]) .lec-option').nth(1)
+    await changed.click()
+    await writing
+    assert.equal(await changed.getAttribute('aria-checked'), 'false')
+    release()
+    await page.waitForFunction(() => document.querySelectorAll('.lec-page:not([inert]) .lec-option')[1]?.getAttribute('aria-checked') === 'true')
+
+    await page.evaluate(({ token, session }) => localStorage.setItem(token, JSON.stringify(session)), { token, session: fixtureSession(FIXTURE_USERS[1]) })
+    const loaded = page.waitForResponse((r) => r.url().includes('/lecture_answers') && r.request().method() === 'GET')
     await page.reload()
-    await page.getByRole('heading', { name: '本节完成', exact: true }).waitFor()
-    assert.match(await page.locator('.vpl-done-score').textContent(), /答对 1 \/ 1/)
+    await loaded
+    await rendered(page, '.lec-page:not([inert]) .lec-title')
+    assert.equal(await page.locator(selected).count(), 0)
   })
 
-  await scenario('vocabulary-audio-cancel', viewport, async (page) => {
-    await signIn(page)
-    await page.addInitScript(() => {
-      const events = new EventTarget()
-      window.__spoken = []
-      Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: {
-        cancel() {}, getVoices: () => [],
-        speak: (utterance) => window.__spoken.push(utterance.text),
-        addEventListener: (...args) => events.addEventListener(...args),
-        removeEventListener: (...args) => events.removeEventListener(...args),
-      } })
-      window.__voicesReady = () => events.dispatchEvent(new Event('voiceschanged'))
+  await scenario('lecture-neighbors-and-gaps', viewport, async (page, fault) => {
+    fault.lectureDays = Array.from({ length: 7 }, (_, index) => ({
+      ...lectureSamples[0], date: `2026-11-${14 + index}`, title: `Lecture ${14 + index}`,
+    }))
+    const requests = new Set()
+    page.on('request', (r) => {
+      const path = new URL(r.url()).pathname
+      if (path.startsWith('/api/lecture/')) requests.add(path.split('/').at(-1))
     })
-    await page.goto(`${baseUrl}/vocabulary`)
-    await seedStudy(page, 'study', ['fr-bonjour', 'fr-merci'])
+    await page.goto(baseUrl + '/vocabulary')
+    await page.waitForURL(baseUrl + '/lecture')
+    await rendered(page, '.lec-entry')
+    assert.equal(await page.locator('.lec-entry').count(), 7)
+    assert.equal(requests.size, 0)
+    await page.locator('.lec-entry').filter({ hasText: 'Lecture 17' }).click()
+    await rendered(page, '.lec-page:not([inert]) .lec-title')
+    assert.deepEqual([...requests].sort(), ['2026-11-16','2026-11-17','2026-11-18'])
+    await page.locator('.lec').evaluate((target) => {
+      const touch = (clientX) => new Touch({ identifier: 1, target, clientX, clientY: 200 })
+      target.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [touch(250)] }))
+      target.dispatchEvent(new TouchEvent('touchend', { bubbles: true, changedTouches: [touch(100)] }))
+    })
+    await page.waitForURL(baseUrl + '/lecture/2026-11-18')
+    await page.locator('.lec-page:not([inert]) .lec-title').filter({ hasText: 'Lecture 18' }).waitFor({ state: 'attached' })
+
+    await page.route('**/api/lecture/2026-11-20', (r) => r.fulfill({ status: 404, json: null }))
+    await page.goto(baseUrl + '/lecture/2026-11-20')
+    await page.waitForURL(baseUrl + '/lecture')
+    await rendered(page, '.lec-entry')
+    assert.equal(await page.locator('.lec-entry').filter({ hasText: 'Lecture 20' }).count(), 0)
+    fault.lectureStatus = 503
+    const unavailable = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/lecture' && r.status() === 503)
     await page.reload()
-    await rendered(page, '.vpl-study-zh')
-    await page.clock.install()
-    await page.clock.pauseAt(new Date(Date.now() + 50))
-    const listen = page.getByRole('button', { name: /Écouter/ })
-    await listen.dispatchEvent('click')
-    await page.getByRole('button', { name: /Suivant/ }).dispatchEvent('click')
-    await page.waitForFunction(() => document.querySelector('.vpl-word')?.textContent === 'merci')
-    await page.evaluate(() => window.__voicesReady())
-    await page.clock.runFor(400)
-    assert.deepEqual(await page.evaluate(() => window.__spoken), [], '换词后不应朗读旧词')
-    await listen.dispatchEvent('click')
-    await listen.dispatchEvent('click')
-    await page.evaluate(() => window.__voicesReady())
-    await page.clock.runFor(400)
-    assert.deepEqual(await page.evaluate(() => window.__spoken), ['merci'], '连点只保留最后一次朗读')
-    await listen.dispatchEvent('click')
-    await page.getByRole('button', { name: '← Accueil', exact: true }).dispatchEvent('click')
-    await page.waitForURL(baseUrl + '/')
-    await page.evaluate(() => window.__voicesReady())
-    await page.clock.runFor(2000)
-    assert.deepEqual(await page.evaluate(() => window.__spoken), ['merci'], '离页后旧事件和定时器不能再次朗读')
-    await page.clock.resume()
+    await unavailable
+    await page.locator('.lec-archive').waitFor({ state: 'attached' })
+    assert.equal(await page.locator('.lec-entry, [role="alert"]').count(), 0)
   })
 
   await scenario('route-spelling', viewport, async (page) => {
-    for (const path of ['/resources/', '/RESOURCES/', '/vocabulary/', '/assistant/', '/login/', '/reset-password/']) {
+    for (const path of ['/resources/', '/RESOURCES/', '/lecture/', '/assistant/', '/login/', '/reset-password/']) {
       await page.goto(baseUrl + path)
       await page.waitForFunction(() => document.querySelector('#root > :not(.boot-overlay)') && !document.querySelector('.boot-overlay'))
       assert.equal(await page.locator('.site-header').count(), 0, `${path} 不应重复页眉`)

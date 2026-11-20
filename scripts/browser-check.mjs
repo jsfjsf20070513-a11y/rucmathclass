@@ -69,9 +69,6 @@ async function scenario(name, viewport, run) {
       }
       return route.continue()
     }
-    if (url.hostname === 'fixture.invalid' && url.pathname === '/rest/v1/resources') {
-      return route.fulfill({ status: fault.resourcesUnavailable ? 503 : 200, contentType: 'application/json', body: fault.resourcesUnavailable ? '{"message":"fixture unavailable"}' : '[]' })
-    }
     if (url.hostname === 'api.open-meteo.com') {
       return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: name.endsWith('-home') ? 61 : 0, is_day: 1 } } })
     }
@@ -234,22 +231,16 @@ try {
       await page.waitForSelector(`${current} .lec-option[aria-checked="true"]`, { state: 'attached' })
     })
     await scenario(`${size}-account-pages`, viewport, async (page, fault) => {
-      await page.goto(`${baseUrl}/vocabulary`)
-      await page.getByText('背词进度按账号保存,请先登录。', { exact: true }).waitFor()
-      await page.getByRole('link', { name: /Connexion/ }).click()
+      await page.goto(`${baseUrl}/login`)
       await page.getByRole('textbox', { name: '邮箱', exact: true }).fill('browser@example.invalid')
       await page.getByLabel('Mot de passe', { exact: true }).fill('local-fixture-only')
       await page.getByRole('button', { name: 'Entrer', exact: true }).click()
       await page.getByRole('heading', { name: 'Bienvenue', exact: true }).waitFor()
       await rendered(page, '.lgn-dest')
       await noHorizontalOverflow(page)
-      await page.getByRole('link', { name: /Vocabulaire/ }).click()
-      await rendered(page, '.vpl-title')
-      await page.getByRole('button', { name: /Commencer/ }).click()
-      await rendered(page, '.vpl-study-zh')
-      await rendered(page, '.vpl-study-actions button')
+      await page.locator('.lgn-dest a[href="/lecture"]').click()
+      await rendered(page, '.lec-entry')
       await noHorizontalOverflow(page)
-      await page.screenshot({ path: join(output, `${size}-vocabulary.png`), fullPage: true })
       await page.getByRole('button', { name: '← Accueil', exact: true }).click()
       await rendered(page, '.mag-vocab .mag-giant')
 
@@ -314,7 +305,7 @@ try {
     await noHorizontalOverflow(page)
   })
   await scenario('tablet-navigation', { width: 800, height: 1024 }, async (page) => {
-    for (const path of ['/resources', '/vocabulary', '/assistant']) {
+    for (const path of ['/resources', '/lecture', '/assistant']) {
       await page.goto(`${baseUrl}${path}`)
       await rendered(page, 'nav[aria-label="页内导航"]')
       await noHorizontalOverflow(page)

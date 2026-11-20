@@ -4,38 +4,29 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { createServer } from 'vite'
 import react from '@vitejs/plugin-react'
-import { frenchVocabulary } from '../../src/data/frenchVocabulary.js'
 import { createLocalFixture, fixtureSession, SCENES } from './localFixture.mjs'
 
 export const projectRoot = fileURLToPath(new URL('../..', import.meta.url))
 
-function bootstrap({ session, key, runId, scene }) {
+function bootstrap({ session, key, runId }) {
   window.__MATHCLASS_DEMO_URL__ = window.location.origin + '/__demo'
   window.__MATHCLASS_DEMO_CHAT__ = window.location.origin + '/__demo/api/chat'
   const marker = 'mathclass-demo-run'
   if (localStorage.getItem(marker) !== runId) {
-    for (const name of Object.keys(localStorage)) {
-      if (name === key || name.startsWith('mcw_vocab_session_')) localStorage.removeItem(name)
-    }
+    localStorage.removeItem(key)
+    localStorage.removeItem('mcw_lecture_answers_v1')
+    localStorage.removeItem('mcw_lecture_answers_v2')
     if (session) localStorage.setItem(key, JSON.stringify(session))
     localStorage.setItem(marker, runId)
   }
   localStorage.setItem('mcw_weather_cache', JSON.stringify({ at: Date.now(), w: { temp: 20, code: 0, isDay: 1 } }))
-  if ((scene.study || scene.answer || scene.finish || scene.queue) && !localStorage.getItem(`mcw_vocab_session_v2:${session.user.id}`)) {
-    localStorage.setItem(`mcw_vocab_session_v2:${session.user.id}`, JSON.stringify({
-      v: 2, userId: session.user.id,
-      day: new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()),
-      status: scene.study ? 'study' : 'ready', level: 'all', queue: (scene.queue || ['fr-bonjour']).map((id) => ({ id })),
-      i: 0, studyIdx: 0, stats: { correct: 0, attempts: 0, combo: 0, maxCombo: 0 }, wrongIds: [],
-    }))
-  }
 }
 
 export async function startDemo({ root = projectRoot, scene: sceneName = 'home', port = 0, cacheDir } = {}) {
   root = await realpath(root)
   const scene = SCENES[sceneName]
   if (!scene) throw new Error(`没有这个场景：${sceneName}。运行 npm run demo -- --help 查看。`)
-  const fixture = createLocalFixture(scene, { wordIds: frenchVocabulary.map(({ id }) => id) })
+  const fixture = createLocalFixture(scene)
   const runId = randomUUID()
   let origin
   const server = await createServer({
@@ -49,7 +40,7 @@ export async function startDemo({ root = projectRoot, scene: sceneName = 'home',
     plugins: [react(), {
       name: 'local-fixture',
       transformIndexHtml() {
-        const data = { session: scene.user === false ? null : fixtureSession(), key: 'sb-127-auth-token', runId, scene }
+        const data = { session: scene.user === false ? null : fixtureSession(), key: 'sb-127-auth-token', runId }
         return [{ tag: 'script', children: `(${bootstrap.toString()})(${JSON.stringify(data).replaceAll('<', '\\u003c')})`, injectTo: 'head-prepend' }]
       },
       configureServer(vite) {

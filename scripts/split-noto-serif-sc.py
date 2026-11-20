@@ -54,9 +54,9 @@ def groups(points):
     shelves &= points - home
     yield "shelves", sorted(shelves)
 
-    # 词表和 GB 2312 一级汉字用较小的切片，以减少长回答首次用到新字时的下载量。
+    # 阅读样稿和 GB 2312 一级汉字用较小的切片，以减少长回答首次用到新字时的下载量。
     rest = points - home - shelves
-    frequency = Counter(text_points("src/data/frenchVocabulary.js"))
+    frequency = Counter(text_points("src/data/lectureSamples.js"))
     common = {cp for cp in rest if frequency[cp] or is_level_one(cp)}
     for label, chars, size in [
         ("common", sorted(common, key=lambda cp: (-frequency[cp], cp)), 96),
