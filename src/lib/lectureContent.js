@@ -3,7 +3,7 @@
 
 const MARKDOWN = /\*\*|__|`|^#{1,6}\s|^\s*[-*+]\s|\[[^\]]*\]\([^)]*\)|⭐/m
 const EMOJI = /\p{Extended_Pictographic}/u
-const BANNED = [
+export const bannedLecturePhrases = [
   // 防御性和套话
   '仅供参考', '请自行核对', '需要注意的是', '值得注意的是', '值得一提的是', '请注意',
   '温馨提示', '总而言之', '综上所述', '希望对你有帮助', '作为AI', '作为 AI',
@@ -16,7 +16,7 @@ function textProblems(text, where) {
   if (typeof text !== 'string' || !text.trim()) return [`${where}：内容为空`]
   if (MARKDOWN.test(text)) problems.push(`${where}：含 Markdown 符号`)
   if (EMOJI.test(text)) problems.push(`${where}：含表情符号`)
-  for (const phrase of BANNED) {
+  for (const phrase of bannedLecturePhrases) {
     if (text.includes(phrase)) problems.push(`${where}：含「${phrase}」`)
   }
   return problems
@@ -34,7 +34,10 @@ function pointProblems(points, where) {
 export function lectureProblems(day) {
   const problems = []
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day?.date || '')) problems.push('日期格式不对')
+  if (!['B1', 'B2', 'C1'].includes(day?.level)) problems.push('难度须为 B1、B2 或 C1')
+  if (!['DELF', 'DALF', 'TCF', 'TEF'].includes(day?.exam)) problems.push('考试名称不对')
   problems.push(...textProblems(day?.title, '标题'))
+  if (typeof day?.title === 'string' && day.title.length > 160) problems.push('标题过长')
   const paragraphs = Array.isArray(day?.paragraphs) ? day.paragraphs : []
   if (!paragraphs.length) problems.push('正文为空')
   paragraphs.forEach((text, index) => problems.push(...textProblems(text, `正文第 ${index + 1} 段`)))
@@ -45,13 +48,20 @@ export function lectureProblems(day) {
   questions.forEach((question, index) => {
     const where = `第 ${index + 1} 题`
     problems.push(...textProblems(question?.stem, `${where}题干`))
-    const keys = (question?.options || []).map((option) => option?.key)
+    if (question?.note !== undefined) problems.push(...textProblems(question.note, `${where}题注`))
+    const options = Array.isArray(question?.options) ? question.options : []
+    const keys = options.map((option) => option?.key)
+    for (const option of options) {
+      problems.push(...textProblems(option?.key, `${where}选项键`), ...textProblems(option?.text, `${where}选项`))
+      if (option?.key?.length > 8) problems.push(`${where}：选项键过长`)
+    }
+    if (new Set(keys).size !== keys.length) problems.push(`${where}：选项键重复`)
     if (keys.length < 2) problems.push(`${where}：选项不足`)
     if (!keys.includes(question?.answer)) problems.push(`${where}：答案不在选项里`)
     const evidence = Array.isArray(question?.evidence) ? question.evidence : []
     if (!evidence.length) problems.push(`${where}：没有引用原文`)
     evidence.forEach((quote) => {
-      if (!article.includes(quote)) problems.push(`${where}：引用的原文在文章里找不到`)
+      if (typeof quote !== 'string' || !quote.trim() || !paragraphs.some((p) => typeof p === 'string' && p.includes(quote))) problems.push(`${where}：引用的原文在文章里找不到`)
     })
   })
 
@@ -65,6 +75,7 @@ export function lectureProblems(day) {
     problems.push(...textProblems(sentence?.zh, `${where}翻译`))
     problems.push(...pointProblems(sentence?.points, where))
   })
+  if (sentences.map((sentence) => sentence?.fr).join(' ') !== article) problems.push('逐句原文与正文不一致')
   problems.push(...pointProblems(day?.takeaways, '本篇要记'))
   return problems
 }
