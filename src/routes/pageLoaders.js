@@ -10,6 +10,8 @@ export const pageLoaders = {
   '/assistant': () => import('../pages/Assistant'),
 }
 
+export const loadAssistantReply = () => import('../components/AssistantReply')
+
 export function prefetchPage(path) {
   if (!canPrefetchInBrowser()) return
   const loader = pageLoaders[path.split(/[?#]/)[0]]

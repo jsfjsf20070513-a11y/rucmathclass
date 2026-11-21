@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageNav from '../components/PageNav'
+import { archiveDate } from '../lib/archiveDate'
 import { usePageFlip } from '../hooks/usePageFlip'
 import { markFlipNav, wasFlipNav } from '../lib/flipNav'
 import { useLectureLibrary } from '../hooks/useLectureLibrary'
@@ -123,9 +124,6 @@ function Verso({ day, chosen, onTurn }) {
   )
 }
 
-const FR_DATE = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
-const frDate = (iso) => FR_DATE.format(new Date(`${iso}T00:00:00Z`))
-
 // 档案：像书架一样按日期列出全部往期，最新在上。
 function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
   // 空闲时先取最新三篇；手指按下时再取被点的那篇。
@@ -148,7 +146,7 @@ function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
           {[...days].reverse().map((day) => (
             <li key={day.date}>
               <button type="button" className="lec-entry" onPointerDown={() => onPrefetch(day.date)} onClick={() => onOpen(day.date)}>
-                <span className="lec-entry-date" lang="fr">{`${frDate(day.date)} · ${day.level}`}</span>
+                <span className="lec-entry-date" lang="fr">{`${archiveDate(day.date)} · ${day.level}`}</span>
                 <span className="lec-entry-title" lang="fr">{day.title}</span>
               </button>
             </li>

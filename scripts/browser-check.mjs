@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
+import { swipeConversation } from './lib/captureScene.mjs'
+import { MATH_THREAD } from './lib/localFixture.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -51,8 +53,17 @@ async function noHorizontalOverflow(page) {
   assert.ok(scrollWidth <= width + 1, `Horizontal overflow: ${scrollWidth} > ${width} at ${page.url()}`)
 }
 
+async function assistantType(page) {
+  const violations = await page.locator('.cor').evaluate((main) => [...main.querySelectorAll('*')]
+    .filter((el) => el.getClientRects().length && !el.closest('svg, .katex-mathml, [hidden]') &&
+      (el.matches('button, textarea') || [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.replace(/\u200b/g, '').trim())))
+    .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 15 || getComputedStyle(el).textTransform === 'uppercase')
+    .map((el) => el.outerHTML.slice(0, 100)))
+  assert.deepEqual(violations, [])
+}
+
 async function scenario(name, viewport, run) {
-  const context = await browser.newContext({ viewport })
+  const context = await browser.newContext({ viewport, hasTouch: viewport.width <= 480 })
   const errors = []
   const unexpectedRequests = []
   const fault = { chunk: '', kind: '', resourcesUnavailable: false, chatStatus: 200 }
@@ -109,7 +120,7 @@ try {
   server = await preview({ root, build: { outDir: buildDir }, preview: { host: '127.0.0.1', port: 0, strictPort: true } })
   baseUrl = `http://127.0.0.1:${server.httpServer.address().port}`
   browser = await chromium.launch()
-  await checkRegressions({ scenario, baseUrl, rendered })
+  await checkRegressions({ scenario, baseUrl, rendered, assistantType })
   for (const [size, viewport] of [['mobile', { width: 390, height: 844 }], ['desktop', { width: 1280, height: 800 }]]) {
     await scenario(`${size}-home`, viewport, async (page) => {
       await page.goto(baseUrl)
@@ -249,6 +260,10 @@ try {
       await page.waitForSelector(`${current} .lec-option[aria-checked="true"]`, { state: 'attached' })
     })
     await scenario(`${size}-account-pages`, viewport, async (page, fault) => {
+      const renderRequests = []
+      page.on('request', (request) => {
+        if (new URL(request.url()).pathname.includes('/assets/AssistantReply-')) renderRequests.push(request.url())
+      })
       await page.goto(`${baseUrl}/login`)
       await page.getByRole('textbox', { name: '邮箱', exact: true }).fill('browser@example.invalid')
       await page.getByLabel('Mot de passe', { exact: true }).fill('local-fixture-only')
@@ -263,31 +278,120 @@ try {
       await rendered(page, '.mag-vocab .mag-giant')
 
       await page.goto(`${baseUrl}/assistant`)
+      const list = page.getByRole('list', { name: '对话列表' })
+      const back = page.getByRole('link', { name: 'Conversations', exact: true })
+      const math = list.locator(`a[href="/assistant/${MATH_THREAD}"]`)
+      const french = list.getByRole('link', { name: /Le mot/ })
+      await rendered(page, '.cor-entry')
+      await assistantType(page)
+      assert.equal(await list.getByRole('link').count(), 4)
+      assert.equal(await list.getByRole('link').first().innerText(), '新对话')
+      assert.deepEqual(await list.locator('time').allTextContents(), ['vendredi 20 novembre', 'mercredi 18 novembre', 'lundi 16 novembre'])
+      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      await noHorizontalOverflow(page)
+      await page.screenshot({ path: join(output, `${size}-assistant-list.png`), fullPage: true })
+
+      await list.getByRole('link', { name: '新对话' }).click()
+      await rendered(page, '.cor-masthead')
+      await back.click()
+      assert.equal(renderRequests.length, 0, '首页、目录和空白对话按需下载正文渲染器')
+      await math.click()
+      await page.waitForURL(`${baseUrl}/assistant/${MATH_THREAD}`)
       await rendered(page, '.cor-r-text')
       await rendered(page, '.cor-input')
-      assert.equal(await page.locator('.cor-r-text .katex').count(), 1)
+      assert.equal(await page.locator('.cor-body.lec-rise').count(), 1)
+      assert.equal(await page.locator('.cor-turn').count(), 2)
+      assert.equal(await page.locator('.cor-question').evaluate((element) => element === document.activeElement), true)
+      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      const proof = page.locator('.cor-r-text')
+      await assistantType(page)
+      assert.equal(renderRequests.length, 1)
+      assert.equal(await proof.locator('.katex').count(), 8)
+      assert.equal(await proof.locator('.katex-display').count(), 1)
+      assert.equal(await proof.locator('ol > li').count(), 2)
+      assert.equal(await proof.locator('strong').textContent(), '长度')
+      assert.deepEqual(await proof.locator('tbody td').allTextContents(), ['9', '3', '4', '2'])
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-history.png`), fullPage: true })
-      await page.getByRole('button', { name: 'Effacer · 清空', exact: true }).click()
+
+      await back.click()
+      await french.click()
+      await rendered(page, '.cor-r-text')
+      assert.equal(await page.locator('.cor-turn').count(), 2)
+      assert.equal(await page.locator('.cor-r-text strong').textContent(), '« une valeur singulière »')
+      await back.click()
+      const row = list.locator('li').filter({ has: page.locator('a[href*="b2222222"]') })
+      const remove = row.getByRole('button', { name: /^删除/ })
+      if (size === 'mobile') await swipeConversation(page, row)
+      else await row.hover()
+      await rendered(page, '.cor-entry:has(a[href*="b2222222"]) .cor-delete')
+      await page.screenshot({ path: join(output, `${size}-assistant-delete.png`), fullPage: true })
+      await remove.click()
+      await row.getByRole('button', { name: /^撤销/ }).click()
+      assert.equal(await french.getAttribute('aria-disabled'), null)
+      if (size === 'mobile') await swipeConversation(page, row)
+      else await row.hover()
+      await remove.click()
+      await row.waitFor({ state: 'detached' })
+      await page.reload()
+      await rendered(page, '.cor-entry')
+      assert.equal(await french.count(), 0)
+      assert.equal(await math.count(), 1)
+      assert.equal(await list.getByRole('link').count(), 3)
+
+      const newThread = list.getByRole('link', { name: '新对话' })
+      await newThread.click()
+      await rendered(page, '.cor-masthead')
+      await back.click()
+      assert.equal(await list.getByRole('link').count(), 3, '打开空白页不创建对话')
+      await newThread.click()
       await rendered(page, '.cor-masthead')
       assert.equal(await page.locator('.cor-turn').count(), 0)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-empty.png`), fullPage: true })
 
-      fault.chatStatus = 401
       const question = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
+      const send = page.getByRole('button', { name: '发送', exact: true })
+      assert.equal(await send.isDisabled(), true)
+      const fieldHeight = () => question.evaluate((field) => field.clientHeight)
+      const oneLine = await fieldHeight()
+      assert.equal(oneLine, await send.evaluate((button) => button.clientHeight))
+      assert.equal(oneLine, await page.getByRole('button', { name: '添加图片' }).evaluate((button) => button.clientHeight))
+      await question.fill('第一行\n第二行')
+      assert.ok(await fieldHeight() > oneLine)
+      await question.fill('第一行\n'.repeat(35))
+      assert.equal(await question.evaluate((field) => field.scrollHeight > field.clientHeight), true)
+      await question.fill('')
+      assert.equal(await fieldHeight(), oneLine)
+
+      const chooser = page.waitForEvent('filechooser')
+      await page.getByRole('button', { name: '添加图片', exact: true }).click()
+      await (await chooser).setFiles({
+        name: 'figure.png', mimeType: 'image/png',
+        buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64'),
+      })
+      await page.getByRole('img', { name: '待发送的图片' }).waitFor()
+      assert.equal(await send.isEnabled(), true)
+      await page.getByRole('button', { name: '移除图片', exact: true }).click()
+      assert.equal(await send.isDisabled(), true)
+
+      fault.chatStatus = 401
       await question.fill('解释一下导数。')
-      await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
+      await send.click()
       await page.getByRole('alert').filter({ hasText: '登录状态已失效' }).waitFor()
       assert.equal(await question.inputValue(), '解释一下导数。')
       assert.equal(await page.locator('.cor-turn').count(), 0)
       fault.chatStatus = 200
-      await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
+      await send.click()
       await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
       await page.waitForFunction(() => document.querySelector('.cor-input')?.value === '')
       await page.reload()
       await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
       await noHorizontalOverflow(page)
+      assert.match(new URL(page.url()).pathname, /^\/assistant\/[a-f\d-]{36}$/)
+      await back.click()
+      await rendered(page, '.cor-entry')
+      assert.equal(await list.locator('.cor-entry .lec-entry-title').first().textContent(), '解释一下导数。')
       await page.getByRole('button', { name: '← Accueil', exact: true }).click()
       await rendered(page, '.mag-cor .mag-giant')
 
@@ -296,6 +400,7 @@ try {
       await page.getByRole('textbox', { name: '邮箱', exact: true }).waitFor()
       await page.goto(`${baseUrl}/assistant`)
       await rendered(page, '.cor-gate a')
+      await assistantType(page)
       assert.equal(await page.getByRole('textbox', { name: '向 AI 助手提问', exact: true }).count(), 0)
       await noHorizontalOverflow(page)
     })

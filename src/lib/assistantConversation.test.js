@@ -78,7 +78,7 @@ describe('assistant conversation lifecycle', () => {
     cleared.reject(new Error('offline'))
     expect(await clearing).toBe(false)
     expect(conversation.getSnapshot().messages).toHaveLength(2)
-    expect(conversation.getSnapshot().error).toContain('清空结果未确认')
+    expect(conversation.getSnapshot().error).toContain('删除结果未确认')
     expect(conversation.getSnapshot().busy).toBe(true)
     expect(await conversation.send('cannot continue uncertain history')).toBe(false)
   })

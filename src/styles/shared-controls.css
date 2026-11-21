@@ -33,6 +33,12 @@
   transform-origin: 50% 100%;
 }
 
+@keyframes lecRise {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.lec-rise { animation: lecRise 0.5s var(--flip-ease) both; }
+
 .page-nav {
   display: flex;
   justify-content: space-between;

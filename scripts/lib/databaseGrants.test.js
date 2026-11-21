@@ -12,7 +12,7 @@ it('keeps legitimate flows and row isolation while restricting excess database g
   const admin = '33333333-3333-4333-8333-333333333333'
   const sql = async (path) => readFile(new URL(`../../${path}`, import.meta.url), 'utf8')
   const policySnapshot = async () => (await db.query("select tablename, policyname, roles, cmd, qual, with_check from pg_policies where schemaname='public' order by tablename, policyname")).rows
-  const tables = ['lecture_answers', 'review_states', 'ai_messages', 'resources', 'profiles']
+  const tables = ['lecture_answers', 'review_states', 'ai_messages', 'ai_conversations', 'resources', 'profiles']
   const recordSnapshot = async () => Promise.all(tables.map(async (table) =>
     (await db.query(`select to_jsonb(record) as record from public.${table} record order by to_jsonb(record)::text`)).rows))
   const asUser = async (id) => {
@@ -69,6 +69,23 @@ it('keeps legitimate flows and row isolation while restricting excess database g
       grant all on public.ai_messages to anon;
       grant select on public.resources to anon;
     `)
+    // 北京时间 00:00 分开两天，同一时间的消息按原主键取第一句。
+    await db.query(`insert into public.ai_messages (user_id, role, content, created_at) values
+      ($1, 'model', '旧回答', '2026-11-01 15:59:59Z'),
+      ($1, 'user', '第一句', '2026-11-01 16:00:00Z'),
+      ($1, 'user', '同秒第二句', '2026-11-01 16:00:00Z'),
+      ($2, 'user', '另一个账号', '2026-11-01 16:00:00Z')`, [a, b])
+    const migration = await sql('sql/schema/setup_ai_conversations.sql')
+    await db.exec(migration)
+    const mapped = await recordSnapshot()
+    await db.exec(migration)
+    assert.deepEqual(await recordSnapshot(), mapped)
+    assert.deepEqual((await db.query(`select c.title, c.legacy_day::text as day, count(m.id)::int as messages
+      from public.ai_conversations c join public.ai_messages m on m.conversation_id = c.id
+      where c.user_id = $1 and c.legacy_day between '2026-11-01' and '2026-11-02'
+      group by c.id order by c.legacy_day`, [a])).rows, [
+      { title: '对话', day: '2026-11-01', messages: 1 }, { title: '第一句', day: '2026-11-02', messages: 2 },
+    ])
     const before = await policySnapshot()
     const recordsBefore = await recordSnapshot()
     const fix = await sql('sql/schema/restrict_app_table_grants.sql')
@@ -90,6 +107,8 @@ it('keeps legitimate flows and row isolation while restricting excess database g
     await denied('select * from public.lecture_answers')
     await denied("insert into public.lecture_answers (day, answers) values ('2026-11-19', '{}')")
     await denied("update public.lecture_answers set answers='{}'")
+    await denied('select * from public.ai_conversations')
+    await denied(`select public.save_ai_turn('${a}', '${admin}', '标题', '问题', '回答')`)
     await denied('select * from public.ai_messages')
     await denied('select * from public.review_states')
     await denied('select * from public.profiles')
@@ -109,6 +128,26 @@ it('keeps legitimate flows and row isolation while restricting excess database g
       await assert.rejects(db.query('update public.lecture_answers set answers=$1', [answers]), (error) => error.code === '23514')
     }
     await ownRows('review_states')
+    await ownRows('ai_conversations')
+    await denied(`insert into public.ai_conversations (user_id, title) values ('${b}', '跨账号')`)
+    await denied("update public.ai_conversations set title='越权改题'")
+    await denied(`select public.save_ai_turn('${b}', '${admin}', '标题', '问题', '回答')`)
+    const append = (id, title, answer = '回答') =>
+      db.query('select public.save_ai_turn($1, $2, $3, $4, $5) as saved', [a, id, title, '问题', answer])
+    // 回复不合约束时整笔回滚，连空目录也不留下。
+    await assert.rejects(append(admin, '第一句', '长'.repeat(20001)), (error) => error.code === '23514')
+    assert.equal((await db.query('select id from public.ai_conversations where id=$1', [admin])).rows.length, 0)
+    const started = (await append(admin, '第一句')).rows[0].saved
+    await append(admin, null)
+    assert.equal((await db.query('delete from public.ai_conversations where id=$1 and updated_at=$2 returning id', [admin, started])).rows.length, 0)
+    assert.deepEqual((await db.query('select role from public.ai_messages where conversation_id=$1 order by created_at, id', [admin])).rows.map((r) => r.role), ['user', 'model', 'user', 'model'])
+    await asUser(b)
+    assert.equal((await db.query('delete from public.ai_conversations where id=$1 returning id', [admin])).rows.length, 0)
+    await assert.rejects(db.query("insert into public.ai_messages (user_id, conversation_id, role, content) values ($1, $2, 'user', 'x')", [b, admin]), (error) => error.code === '23503')
+    await asUser(a)
+    await db.query('delete from public.ai_conversations where id=$1', [admin])
+    assert.equal((await db.query('select id from public.ai_messages where conversation_id=$1', [admin])).rows.length, 0)
+    await assert.rejects(append(admin, null), (error) => error.code === 'P0002')
     await ownRows('ai_messages')
     await db.query('insert into public.ai_messages (user_id, role, content) values ($1, $2, $3)', [a, 'user', 'new fixture'])
     await denied(`insert into public.ai_messages (user_id, role, content) values ('${b}', 'user', 'must fail')`)
