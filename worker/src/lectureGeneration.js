@@ -4,7 +4,8 @@ import { beijingDate, dayMs, lectureIndex, lectureSummary, listLectureKeys } fro
 
 const api = 'https://api.openai.com/v1/responses'
 const processing = new Set()
-const modelAt = (index) => index < 3 ? 'gpt-6.2-astra' : 'gpt-6.2-sol'
+// 平时文章由人工批量写好、审过后存入；这里只在某天缺稿时兜底，先用便宜的 Sol，三次不过再换 Astra。
+const modelAt = (index) => index < 3 ? 'gpt-6.2-sol' : 'gpt-6.2-astra'
 
 async function openai(env, id, body) {
   const response = await fetch(id ? `${api}/${encodeURIComponent(id)}` : api, {

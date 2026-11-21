@@ -53,7 +53,7 @@ it('creates one background response for Beijing tomorrow and resumes it across m
   reply({ status: 'queued', id: 'resp_one' })
   await tick()
   const body = JSON.parse(upstream.mock.calls[0][1].body)
-  expect(body).toMatchObject({ model: 'gpt-6.2-astra', background: true, reasoning: { effort: 'high' },
+  expect(body).toMatchObject({ model: 'gpt-6.2-sol', background: true, reasoning: { effort: 'high' },
     service_tier: 'default', background_options: { completion_window: '8h' }, text: { format: { type: 'json_schema', strict: true } } })
   expect(body.input).toContain(date)
   expect(body.input).not.toContain('old title')
@@ -87,7 +87,7 @@ it('records all five failures privately and never indexes rejected output or res
   const result = await kv.get('result:' + date, 'json')
   expect(result.status).toBe('abandoned')
   expect(result.failures[0].problems).toContain('第 1 题：引用的原文在文章里找不到')
-  expect(result.failures.map((f) => f.model)).toEqual(['astra','astra','astra','sol','sol'].map((name) => 'gpt-6.2-' + name))
+  expect(result.failures.map((f) => f.model)).toEqual(['sol','sol','sol','astra','astra'].map((name) => 'gpt-6.2-' + name))
   expect(upstream.mock.calls.map(([, args]) => JSON.parse(args.body).model)).toEqual(result.failures.map((f) => f.model))
   expect(await kv.get('day:' + date)).toBeNull()
   expect(await kv.get('pending:' + date)).toBeNull()
@@ -171,7 +171,7 @@ it('reserves a paid attempt before POST, including overlapping ticks and a lost 
   expect(upstream).toHaveBeenCalledTimes(1)
   await tick(now + 125_000)
   expect(await kv.get('pending:' + date, 'json')).toMatchObject({ failures: [
-    { model: 'gpt-6.2-astra', problems: ['上次提交未能确认 response id'] },
+    { model: 'gpt-6.2-sol', problems: ['上次提交未能确认 response id'] },
   ] })
   expect(upstream).toHaveBeenCalledTimes(1)
   reply(completed(day))
