@@ -1,6 +1,21 @@
 # 开发与验证
 
-本地演示和页面对比见 [README](../README.md)。命令以 [package.json](../package.json) 为准。使用 `.nvmrc` 指定的 Node 版本，再执行 `npm ci`。`npm run demo` 使用假数据；`npm run dev` 会读取本地配置，也可能请求真实服务。
+本地演示和页面对比见 [README](../README.md)。命令以 [package.json](../package.json) 为准。使用 `.nvmrc` 指定的 Node 版本。`npm run demo` 使用假数据。`npm run dev` 会读取本地配置，也可能请求真实服务。
+
+## 本机依赖与 iCloud
+
+本机仓库位于 iCloud 同步的桌面目录。2026-11-21 作者决定保留这个位置。
+
+在 `.claude/worktrees/` 下新建工作目录后，从主目录复制依赖。复制完成后，立即给新工作目录的 `node_modules` 设置 iCloud 忽略标记。在新工作目录中执行以下命令。
+
+```bash
+cp -R ../../../node_modules ./node_modules &&
+  xattr -w 'com.apple.fileprovider.ignore#P' 1 node_modules
+```
+
+补装依赖只用 `npm install`。不要运行 `npm ci`。它会重建 `node_modules`，导致忽略标记丢失。
+
+不要给 iCloud 里已有副本的目录补打忽略标记，例如 `dist/` 和 `.cache/`。iCloud 可能把本地目录改名为「原名 2」。
 
 ## 内容与生成文件
 

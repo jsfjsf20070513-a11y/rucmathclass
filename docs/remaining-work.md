@@ -19,4 +19,4 @@
 
 ## iCloud 同步冲突
 
-仓库位于 iCloud 同步的桌面目录。本地依赖设了 `com.apple.fileprovider.ignore#P` 后，iCloud 仍把它移到了 `node_modules 2/`。同步拉回的 `node_modules/` 不完整。`dist/` 和 `.cache/` 里也出现了带 ` 2` 或 ` 3` 后缀的冲突副本。建议将仓库移出 iCloud 同步目录。2026-11-21 作者决定把仓库移出 iCloud，迁移范围待定。
+2026-11-21 作者决定把仓库留在 iCloud 同步的桌面目录。依赖按[本机依赖与 iCloud](development.md#本机依赖与-icloud)的做法处理。`dist/` 和 `.cache/` 中已有的冲突副本待清理。
