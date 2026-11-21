@@ -5,7 +5,7 @@ import { withRequestDeadline } from '../lib/requestDeadline'
 async function getJSON(path, signal) {
   return withRequestDeadline(async (bounded) => {
     const response = await fetch(path, { signal: bounded })
-    if (!response.ok) throw new Error('阅读请求失败')
+    if (!response.ok) throw Object.assign(new Error('阅读请求失败'), { status: response.status })
     return response.json()
   }, { signal })
 }
@@ -52,9 +52,11 @@ export function useLectureLibrary(date) {
           setArticles((prev) => prev[key] ? prev : { ...prev, [key]: day })
           setMissing((prev) => prev.includes(key) ? prev.filter((date) => date !== key) : prev)
         }
-      }).catch(() => {
+      }).catch((error) => {
         if (cache.current.get(key) === work) cache.current.delete(key)
-        if (active) setMissing((prev) => prev.includes(key) ? prev : [...prev, key])
+        // 只有确实没有这篇（404 或内容不合格）才从列表里拿掉；超时、断网、5xx 留着，下次换天或回档案再取。
+        const gone = error?.status === 404 || error?.message === '文章格式错误'
+        if (active && gone) setMissing((prev) => prev.includes(key) ? prev : [...prev, key])
       })
     }
     return () => { active = false }

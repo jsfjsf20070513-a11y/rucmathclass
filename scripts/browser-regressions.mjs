@@ -132,6 +132,16 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     await page.waitForURL(baseUrl + '/lecture')
     await rendered(page, '.lec-entry')
     assert.equal(await page.locator('.lec-entry').filter({ hasText: 'Lecture 20' }).count(), 0)
+    // 临时失败（5xx、超时）不把已发布的文章从档案里拿掉。
+    await page.route('**/api/lecture/2026-11-19', (r) => r.fulfill({ status: 503, json: null }))
+    const flaky = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/lecture/2026-11-19' && r.status() === 503)
+    await page.goto(baseUrl + '/lecture/2026-11-18')
+    await flaky
+    await page.locator('.page-nav-back').click()
+    await page.waitForURL(baseUrl + '/lecture')
+    await rendered(page, '.lec-entry')
+    assert.equal(await page.locator('.lec-entry').filter({ hasText: 'Lecture 19' }).count(), 1)
+    await page.unroute('**/api/lecture/2026-11-19')
     fault.lectureStatus = 503
     const unavailable = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/lecture' && r.status() === 503)
     await page.reload()
