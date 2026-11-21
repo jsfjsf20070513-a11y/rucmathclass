@@ -221,8 +221,8 @@ try {
       await page.waitForURL(/\/lecture\/\d{4}-\d{2}-\d{2}$/)
       const day = await path()
       await rendered(page, `${current} .lec-title`)
-      // 文章页从右边翻入（和首页进档案同一个动画），翻入时正文已经在。
-      assert.equal(await page.locator('.lec-stack.page-arrive').count(), 1)
+      // 文章页从下往上抽出，抽出时正文已经在。
+      assert.equal(await page.locator('.lec-stack.lec-rise').count(), 1)
       await page.waitForFunction(() => document.querySelector('.lec-stack').getAnimations().every((animation) => animation.playState === 'finished'))
       assert.equal(await page.evaluate(() => { window.__stopFrames = true; return window.__blankFrames }), 0)
       await page.locator(`${current} .lec-option`).first().click()

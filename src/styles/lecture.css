@@ -23,8 +23,13 @@
   min-height: 0;
   position: relative;
 }
-/* 从档案点进来、正文还没到时先不露出空白页 */
+/* 从档案点进来：正文还没到时先不露出空白页；到了就像从档案袋里往上抽出一张纸 */
 .lec-stack.is-waiting { visibility: hidden; }
+.lec-stack.lec-rise { animation: lecRise 0.5s var(--flip-ease) both; }
+@keyframes lecRise {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
 
 .lec-page {
   position: absolute;

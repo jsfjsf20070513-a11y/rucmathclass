@@ -167,7 +167,7 @@ function Reader({ days, articles, date, answers, onChoose }) {
   const scrollers = useRef({})
   // 只在打开时定位；之后左右翻只改地址，不重建页面栈。
   const [initial] = useState(() => days.findIndex((day) => day.date === date))
-  // 从档案点进来时，正文到了再让这一页从右边翻入；最多等 1.5 秒。
+  // 从档案点进来时，正文到了再让这一页从下往上抽出；最多等 1.5 秒。换天仍是左右翻。
   const [entering] = useState(() => wasFlipNav())
   const [firstDate] = useState(date)
   const [waitedOut, setWaitedOut] = useState(false)
@@ -207,7 +207,7 @@ function Reader({ days, articles, date, answers, onChoose }) {
       <nav className="page-nav" aria-label="页内导航">
         <button type="button" className="page-nav-back" lang="fr" onClick={onArchive}>Archives</button>
       </nav>
-      <div className={`lec-stack${entering ? (ready ? ' page-arrive' : ' is-waiting') : ''}`}>
+      <div className={`lec-stack${entering ? (ready ? ' lec-rise' : ' is-waiting') : ''}`}>
         {days.map((entry, index) => {
           const day = articles[entry.date]
           const chosen = answers[entry.date] || {}
