@@ -36,7 +36,7 @@ function AppRoutes() {
           <Route path="vocabulary" element={<Navigate to="/lecture" replace />} />
           <Route path="lecture" element={<Lecture account={account} />} />
           <Route path="lecture/:date" element={<Lecture account={account} />} />
-          <Route path="assistant" element={<Assistant />} />
+          <Route path="assistant/:id?" element={<Assistant />} />
           <Route path="resources" element={<Resources />} />
           {/* 资源详情与推荐已下线；旧 /resources/:id（含 curate）统一回书架。 */}
           <Route path="resources/:id" element={<Navigate to="/resources" replace />} />

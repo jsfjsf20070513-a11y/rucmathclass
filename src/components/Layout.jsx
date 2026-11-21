@@ -18,7 +18,7 @@ export default function Layout() {
   // `/` 是 100svh 翻页刊;内页与登录页同属一本书(Connexion 即杂志第 06 屏)。
   const pathname = normalizeRoutePath(location.pathname)
   const isMagazinePage = ['/', '/lecture', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
-    || pathname.startsWith('/lecture/')
+    || pathname.startsWith('/lecture/') || pathname.startsWith('/assistant/')
   if (isMagazinePage) {
     return <Outlet />
   }

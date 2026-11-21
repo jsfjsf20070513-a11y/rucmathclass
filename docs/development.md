@@ -63,7 +63,7 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 `sql/schema/` 保存当前表定义，`sql/audit/` 用于只读核查，`sql/legacy/` 保存旧文件。这些 SQL 不是一套可顺序执行的安装脚本。
 
-2026-09-27 已获授权执行 [表权限修正](../sql/schema/restrict_app_table_grants.sql)，并用 [只读查询](../sql/audit/app_permissions.sql) 核对结果。以后再次修改生产数据库，仍需重新核对并取得明确授权。前端发布不会自动执行 SQL。阅读答案表使用独立的 [setup_lecture_answers.sql](../sql/schema/setup_lecture_answers.sql)。
+2026-09-27 已获授权执行 [表权限修正](../sql/schema/restrict_app_table_grants.sql)，并用 [只读查询](../sql/audit/app_permissions.sql) 核对结果。以后再次修改生产数据库，仍需重新核对并取得明确授权。前端发布不会自动执行 SQL。阅读答案表使用独立的 [setup_lecture_answers.sql](../sql/schema/setup_lecture_answers.sql)。答疑分段依赖已有的 `ai_messages`，旧记录按账号和北京时间日期归段。[分段表与迁移](../sql/schema/setup_ai_conversations.sql)
 
 ## 发布前的本地检查
 

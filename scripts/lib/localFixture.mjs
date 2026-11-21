@@ -10,6 +10,8 @@ export const FIXTURE_USERS = ['browser', 'other'].map((name, index) => ({
   app_metadata: {}, user_metadata: {}, created_at: '2026-01-01T00:00:00Z',
 }))
 
+export const MATH_THREAD = 'a1111111-1111-4111-8111-111111111111'
+const mathPath = '/assistant/' + MATH_THREAD
 export const SCENES = {
   home: { title: '首页', path: '/', user: false },
   login: { title: '登录', path: '/login', user: false },
@@ -22,10 +24,14 @@ export const SCENES = {
   lecture: { title: '每日阅读档案', path: '/lecture' },
   'lecture-day': { title: '每日阅读正面', path: '/lecture/2026-11-20' },
   'lecture-verso': { title: '每日阅读背面', path: '/lecture/2026-11-20', verso: true },
-  assistant: { title: '已有对话', path: '/assistant' },
-  'assistant-empty': { title: '新对话', path: '/assistant', emptyHistory: true },
-  'assistant-error': { title: '答疑请求失败', path: '/assistant', emptyHistory: true, chatStatus: 429 },
-  'assistant-unavailable': { title: '答疑服务不可用', path: '/assistant', emptyHistory: true, chatStatus: 500, chatError: 'Server not configured' },
+  assistant: { title: '答疑目录', path: '/assistant' },
+  'assistant-list': { title: '对话列表', path: '/assistant' },
+  'assistant-thread': { title: '数学对话', path: mathPath },
+  'assistant-new': { title: '新对话', path: '/assistant/new', emptyHistory: true },
+  'assistant-delete': { title: '删除一段对话', path: '/assistant', revealDelete: true },
+  'assistant-empty': { title: '新对话', path: '/assistant/new', emptyHistory: true },
+  'assistant-error': { title: '答疑请求失败', path: '/assistant/new', emptyHistory: true, chatStatus: 429 },
+  'assistant-unavailable': { title: '答疑服务不可用', path: '/assistant/new', emptyHistory: true, chatStatus: 500, chatError: 'Server not configured' },
   'reset-password': { title: '设置密码', path: '/reset-password' },
 }
 
@@ -38,16 +44,54 @@ export function fixtureSession(user = FIXTURE_USERS[0]) {
 
 const response = (json, status = 200) => ({ status, json })
 const failure = (message, status = 400, code = 'fixture_error') => response({ message, error: message, code }, status)
-const initialHistory = () => [
-  { id: 1, role: 'user', content: '给我一个简单的恒等式。', created_at: '2026-01-01T00:00:00Z' },
-  { id: 2, role: 'model', content: '恒等式为 $1 + 1 = 2$。', created_at: '2026-01-01T00:00:01Z' },
+const samples = [
+  {
+    id: 'c3333333-3333-4333-8333-333333333333', date: '2026-11-16',
+    question: '今天先聊点别的。你喜欢雨声吗？',
+    reply: '小雨落在树叶上的声音很轻，适合一边听一边看书。你呢？',
+  },
+  {
+    id: 'b2222222-2222-4222-8222-222222222222', date: '2026-11-18',
+    question: 'Le mot « valeur » est masculin ou féminin ?',
+    reply: 'On dit **« une valeur singulière »**. Le nom « valeur » est féminin.',
+  },
+  {
+    id: MATH_THREAD, date: '2026-11-20', question: '算奇异值时，为什么要开平方？',
+    reply: String.raw`先看单位向量经过实矩阵 $A$ 变换后的**长度**。
+
+1. 取 $A^{\mathsf T}A$ 的单位特征向量 $v$，记对应的特征值为 $\lambda$。
+2. 计算 $Av$ 的长度平方，用 $v^{\mathsf T}v=1$ 化简。
+
+$$\|Av\|^2=v^{\mathsf T}(A^{\mathsf T}A)v=\lambda.$$
+
+沿这个方向的伸缩倍数就是奇异值，因此要取非负平方根 $\sqrt{\lambda}$。
+
+| 特征值 λ | 奇异值 σ |
+| --- | --- |
+| 9 | 3 |
+| 4 | 2 |`,
+  },
 ]
 
 export function createLocalFixture(fault = {}) {
   const passwords = new Map(FIXTURE_USERS.map((user) => [user.id, FIXTURE_PASSWORD]))
-  const histories = new Map(FIXTURE_USERS.map((user) => [user.id, fault.emptyHistory ? [] : initialHistory()]))
+  const histories = new Map()
+  const conversations = new Map()
+  let nextId = 1
+  for (const user of FIXTURE_USERS) {
+    const entries = new Map(), messages = []
+    if (!fault.emptyHistory && user === FIXTURE_USERS[0]) {
+      for (const { id, date, question, reply } of samples) {
+        const start = date + 'T04:00:00.000Z', end = date + 'T04:00:01.000Z'
+        entries.set(id, { id, title: question, created_at: start, updated_at: end })
+        messages.push({ id: nextId++, conversation_id: id, role: 'user', content: question, created_at: start },
+          { id: nextId++, conversation_id: id, role: 'model', content: reply, created_at: end })
+      }
+    }
+    conversations.set(user.id, entries)
+    histories.set(user.id, messages)
+  }
   const answers = new Map(FIXTURE_USERS.map((user) => [user.id, new Map()]))
-  let nextId = 3
   return {
     handle({ url: input, method = 'GET', headers = {}, body = {} }) {
       const url = new URL(input, 'https://fixture.invalid')
@@ -79,7 +123,7 @@ export function createLocalFixture(fault = {}) {
       if (!user) return failure('登录状态已失效，请刷新页面并重新登录后再试。', 401)
       if (path === '/api/chat') {
         if (fault.chatStatus && fault.chatStatus !== 200) return failure(fault.chatError || (fault.chatStatus === 401 ? '登录状态已失效，请刷新页面并重新登录后再试。' : '请求太频繁，请稍后再试。'), fault.chatStatus)
-        return response({ text: '导数描述函数在某一点的变化率。' })
+        return response({ text: fault.chatReply || '导数描述函数在某一点的变化率。' })
       }
       const owner = url.searchParams.get('user_id')
       if (owner && owner !== `eq.${user.id}`) return failure('假账号只能读取自己的记录。', 403)
@@ -101,12 +145,42 @@ export function createLocalFixture(fault = {}) {
         rows.set(date, row)
         return result(row, method === 'POST' ? 201 : 200)
       }
+      const entries = conversations.get(user.id)
+      if (path === '/rest/v1/ai_conversations') {
+        if (fault.legacyAssistant) return failure('Table missing from schema cache', 404, 'PGRST205')
+        if (method === 'DELETE') {
+          const id = url.searchParams.get('id')?.slice(3)
+          const entry = entries.get(id)
+          if (!entry || url.searchParams.get('updated_at') !== 'eq.' + entry.updated_at) return response([])
+          entries.delete(id)
+          histories.set(user.id, histories.get(user.id).filter((message) => message.conversation_id !== id))
+          return response([{ id }])
+        }
+        if (method !== 'GET') return failure('不支持的目录操作', 405)
+        const after = url.searchParams.get('id')?.slice(3)
+        const sorted = [...entries.values()].filter((entry) => !after || entry.id > after).sort((a, b) => a.id.localeCompare(b.id))
+        return response(sorted.slice(0, Number(url.searchParams.get('limit')) || 1000))
+      }
+      if (path === '/rest/v1/rpc/save_ai_turn' && method === 'POST') {
+        const { p_id: id, p_title: title, p_question: question, p_reply: reply } = body
+        if (body.p_user_id !== user.id) return failure('账号不符', 403)
+        const previous = entries.get(id)
+        if (!previous && (!title || [...conversations.values()].some((rows) => rows.has(id)))) return failure('对话不可用', 404)
+        if (fault.saveStatus) return failure('写入失败', fault.saveStatus)
+        const start = Math.max(Date.now(), previous ? Date.parse(previous.updated_at) + 1 : 0)
+        const created = new Date(start).toISOString(), updated = new Date(start + 1).toISOString()
+        entries.set(id, { id, title: previous?.title || title, created_at: previous?.created_at || created, updated_at: updated })
+        histories.get(user.id).push({ id: nextId++, conversation_id: id, role: 'user', content: question, created_at: created },
+          { id: nextId++, conversation_id: id, role: 'model', content: reply, created_at: updated })
+        return response(updated)
+      }
       if (path === '/rest/v1/ai_messages') {
         let history = histories.get(user.id)
         if (method === 'POST') {
           if (!Array.isArray(body) || body.some((row) => row.user_id !== user.id)) return failure('假账号不能修改别人的对话。', 403)
-          history.push(...body.map((row) => ({ ...row, id: nextId++ })))
-          return response(null, 201)
+          const rows = body.map((row) => ({ ...row, id: nextId++ }))
+          history.push(...rows)
+          return response(url.searchParams.get('select') === 'id' ? rows.map(({ id }) => ({ id })) : null, 201)
         }
         if (method === 'DELETE') {
           const cutoff = Number(url.searchParams.get('id')?.replace('lte.', ''))
@@ -114,7 +188,15 @@ export function createLocalFixture(fault = {}) {
           histories.set(user.id, history.filter((row) => row.id > cutoff))
           return { status: 204 }
         }
-        history = [...history].sort((a, b) => b.id - a.id).slice(0, Number(url.searchParams.get('limit')) || 200)
+        const id = url.searchParams.get('conversation_id')?.slice(3)
+        const role = url.searchParams.get('role')?.slice(3)
+        const order = url.searchParams.get('order') || 'id.desc'
+        const direction = order.startsWith('created_at.asc') ? 1 : -1
+        history = history.filter((row) => (!id || row.conversation_id === id) && (!role || row.role === role))
+          .sort((a, b) => {
+            const dateOrder = order.startsWith('created_at.') ? a.created_at.localeCompare(b.created_at) : 0
+            return direction * (dateOrder || a.id - b.id)
+          }).slice(0, Number(url.searchParams.get('limit')) || 200)
         if (url.searchParams.get('select') === 'id') history = history.map(({ id }) => ({ id }))
         return response(headers.accept?.includes('vnd.pgrst.object') ? history[0] || null : history)
       }

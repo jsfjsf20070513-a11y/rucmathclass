@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fakeSupabase } from '../test/fakeSupabase'
-import { clearMessages, fetchMessages, saveTurn } from './aiAssistantBackend'
+import { clearMessages, deleteConversation, fetchConversations, fetchMessages, saveTurn } from './aiAssistantBackend'
 
 const harness = vi.hoisted(() => ({ client: null }))
 vi.mock('./supabase', () => ({ isSupabaseConfigured: true, supabase: { from: (...args) => harness.client.from(...args) } }))
@@ -20,6 +20,23 @@ describe('assistant history repository', () => {
     expect(messages[0].content).toBe('50')
     expect(messages.at(-1).content).toBe('249')
     expect(messages.some((m) => m.content === 'private')).toBe(false)
+  })
+  it('分页读全本账号的目录，消息查询限定到所选段', async () => {
+    const entries = Array.from({ length: 205 }, (_, i) => ({
+      id: String(i).padStart(4, '0'), user_id: 'alice', title: String(i), updated_at: new Date(1000 * i).toISOString(),
+    }))
+    harness.client = fakeSupabase([...entries, { ...entries[0], user_id: 'bob' }])
+    const result = await fetchConversations('alice')
+    expect(result.entries.map((entry) => entry.title)).toEqual(entries.reverse().map((entry) => entry.title))
+    harness.client = fakeSupabase(['a', 'b'].flatMap((conversation_id) => ['alice', 'bob'].map((user_id) => ({
+      user_id, conversation_id, role: 'user', content: user_id + conversation_id, id: 1,
+    }))))
+    expect((await fetchMessages('alice', 200, 'a')).messages).toEqual([{ role: 'user', content: 'alicea' }])
+  })
+  it('旧库在撤销期限内收到新消息时，保留两条记录', async () => {
+    harness.client = fakeSupabase([{ user_id: 'u1', id: 1 }, { user_id: 'u1', id: 2 }])
+    await expect(deleteConversation('u1', { id: 'legacy', lastMessageId: 1 })).rejects.toThrow()
+    expect(harness.client.rows).toHaveLength(2)
   })
   it('saves both sides in a single insert and never stores image bytes', async () => {
     harness.client = fakeSupabase()

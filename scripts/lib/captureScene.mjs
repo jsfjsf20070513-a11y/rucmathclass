@@ -1,7 +1,18 @@
-import { FIXTURE_TIME, FIXTURE_PASSWORD, FIXTURE_USERS } from './localFixture.mjs'
+import { FIXTURE_TIME, FIXTURE_PASSWORD, FIXTURE_USERS, MATH_THREAD } from './localFixture.mjs'
+
+export async function swipeConversation(page, row) {
+  const box = await row.boundingBox()
+  const x = box.x + box.width * 0.8, y = box.y + box.height / 2
+  const session = await page.context().newCDPSession(page)
+  try {
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+    await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x - 90, y }] })
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  } finally { await session.detach() }
+}
 
 export async function captureScene(browser, demo, viewport, path) {
-  const context = await browser.newContext({ viewport, deviceScaleFactor: 1, locale: 'zh-CN', timezoneId: 'Asia/Shanghai', reducedMotion: 'reduce', serviceWorkers: 'block' })
+  const context = await browser.newContext({ viewport, hasTouch: viewport.width <= 480, deviceScaleFactor: 1, locale: 'zh-CN', timezoneId: 'Asia/Shanghai', reducedMotion: 'reduce', serviceWorkers: 'block' })
   const failures = []
   await context.route('**/*', (route) => {
     if (new URL(route.request().url()).origin === demo.origin) return route.continue()
@@ -19,7 +30,9 @@ export async function captureScene(browser, demo, viewport, path) {
   await page.clock.setFixedTime(new Date(FIXTURE_TIME))
   page.on('pageerror', (error) => failures.push(error.message))
   try {
-    await page.goto(demo.url)
+    const assistant = demo.scene.path.startsWith('/assistant')
+    // 从两版共有的入口进入。旧版只有一个页面，保留它实际能显示的内容。
+    await page.goto(assistant ? demo.origin + '/assistant' : demo.url)
     await page.locator('#root > :not(.boot-overlay)').first().waitFor()
     await page.waitForFunction(() => !document.querySelector('.boot-overlay'))
     if (demo.scene.loginError || demo.scene.signupSubmitted) {
@@ -49,13 +62,31 @@ export async function captureScene(browser, demo, viewport, path) {
       await sheet.getByRole('button', { name: /Verso/ }).click()
       await sheet.locator('.lec-verso').waitFor()
     }
+    let assistantReady, oldThread
+    if (assistant) {
+      await page.locator('.cor-archive .lec-entry, .cor-masthead, .cor-r-text').first().waitFor()
+      const archive = await page.locator('.cor-archive').count()
+      oldThread = !archive && demo.scene.path.endsWith(MATH_THREAD)
+      if (archive && demo.scene.path !== '/assistant') {
+        await page.locator(`a[href="${demo.scene.path}"]`).click()
+      }
+      if (archive && demo.scene.revealDelete) {
+        const row = page.locator('.cor-entry').filter({ has: page.locator(`a[href="/assistant/${MATH_THREAD}"]`) })
+        if (viewport.width <= 480) await swipeConversation(page, row)
+        else await row.hover()
+        await row.locator('.cor-delete').waitFor()
+        await page.waitForFunction(() => getComputedStyle(document.querySelector('.cor-entry .cor-delete')).opacity === '1')
+      }
+      assistantReady = archive && demo.scene.path === '/assistant' ? '.cor-entry' :
+        demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text'
+    }
     if (demo.scene.chatStatus) {
       await page.getByRole('textbox', { name: '向 AI 助手提问' }).fill('解释一下导数。')
-      await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
+      await page.getByRole('button', { name: /^(?:Envoyer|发送)$/ }).click()
       await page.getByRole('alert').waitFor()
     }
     const ready = demo.scene.path.startsWith('/lecture') ? (lectureMissing ? '.notfound-code' : demo.scene.verso ? '.lec-page:not([inert]) .lec-verso' : demo.scene.path === '/lecture' ? '.lec-entry' : '.lec-page:not([inert]) .lec-option')
-      : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
+      : assistant ? assistantReady
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'
     await page.locator(ready).first().waitFor()
@@ -66,6 +97,9 @@ export async function captureScene(browser, demo, viewport, path) {
       await Promise.all([...document.images].filter((image) => image.src).map((image) => image.decode()))
     })
     await page.waitForFunction(() => [...document.querySelectorAll('[data-animate], .mag-cover-content')].filter((item) => !item.closest('[inert]')).every((item) => Number(getComputedStyle(item).opacity) >= 0.99))
+    if (oldThread) {
+      await page.locator('.cor-q-text, .cor-question').last().evaluate((question) => question.scrollIntoView({ block: 'start', behavior: 'instant' }))
+    }
     if (failures.length) throw new Error(failures.join('\n'))
     await page.screenshot({ path, fullPage: true, animations: 'disabled' })
   } catch (error) {

@@ -48,8 +48,11 @@ try {
     const archive = execFileSync('git', ['archive', '--format=tar', before], { cwd: projectRoot, maxBuffer: 64 * 1024 * 1024 })
     execFileSync('tar', ['-x', '-C', beforeRoot], { input: archive })
     const [oldLock, newLock] = await Promise.all([readFile(join(beforeRoot, 'package-lock.json')), readFile(join(projectRoot, 'package-lock.json'))])
-    if (!oldLock.equals(newLock)) throw new Error('两版的依赖清单不同，暂时无法自动对比。请选择依赖清单相同的基准版本。')
-    await symlink(join(projectRoot, 'node_modules'), join(beforeRoot, 'node_modules'), 'dir')
+    if (oldLock.equals(newLock)) {
+      await symlink(join(projectRoot, 'node_modules'), join(beforeRoot, 'node_modules'), 'dir')
+    } else {
+      execFileSync('npm', ['ci', '--prefer-offline', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: beforeRoot, stdio: 'inherit' })
+    }
     output = join(projectRoot, 'output/playwright/comparisons', new Date().toISOString().replaceAll(':', '-'))
     await mkdir(output, { recursive: true })
     const status = git('status', '--porcelain')

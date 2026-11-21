@@ -2,7 +2,7 @@ import { lectureSamples } from '../src/data/lectureSamples.js'
 import assert from 'node:assert/strict'
 import { fixtureSession, FIXTURE_PASSWORD, FIXTURE_USERS } from './lib/localFixture.mjs'
 
-export async function checkRegressions({ scenario, baseUrl, rendered }) {
+export async function checkRegressions({ scenario, baseUrl, rendered, assistantType }) {
   const viewport = { width: 390, height: 844 }
   const session = fixtureSession()
   const signIn = (page) => page.addInitScript((session) => localStorage.setItem('sb-fixture-auth-token', JSON.stringify(session)), session)
@@ -27,7 +27,7 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     await signIn(page)
     fault.chatStatus = 500
     fault.chatError = 'Server not configured'
-    await page.goto(`${baseUrl}/assistant`)
+    await page.goto(`${baseUrl}/assistant/new`)
     const input = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
     await input.fill('解释一下导数。')
     await input.press('Enter')
@@ -42,7 +42,7 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     await signIn(page)
     let sent = 0
     page.on('request', (request) => { if (new URL(request.url()).pathname === '/api/chat') sent += 1 })
-    await page.goto(`${baseUrl}/assistant`)
+    await page.goto(`${baseUrl}/assistant/new`)
     const input = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
     await input.fill('解释一下导数。')
     for (const properties of [{ isComposing: true }, { keyCode: 229 }]) {
@@ -55,6 +55,40 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     await input.press('Enter')
     await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
     assert.equal(sent, 1)
+  })
+
+  await scenario('assistant-legacy-history', viewport, async (page, fault) => {
+    fault.legacyAssistant = true
+    await signIn(page)
+    await page.goto(baseUrl + '/assistant')
+    await rendered(page, '.cor-entry')
+    assert.equal(await page.locator('.cor-archive .lec-entry').count(), 1)
+    await page.locator('a[href="/assistant/legacy"]').click()
+    await rendered(page, '.cor-input')
+    assert.equal(await page.locator('.cor-turn').count(), 6)
+    assert.equal(await page.getByRole('alert').count(), 0)
+    await page.locator('.cor-input').fill('接着上一问')
+    await page.locator('.cor-input').press('Enter')
+    await page.waitForFunction(() => document.querySelector('.cor-input')?.value === '')
+    await page.reload()
+    await rendered(page, '.cor-input')
+    await page.getByText('接着上一问', { exact: true }).waitFor()
+    assert.equal(await page.locator('.cor-turn').count(), 8)
+    assert.equal(await page.getByRole('alert').count(), 0)
+  })
+
+  await scenario('assistant-formula-layout', { width: 320, height: 620 }, async (page, fault) => {
+    await signIn(page)
+    fault.chatReply = String.raw`| 下标 | 分式 |
+| --- | --- |
+| $a_{i_j}$ | $\frac{x_m}{y_n}$ |`
+    await page.goto(baseUrl + '/assistant/new')
+    await page.locator('.cor-input').fill('读出下标')
+    await page.locator('.cor-input').press('Enter')
+    await rendered(page, '.cor-table .katex')
+    await assistantType(page)
+    assert.equal(await page.locator('table .katex').count(), 2)
+    assert.equal(await page.locator('.cor-thread').evaluate((el) => el.scrollWidth <= el.clientWidth), true)
   })
 
   await scenario('lecture-account-sync', viewport, async (page) => {
@@ -154,7 +188,7 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
   })
 
   await scenario('route-spelling', viewport, async (page) => {
-    for (const path of ['/resources/', '/RESOURCES/', '/lecture/', '/assistant/', '/login/', '/reset-password/']) {
+    for (const path of ['/resources/', '/RESOURCES/', '/lecture/', '/assistant/', '/ASSISTANT/new/', '/login/', '/reset-password/']) {
       await page.goto(baseUrl + path)
       await page.waitForFunction(() => document.querySelector('#root > :not(.boot-overlay)') && !document.querySelector('.boot-overlay'))
       assert.equal(await page.locator('.site-header').count(), 0, `${path} 不应重复页眉`)

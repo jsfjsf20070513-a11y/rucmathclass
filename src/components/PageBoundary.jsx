@@ -1,5 +1,6 @@
 import { Component, Suspense, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { normalizeRoutePath } from '../lib/routePath'
 import '../styles/page-status.css'
 
 function LoadingPage() {
@@ -33,7 +34,8 @@ class Boundary extends Component {
 
 export default function PageBoundary({ children }) {
   const { pathname } = useLocation()
-  // 档案和单日共用索引，换天或返回档案时保留已读正文与缺篇记录。
-  const key = pathname.startsWith('/lecture/') ? '/lecture' : pathname
+  // 阅读和答疑各自的两层页面共用账号状态和已读内容。
+  const path = normalizeRoutePath(pathname)
+  const key = path.startsWith('/assistant/') ? '/assistant' : path.startsWith('/lecture/') ? '/lecture' : path
   return <Boundary key={key}><Suspense fallback={<LoadingPage />}>{children}</Suspense></Boundary>
 }
