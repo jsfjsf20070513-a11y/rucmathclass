@@ -54,7 +54,8 @@ async function checkMotion(page, action, className, animationName, { forbidWelco
   } finally { await cdp.detach() }
   assert.ok(frames.length >= 3, className + ' 取到的画面太少')
   for (const [i, frame] of frames.entries()) {
-    const { data, info } = await sharp(frame).resize({ width: 220 }).greyscale().raw().toBuffer({ resolveWithObject: true })
+    // 截帧时已经限制了尺寸。按原帧检测，保留桌面小字的笔画。
+    const { data, info } = await sharp(frame).greyscale().raw().toBuffer({ resolveWithObject: true })
     // 排除固定的页眉、按钮和细分隔线。正文至少要有两行像素带有墨迹。
     const body = data.subarray(Math.ceil(info.height * 0.1) * info.width, Math.floor(info.height * 0.91) * info.width)
     let inkRows = 0
