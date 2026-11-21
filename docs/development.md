@@ -7,11 +7,13 @@
 | 内容 | 应修改的输入 | 生成方式 |
 | --- | --- | --- |
 | 首页定理和引语 | [siteContent.js](../src/data/siteContent.js) | 定理运行 `npm run theorems:render`；引语直接读取 |
-| 法语词库 | [vocab-source.json](../scripts/vocab-source.json) | `npm run vocab:import -- 文件路径` 先看报告；加 `--out` 才写文件 |
+| 每日法语阅读 | [样稿](../src/data/lectureSamples.js)、[出题要求](../worker/src/lecturePrompt.js) | 本地种子运行 `node scripts/seed-lecture.mjs --local`。日常文章由 Worker 定时生成。 |
 | 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取 |
 | 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查。运行 `npm run portraits:fetch` 才联网补图。补图会转为 WebP，并去掉色彩配置等附加数据。 |
 
-词条 ID 用来对应已有学习进度，不能因整理词库而重排。导入有错误时停止写入。不要手改生成的 `frenchVocabulary.js` 和 `dailyTheoremNotes.generated.js`。
+`npm run dev` 和 `npm run demo` 的阅读接口都使用三篇样稿。
+
+旧背词的导入脚本和词库原样保存在[归档目录](archive/vocabulary/)。首页定理讲解由脚本生成，请修改输入文件。
 
 `public/health.json` 的 `ok` 只表示文件成功生成，不检查数据库或 AI。普通构建若只改变了它的时间戳，提交前执行 `git restore public/health.json`。不要一并还原手写文件。
 
@@ -27,7 +29,7 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 `sql/schema/` 保存当前表定义，`sql/audit/` 用于只读核查，`sql/legacy/` 保存旧文件。这些 SQL 不是一套可顺序执行的安装脚本。
 
-2026-09-27 已获授权执行 [表权限修正](../sql/schema/restrict_app_table_grants.sql)，并用 [只读查询](../sql/audit/app_permissions.sql) 核对结果。以后再次修改生产数据库，仍需重新核对并取得明确授权。前端发布不会自动执行 SQL。
+2026-09-27 已获授权执行 [表权限修正](../sql/schema/restrict_app_table_grants.sql)，并用 [只读查询](../sql/audit/app_permissions.sql) 核对结果。以后再次修改生产数据库，仍需重新核对并取得明确授权。前端发布不会自动执行 SQL。阅读答案表使用独立的 [setup_lecture_answers.sql](../sql/schema/setup_lecture_answers.sql)。
 
 ## 发布前的本地检查
 

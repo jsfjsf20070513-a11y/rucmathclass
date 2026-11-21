@@ -33,5 +33,7 @@ class Boundary extends Component {
 
 export default function PageBoundary({ children }) {
   const { pathname } = useLocation()
-  return <Boundary key={pathname}><Suspense fallback={<LoadingPage />}>{children}</Suspense></Boundary>
+  // 档案和单日共用索引，换天或返回档案时保留已读正文与缺篇记录。
+  const key = pathname.startsWith('/lecture/') ? '/lecture' : pathname
+  return <Boundary key={key}><Suspense fallback={<LoadingPage />}>{children}</Suspense></Boundary>
 }

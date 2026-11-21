@@ -215,7 +215,7 @@
 }
 .notfound-page { text-align: center; }
 .notfound-code { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 13px; letter-spacing: 0.3em; color: var(--accent); }
-.notfound-title { margin: 18px 0 0; font-family: "Songti SC", "SimSun", "STSong", "Noto Serif SC", serif; font-size: 36px; font-weight: 500; }
+.notfound-title { margin: 18px 0 0; font-family: var(--font-cjk), serif; font-size: 36px; font-weight: 500; }
 .notfound-sub { margin: 10px 0 0; color: var(--muted); font-size: 18px; }
 .notfound-quote { margin: 30px auto 0; max-width: 34rem; color: var(--ink); font-size: 19px; line-height: 1.55; }
 .notfound-quote-zh { margin: 10px auto 0; max-width: 30rem; color: var(--muted); font-size: 15px; }
@@ -228,6 +228,7 @@
 .notfound-home a, .notfound-home a:visited { color: var(--muted); border-bottom: none; font-size: 16px; }
 .notfound-home a:hover { color: var(--accent); }
 .katex-display { overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.katex .cjk_fallback { font-family: var(--font-cjk), serif; }
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,0 +1,493 @@
+{
+  "date": "2026-11-21",
+  "level": "C1",
+  "exam": "DALF",
+  "title": "Au théâtre, le rire à contretemps",
+  "paragraphs": [
+    "Lors de la première représentation en français d’une comédie italienne, une partie de la salle éclate de rire alors que le comédien, une enveloppe à la main, n’a pas encore ouvert la bouche. La responsable des surtitres comprend ce qui vient de se passer en levant les yeux vers l’écran où ses phrases accompagnent le spectacle. Elle y a déjà affiché la réplique entière, y compris les trois derniers mots, que le comédien prend un malin plaisir à faire attendre.",
+    "Sa traduction a beau être fidèle, elle a changé la nature du silence qui précède ces trois mots. Pour qui a lu la suite, le temps que met le personnage à décacheter l’enveloppe paraît long, là où un spectateur qui découvre la réplique à l’oreille se demande encore ce qu’elle peut bien contenir. Le lendemain, la responsable essaie de couper la phrase en deux et de ne faire apparaître la chute qu’au moment où elle est prononcée.",
+    "À l’issue de cet essai, une spectatrice sourde lui fait pourtant remarquer qu’à force de guetter l’écran pour saisir le dernier mot, elle a manqué le regard que le comédien lançait à sa partenaire. Une autre dit avoir apprécié de pouvoir enfin rire avec sa voisine. Faut-il, pour autant, prendre ce rire simultané pour la preuve que le problème est réglé ?",
+    "La troupe renonce à fixer une fois pour toutes le bon moment pour afficher une réplique. Désormais, à la répétition, la responsable commence par demander aux comédiens quel détail le public risque de perdre s’il lève les yeux à tel instant précis. Dans la scène de l’enveloppe, c’est finalement le comédien qui propose de prolonger d’un rien son regard vers sa partenaire, le temps que les yeux redescendent de l’écran vers la scène."
+  ],
+  "questions": [
+    {
+      "stem": "En quel sens le premier surtitrage a-t-il « changé la nature du silence » ?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Il a donné à croire que le personnage hésitait à lire la lettre à voix haute."
+        },
+        {
+          "key": "B",
+          "text": "Il a transformé un moment de suspense en attente pour les spectateurs qui avaient lu la réplique."
+        },
+        {
+          "key": "C",
+          "text": "Il a obligé le comédien à attendre que les spectateurs aient fini de lire pour ouvrir l’enveloppe."
+        },
+        {
+          "key": "D",
+          "text": "Il a laissé les spectateurs dans le doute sur le sens des derniers mots de la traduction."
+        }
+      ],
+      "answer": "B",
+      "evidence": [
+        "Pour qui a lu la suite, le temps que met le personnage à décacheter l’enveloppe paraît long, là où un spectateur qui découvre la réplique à l’oreille se demande encore ce qu’elle peut bien contenir."
+      ]
+    },
+    {
+      "stem": "Quelle idée la question qui clôt le troisième paragraphe invite-t-elle à examiner ?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Le rire des voisins risque de couvrir la fin de la réplique."
+        },
+        {
+          "key": "B",
+          "text": "Le succès d’une comédie dépend de la proportion de spectateurs qui rient."
+        },
+        {
+          "key": "C",
+          "text": "Les réactions du public renseignent surtout sur la qualité de la traduction."
+        },
+        {
+          "key": "D",
+          "text": "Un rire partagé peut masquer la perte d’une partie du jeu des comédiens."
+        }
+      ],
+      "answer": "D",
+      "evidence": [
+        "À l’issue de cet essai, une spectatrice sourde lui fait pourtant remarquer qu’à force de guetter l’écran pour saisir le dernier mot, elle a manqué le regard que le comédien lançait à sa partenaire.",
+        "Une autre dit avoir apprécié de pouvoir enfin rire avec sa voisine."
+      ]
+    },
+    {
+      "stem": "Que révèle la proposition du comédien sur la place que la troupe accorde désormais aux surtitres ?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Les conditions de lecture du public entrent dans les choix de jeu dès les répétitions."
+        },
+        {
+          "key": "B",
+          "text": "La durée de chaque geste dépend désormais de la longueur du texte projeté."
+        },
+        {
+          "key": "C",
+          "text": "Les comédiens assument à tour de rôle la responsabilité de faire défiler le texte."
+        },
+        {
+          "key": "D",
+          "text": "Les répliques dont le sens passe par un regard peuvent désormais être retirées de l’écran."
+        }
+      ],
+      "answer": "A",
+      "evidence": [
+        "Désormais, à la répétition, la responsable commence par demander aux comédiens quel détail le public risque de perdre s’il lève les yeux à tel instant précis.",
+        "Dans la scène de l’enveloppe, c’est finalement le comédien qui propose de prolonger d’un rien son regard vers sa partenaire, le temps que les yeux redescendent de l’écran vers la scène."
+      ]
+    }
+  ],
+  "titleNote": {
+    "zh": "剧场里，笑声早了一拍",
+    "points": [
+      {
+        "term": "le rire",
+        "note": "这里指观众席里响起的笑声。"
+      },
+      {
+        "term": "à contretemps",
+        "note": "本该在一个时候发生，却错开了节拍。标题究竟指笑早了还是笑晚了，要读开头才知道。"
+      }
+    ]
+  },
+  "sentences": [
+    {
+      "fr": "Lors de la première représentation en français d’une comédie italienne, une partie de la salle éclate de rire alors que le comédien, une enveloppe à la main, n’a pas encore ouvert la bouche.",
+      "zh": "一部意大利喜剧首次用法语演出时，演员手里拿着信封，还没开口，台下就已经有一片观众笑出了声。",
+      "points": [
+        {
+          "star": true,
+          "term": "Lors de",
+          "note": "在某件事发生时。后面直接接活动或事件的名称。"
+        },
+        {
+          "term": "la première représentation en français",
+          "note": "这部戏第一次用法语演出。représentation 在剧场里指一场演出。"
+        },
+        {
+          "term": "une partie de la salle",
+          "note": "一部分观众。salle 本指观众厅，这里借场地来说坐在里面的人。"
+        },
+        {
+          "star": true,
+          "term": "éclate de rire",
+          "note": "突然笑出声来。"
+        },
+        {
+          "star": true,
+          "term": "alors que",
+          "note": "把同一时刻台上和台下的情形放在一起看。演员还没开口，观众却已经笑了。"
+        },
+        {
+          "term": "le comédien",
+          "note": "这里指台上的男演员。这个词也能指演正剧的演员。"
+        },
+        {
+          "term": "une enveloppe à la main",
+          "note": "手里拿着一个信封。"
+        },
+        {
+          "term": "n’a pas encore ouvert la bouche",
+          "note": "还没开口说话。"
+        }
+      ]
+    },
+    {
+      "fr": "La responsable des surtitres comprend ce qui vient de se passer en levant les yeux vers l’écran où ses phrases accompagnent le spectacle.",
+      "zh": "负责舞台字幕的人抬头看向屏幕，上面正放着她为演出写的字幕。她这才明白刚才是怎么回事。",
+      "points": [
+        {
+          "term": "La responsable des surtitres",
+          "note": "负责舞台字幕的人。surtitres 指演出时通常投在舞台上方的文字。"
+        },
+        {
+          "star": true,
+          "term": "ce qui vient de se passer",
+          "note": "刚刚发生的事。vient de 表示事情才发生不久。"
+        },
+        {
+          "term": "en levant les yeux vers l’écran",
+          "note": "抬头看向屏幕时。lever les yeux 是把视线往上移。"
+        },
+        {
+          "term": "où ses phrases accompagnent le spectacle",
+          "note": "她写的句子随着演出显示在那块屏幕上。où 指前面的屏幕。"
+        }
+      ]
+    },
+    {
+      "fr": "Elle y a déjà affiché la réplique entière, y compris les trois derniers mots, que le comédien prend un malin plaisir à faire attendre.",
+      "zh": "她已经把整句台词打在了屏幕上，连最后三个词也亮了出来，而演员偏偏最享受吊着观众胃口、迟迟不说这几个词的那一刻。",
+      "points": [
+        {
+          "term": "y",
+          "note": "指在刚才说的那块屏幕上。"
+        },
+        {
+          "term": "a déjà affiché",
+          "note": "已经把文字显示出来了。"
+        },
+        {
+          "term": "la réplique entière",
+          "note": "完整的一句台词。réplique 在戏剧里指一个角色轮到自己说的那句话。"
+        },
+        {
+          "star": true,
+          "term": "y compris",
+          "note": "包括……在内。"
+        },
+        {
+          "term": "prend un malin plaisir à",
+          "note": "偏偏很享受做某件带点捉弄意味的事。这里写演员有意吊人胃口。"
+        },
+        {
+          "term": "faire attendre",
+          "note": "故意让那三个词晚一点才说出口。前面的 que 指 les trois derniers mots。"
+        }
+      ]
+    },
+    {
+      "fr": "Sa traduction a beau être fidèle, elle a changé la nature du silence qui précède ces trois mots.",
+      "zh": "她的翻译固然忠实，可这三个词说出口之前的那阵沉默，对观众来说已经变了味。",
+      "points": [
+        {
+          "star": true,
+          "term": "a beau être fidèle",
+          "note": "译文固然忠实。avoir beau 先承认一件事，后半句再说结果依然出人意料。"
+        },
+        {
+          "term": "a changé la nature du silence",
+          "note": "改变了这阵沉默给人的感受。边听边等台词的人和已经读完台词的人，等得很不一样。"
+        },
+        {
+          "term": "qui précède ces trois mots",
+          "note": "出现在那三个词之前的。这里说的是演员开口前的停顿。"
+        }
+      ]
+    },
+    {
+      "fr": "Pour qui a lu la suite, le temps que met le personnage à décacheter l’enveloppe paraît long, là où un spectateur qui découvre la réplique à l’oreille se demande encore ce qu’elle peut bien contenir.",
+      "zh": "已经读到下文的人觉得，台上那个人拆封信用了好久。同一会儿，靠听台词看戏的观众却还在猜，信封里到底装着什么。",
+      "points": [
+        {
+          "star": true,
+          "term": "Pour qui a lu la suite",
+          "note": "对已经读到下文的人来说。这里的 qui 泛指符合这个条件的人。"
+        },
+        {
+          "star": true,
+          "term": "le temps que met le personnage à",
+          "note": "角色做某件事所花的时间。比如 elle met une minute à répondre，她花了一分钟才回答。"
+        },
+        {
+          "term": "décacheter l’enveloppe",
+          "note": "拆开封好的信封。"
+        },
+        {
+          "term": "paraît long",
+          "note": "让人觉得很漫长，说的是观众自己的感觉。"
+        },
+        {
+          "star": true,
+          "term": "là où",
+          "note": "这里相当于“而另一边却……”，用来对照两种观剧体验。"
+        },
+        {
+          "term": "à l’oreille",
+          "note": "靠听。观众是在演员说出口时才听到台词的。"
+        },
+        {
+          "star": true,
+          "term": "ce qu’elle peut bien contenir",
+          "note": "里面到底能装着什么。elle 指信封，bien 带出反复猜想的语气。"
+        }
+      ]
+    },
+    {
+      "fr": "Le lendemain, la responsable essaie de couper la phrase en deux et de ne faire apparaître la chute qu’au moment où elle est prononcée.",
+      "zh": "第二天，字幕负责人试着把一句话拆成两段，等演员说到最后那个包袱，才把它打出来。",
+      "points": [
+        {
+          "term": "Le lendemain",
+          "note": "文中那场演出的第二天。"
+        },
+        {
+          "star": true,
+          "term": "essaie de",
+          "note": "试着做某件事，看看效果怎么样。"
+        },
+        {
+          "term": "couper la phrase en deux",
+          "note": "把一句话分成两部分。"
+        },
+        {
+          "term": "faire apparaître",
+          "note": "让文字出现在屏幕上。"
+        },
+        {
+          "term": "la chute",
+          "note": "一句话或一个故事最后出人意料的收尾。这里指引人发笑的最后三个词。"
+        },
+        {
+          "star": true,
+          "term": "ne faire apparaître la chute qu’au moment où elle est prononcée",
+          "note": "只有当演员说出那句收尾的话时，才把它显示出来。ne 和 que 合起来限定出现的时机。"
+        }
+      ]
+    },
+    {
+      "fr": "À l’issue de cet essai, une spectatrice sourde lui fait pourtant remarquer qu’à force de guetter l’écran pour saisir le dernier mot, elle a manqué le regard que le comédien lançait à sa partenaire.",
+      "zh": "这次试演结束后，一位聋人女观众却跟字幕负责人说，为了看清最后一个词，她一直盯着屏幕，结果错过了男演员投向搭档的那一眼。",
+      "points": [
+        {
+          "star": true,
+          "term": "À l’issue de",
+          "note": "在一件事结束时。这里是试过新的字幕放法之后。"
+        },
+        {
+          "term": "une spectatrice sourde",
+          "note": "一位聋人女观众。"
+        },
+        {
+          "star": true,
+          "term": "lui fait pourtant remarquer",
+          "note": "却向她指出。lui 指字幕负责人，pourtant 表示事情还有先前没想到的一面。"
+        },
+        {
+          "star": true,
+          "term": "à force de",
+          "note": "由于一直做某件事，最后产生了一个结果。"
+        },
+        {
+          "term": "guetter l’écran",
+          "note": "盯着屏幕等，生怕字幕一出来就错过。guetter 带着等候某件事发生的意思。"
+        },
+        {
+          "term": "saisir le dernier mot",
+          "note": "及时看清最后那个词。saisir 在这里是捕捉到文字的意思。"
+        },
+        {
+          "term": "elle a manqué le regard",
+          "note": "她错过了那个眼神。这里的 elle 是女观众。"
+        },
+        {
+          "term": "le regard que le comédien lançait à sa partenaire",
+          "note": "男演员投向同台女演员的那一眼。sa partenaire 在这里是演对手戏的搭档。"
+        }
+      ]
+    },
+    {
+      "fr": "Une autre dit avoir apprécié de pouvoir enfin rire avec sa voisine.",
+      "zh": "另一位女观众说，这次终于能和邻座一起笑了，她觉得这样很好。",
+      "points": [
+        {
+          "term": "Une autre",
+          "note": "另一位女观众。前一句已经提过 spectatrice，这里省去了这个词。"
+        },
+        {
+          "star": true,
+          "term": "dit avoir apprécié",
+          "note": "她说自己当时很喜欢这一点。先有看戏时的感受，后来才把感受说出来。"
+        },
+        {
+          "term": "sa voisine",
+          "note": "这里指坐在她旁边的女观众。"
+        }
+      ]
+    },
+    {
+      "fr": "Faut-il, pour autant, prendre ce rire simultané pour la preuve que le problème est réglé ?",
+      "zh": "可就凭两个人同时笑了，就能认定问题已经解决了吗？",
+      "points": [
+        {
+          "term": "Faut-il",
+          "note": "应该这样做吗？这里是在追问后面的判断有没有道理。"
+        },
+        {
+          "star": true,
+          "term": "pour autant",
+          "note": "就凭前面这一点。作者在问，能一起笑是否足以推出后面的结论。"
+        },
+        {
+          "star": true,
+          "term": "prendre ce rire simultané pour la preuve",
+          "note": "把同时响起的笑声当作证据。prendre une chose pour une autre，就是把一件事看作另一件事。"
+        },
+        {
+          "term": "le problème est réglé",
+          "note": "问题已经解决了。"
+        }
+      ]
+    },
+    {
+      "fr": "La troupe renonce à fixer une fois pour toutes le bon moment pour afficher une réplique.",
+      "zh": "剧团放弃了给台词字幕定一个今后都照用的最佳显示时机。",
+      "points": [
+        {
+          "term": "La troupe",
+          "note": "一起排戏、演戏的剧团。"
+        },
+        {
+          "star": true,
+          "term": "renonce à",
+          "note": "放弃原先打算做的事。"
+        },
+        {
+          "term": "fixer",
+          "note": "定下来。这里是确定字幕出现的时机。"
+        },
+        {
+          "star": true,
+          "term": "une fois pour toutes",
+          "note": "一次定下来，以后都照办。"
+        }
+      ]
+    },
+    {
+      "fr": "Désormais, à la répétition, la responsable commence par demander aux comédiens quel détail le public risque de perdre s’il lève les yeux à tel instant précis.",
+      "zh": "从那以后，每次排练，字幕负责人都会先问演员，如果观众恰好在这一刻抬头，可能会错过哪个细节。",
+      "points": [
+        {
+          "star": true,
+          "term": "Désormais",
+          "note": "从这次改变起，往后都这样做。"
+        },
+        {
+          "term": "à la répétition",
+          "note": "在排练时。répétition 在戏剧里指正式演出前的排练。"
+        },
+        {
+          "star": true,
+          "term": "commence par demander",
+          "note": "第一步先问。commencer par 后面可以接最先做的那件事。"
+        },
+        {
+          "star": true,
+          "term": "risque de perdre",
+          "note": "有可能错过。这里说的是不希望发生的结果。"
+        },
+        {
+          "term": "s’il lève les yeux",
+          "note": "如果观众抬头看字幕。il 指前面的 le public，也就是现场观众。"
+        },
+        {
+          "term": "à tel instant précis",
+          "note": "在某个具体时刻。排到哪一处，就拿那一刻来讨论。"
+        }
+      ]
+    },
+    {
+      "fr": "Dans la scène de l’enveloppe, c’est finalement le comédien qui propose de prolonger d’un rien son regard vers sa partenaire, le temps que les yeux redescendent de l’écran vers la scène.",
+      "zh": "演到拆信那一场，最后是男演员自己提议，把望向搭档的那一眼稍稍停久一点，好让观众来得及把目光从屏幕移回舞台。",
+      "points": [
+        {
+          "term": "la scène de l’enveloppe",
+          "note": "有拆信这个动作的那场戏。"
+        },
+        {
+          "star": true,
+          "term": "c’est finalement le comédien qui",
+          "note": "最后提出办法的是男演员。这样说把出主意的人点了出来。"
+        },
+        {
+          "term": "prolonger",
+          "note": "让一件事持续得久一点。"
+        },
+        {
+          "term": "d’un rien",
+          "note": "只多那么一点点。这里说的是眼神多停留的时间。"
+        },
+        {
+          "star": true,
+          "term": "le temps que",
+          "note": "留出足够的时间，好让后面的事来得及发生。"
+        },
+        {
+          "term": "les yeux redescendent de l’écran vers la scène",
+          "note": "观众把视线从上方的屏幕移回下方的舞台。这里的 la scène 指演员站着表演的地方。"
+        }
+      ]
+    }
+  ],
+  "takeaways": [
+    {
+      "term": "les surtitres",
+      "note": "舞台字幕，通常显示在舞台上方。"
+    },
+    {
+      "term": "la chute",
+      "note": "故事或笑话最后出人意料的收尾。本文的笑点就在这几个词里。"
+    },
+    {
+      "term": "a beau être fidèle",
+      "note": "固然忠实。avoir beau 常用来承认一个事实，再说结果依然与预期不同。"
+    },
+    {
+      "term": "là où",
+      "note": "放在两种反应之间，可以读成“而另一边却……”。"
+    },
+    {
+      "term": "à force de",
+      "note": "由于反复或持续做某件事，终于造成某种结果。"
+    },
+    {
+      "term": "pour autant",
+      "note": "就凭这一点。常用来追问前面的事实能不能支持后面的判断。"
+    },
+    {
+      "term": "le temps que",
+      "note": "留出工夫让另一件事发生。文中演员多看搭档一会儿，就是给观众工夫把目光移回来。"
+    }
+  ]
+}

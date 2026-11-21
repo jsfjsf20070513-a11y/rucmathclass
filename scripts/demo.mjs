@@ -5,7 +5,7 @@ import { FIXTURE_PASSWORD, SCENES } from './lib/localFixture.mjs'
 try {
   const { values } = parseArgs({ options: { scene: { type: 'string', default: 'home' }, port: { type: 'string', default: '4178' }, help: { type: 'boolean' } } })
   if (values.help) {
-    console.log('用法：npm run demo -- --scene vocabulary-study\n场景：\n' + Object.entries(SCENES).map(([name, scene]) => `  ${name}  ${scene.title}`).join('\n'))
+    console.log('用法：npm run demo -- --scene lecture\n场景：\n' + Object.entries(SCENES).map(([name, scene]) => `  ${name}  ${scene.title}`).join('\n'))
   } else {
     const port = Number(values.port)
     if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('端口应是 1024 到 65535 之间的整数。')

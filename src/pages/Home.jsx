@@ -18,7 +18,7 @@ import { flipNavFrom, markFlipNav } from '../lib/flipNav'
 
 // 扉页：全屏横翻，各页样式在 App.css 的 .mag 下。
 // 一本 5 页横翻的美术馆图录 + 撕开进入的 Connexion 屏。100svh 无纵向滚动。
-// 01 封面(60 人肖像墙 + 天气 canvas)/ 02 Vocabulaire / 03 Théorème /
+// 01 封面(60 人肖像墙 + 天气 canvas)/ 02 Lecture / 03 Théorème /
 // 04 Bibliothèque / 05 Parole(木色)→ 撕开 → 06 Connexion(原地对接 auth)。
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000
@@ -26,9 +26,9 @@ const THEOREM_ROTATION_START_DAY = Math.floor(Date.UTC(2025, 8, 1) / DAY_IN_MS)
 // 未登录 5 页;登录后插入 05 Correspondance(AI 答疑之门),Parole 顺延为 06 压卷。
 const SIDES_BASE = ['none', 'right', 'left', 'top', 'bottom']
 const SIDES_FULL = ['none', 'right', 'left', 'top', 'left', 'bottom']
-// ← Accueil 按来路落页:从背词回 02、从书目回 04、从答疑回 05、从登录回压卷 Parole。
+// ← Accueil 按来路落页:从阅读回 02、从书目回 04、从答疑回 05、从登录回压卷 Parole。
 const returnPageFor = (from, hasAssistant) => ({
-  '/vocabulary': 1,
+  '/lecture': 1,
   '/resources': 3,
   '/assistant': hasAssistant ? 4 : 1,
   '/login': hasAssistant ? 5 : 4,
@@ -194,21 +194,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 02 Vocabulaire(引导页,全页无汉字) ── */}
-      <section ref={setPageEl(1)} className="mag-page mag-vocab" style={{ zIndex: 11, transform: entry.page >= 1 ? 'none' : 'translateX(105%) rotate(2.2deg)' }} aria-label="Vocabulaire">
+      {/* ── 02 Lecture(引导页,全页无汉字) ── */}
+      <section ref={setPageEl(1)} className="mag-page mag-vocab" style={{ zIndex: 11, transform: entry.page >= 1 ? 'none' : 'translateX(105%) rotate(2.2deg)' }} aria-label="Lecture">
         <div className="mag-vocab-inner">
           <div className="mag-pageno" data-animate=""><p>{`02 — 0${pageCount}`}</p></div>
           <div className="mag-rule" data-animate="" />
-          <h2 className="mag-giant" lang="fr" data-animate="">Vocabulaire</h2>
+          <h2 className="mag-giant" lang="fr" data-animate="">Lecture</h2>
           <div className="mag-vocab-foot" data-animate="">
-            <p className="mag-vocab-quote" lang="fr">Dire les mathématiques en français, un mot à la fois.</p>
+            <p className="mag-vocab-quote" lang="fr">Un texte par jour, lu jusqu’au bout.</p>
             <button
               type="button"
               className="text-action"
               lang="fr"
-              onPointerEnter={() => prefetchPage('/vocabulary')}
-              onFocus={() => prefetchPage('/vocabulary')}
-              onClick={() => flipNavigate('/vocabulary')}
+              onPointerEnter={() => prefetchPage('/lecture')}
+              onFocus={() => prefetchPage('/lecture')}
+              onClick={() => flipNavigate('/lecture')}
             >
               Entrer&nbsp;&nbsp;→
             </button>

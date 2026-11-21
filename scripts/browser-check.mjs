@@ -61,6 +61,7 @@ async function scenario(name, viewport, run) {
   // Supabase/AI configuration, and no real account is created or signed in.
   await context.route('**/*', async (route) => {
     const url = new URL(route.request().url())
+    if (await account.handle(route, baseUrl)) return
     if (url.origin === baseUrl) {
       if (fault.chunk && url.pathname.includes(fault.chunk) && url.pathname.endsWith('.js')) {
         if (fault.kind === 'fail') return route.fulfill({ status: 503, body: 'fixture unavailable' })
@@ -68,10 +69,6 @@ async function scenario(name, viewport, run) {
       }
       return route.continue()
     }
-    if (url.hostname === 'fixture.invalid' && url.pathname === '/rest/v1/resources') {
-      return route.fulfill({ status: fault.resourcesUnavailable ? 503 : 200, contentType: 'application/json', body: fault.resourcesUnavailable ? '{"message":"fixture unavailable"}' : '[]' })
-    }
-    if (await account.handle(route)) return
     if (url.hostname === 'api.open-meteo.com') {
       return route.fulfill({ json: { current: { temperature_2m: 20, weather_code: name.endsWith('-home') ? 61 : 0, is_day: 1 } } })
     }
@@ -193,23 +190,57 @@ try {
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
       await noHorizontalOverflow(page)
     })
+    await scenario(`${size}-lecture`, viewport, async (page) => {
+      const current = '.lec-page:not([inert])'
+      const path = () => page.evaluate(() => location.pathname)
+      await page.goto(baseUrl)
+      await rendered(page, '.mag-masthead')
+      await page.getByRole('button', { name: '下一页', exact: true }).click()
+      await rendered(page, '.mag-vocab .mag-giant')
+      await page.locator('.mag-vocab').getByRole('button', { name: /Entrer/ }).click()
+      await page.waitForURL(`${baseUrl}/lecture`)
+      await rendered(page, '.lec-entry')
+      // 翻页进场动画结束后再量宽度。
+      await page.waitForFunction(() => (document.querySelector('.lec')?.getAnimations() || []).every((animation) => animation.playState === 'finished'))
+      await noHorizontalOverflow(page)
+      await page.locator('.lec-entry').nth(1).click()
+      await page.waitForURL(/\/lecture\/\d{4}-\d{2}-\d{2}$/)
+      const day = await path()
+      await rendered(page, `${current} .lec-title`)
+      await page.locator(`${current} .lec-option`).first().click()
+      await page.locator(`${current} .lec-option[aria-checked="true"]`).waitFor()
+      assert.equal(await page.locator(`${current} .lec-option[aria-checked="true"]`).count(), 1)
+      // 选项上的方向键不能换天。
+      await page.keyboard.press('ArrowRight')
+      assert.equal(await path(), day)
+      await page.locator(`${current} .lec-turn button`).click()
+      await rendered(page, `${current} .lec-verso`)
+      await noHorizontalOverflow(page)
+      // 换到后一天再回来，背面仍在，地址跟着日期走。
+      await page.evaluate(() => document.activeElement?.blur())
+      await page.keyboard.press('ArrowRight')
+      await page.waitForFunction((previous) => location.pathname !== previous, day)
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForURL(`${baseUrl}${day}`)
+      await rendered(page, `${current} .lec-verso`)
+      await page.getByRole('button', { name: 'Archives', exact: true }).click()
+      await page.waitForURL(`${baseUrl}/lecture`)
+      await rendered(page, '.lec-entry')
+      // 刷新后答案还在。
+      await page.goto(`${baseUrl}${day}`)
+      await page.waitForSelector(`${current} .lec-option[aria-checked="true"]`, { state: 'attached' })
+    })
     await scenario(`${size}-account-pages`, viewport, async (page, fault) => {
-      await page.goto(`${baseUrl}/vocabulary`)
-      await page.getByText('背词进度按账号保存,请先登录。', { exact: true }).waitFor()
-      await page.getByRole('link', { name: /Connexion/ }).click()
+      await page.goto(`${baseUrl}/login`)
       await page.getByRole('textbox', { name: '邮箱', exact: true }).fill('browser@example.invalid')
       await page.getByLabel('Mot de passe', { exact: true }).fill('local-fixture-only')
       await page.getByRole('button', { name: 'Entrer', exact: true }).click()
       await page.getByRole('heading', { name: 'Bienvenue', exact: true }).waitFor()
       await rendered(page, '.lgn-dest')
       await noHorizontalOverflow(page)
-      await page.getByRole('link', { name: /Vocabulaire/ }).click()
-      await rendered(page, '.vpl-title')
-      await page.getByRole('button', { name: /Commencer/ }).click()
-      await rendered(page, '.vpl-study-zh')
-      await rendered(page, '.vpl-study-actions button')
+      await page.locator('.lgn-dest a[href="/lecture"]').click()
+      await rendered(page, '.lec-entry')
       await noHorizontalOverflow(page)
-      await page.screenshot({ path: join(output, `${size}-vocabulary.png`), fullPage: true })
       await page.getByRole('button', { name: '← Accueil', exact: true }).click()
       await rendered(page, '.mag-vocab .mag-giant')
 
@@ -274,7 +305,7 @@ try {
     await noHorizontalOverflow(page)
   })
   await scenario('tablet-navigation', { width: 800, height: 1024 }, async (page) => {
-    for (const path of ['/resources', '/vocabulary', '/assistant']) {
+    for (const path of ['/resources', '/lecture', '/assistant']) {
       await page.goto(`${baseUrl}${path}`)
       await rendered(page, 'nav[aria-label="页内导航"]')
       await noHorizontalOverflow(page)

@@ -18,7 +18,7 @@ describe('模块导入限制', () => {
   })
 
   it('业务导入和统一的页面按需下载仍可使用', async () => {
-    expect(await errors('src/hooks/useProbe.js', "export { fetchReviewStates } from '../lib/vocabularyBackend.js'\n")).toEqual([])
+    expect(await errors('src/hooks/useProbe.js', "export { syncLectureDay } from '../lib/lectureAnswersBackend.js'\n")).toEqual([])
     expect(await errors('src/routes/probe.js', "export const load = () => import('../pages/Home.jsx')\n")).toEqual([])
   })
 })

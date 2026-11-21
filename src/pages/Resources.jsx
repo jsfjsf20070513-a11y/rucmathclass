@@ -120,7 +120,7 @@ export default function Resources() {
                     return (
                       <li key={item.id} className="bib-entry" data-animate="">
                         <div className="bib-entry-row">
-                          <a {...externalLinkProps(item.url)} className="bib-entry-title">{item.title}&nbsp;↗</a>
+                          <a {...externalLinkProps(item.url)} className="bib-entry-title">{item.title}</a>
                           {item.tag ? <span className="bib-entry-tag">{item.tag}</span> : null}
                         </div>
                         {lead ? <p className="bib-entry-desc">{lead}</p> : null}

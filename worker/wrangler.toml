@@ -20,6 +20,18 @@ zone_name = "rucmathclass.com"
 pattern = "rucmathclass.com/api/speak*"
 zone_name = "rucmathclass.com"
 
+[[routes]]
+pattern = "rucmathclass.com/api/lecture*"
+zone_name = "rucmathclass.com"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[[kv_namespaces]]
+binding = "LECTURE"
+# 2026-11-21 用 npx wrangler kv namespace create LECTURE 建立。
+id = "177695e397db4f53b10655136cab231e"
+
 # 限流绑定:每 IP 每 60s 最多 30 次。
 # namespace_id 是自取的整数标识。绑定缺失或出错时返回 503，不调用模型。
 [[unsafe.bindings]]

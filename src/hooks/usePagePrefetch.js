@@ -9,7 +9,7 @@ export function usePagePrefetch() {
   useEffect(() => {
     const idle = 'requestIdleCallback' in window
     return schedulePagePrefetch({
-      loaders: ['/resources', '/vocabulary', ...(hasUser ? ['/assistant'] : ['/login'])].map((path) => pageLoaders[path]),
+      loaders: ['/resources', '/lecture', ...(hasUser ? ['/assistant'] : ['/login'])].map((path) => pageLoaders[path]),
       allowed: canPrefetchInBrowser,
       schedule: (run) => idle ? window.requestIdleCallback(run, { timeout: 4000 }) : window.setTimeout(run, 1500),
       cancel: (id) => idle ? window.cancelIdleCallback(id) : window.clearTimeout(id),

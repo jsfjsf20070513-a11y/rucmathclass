@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
+import { createLocalFixture } from './scripts/lib/localFixture.mjs'
 
 const bootSource = readFileSync(new URL('./public/boot-start.js', import.meta.url))
 const bootFileName = `assets/boot-start-${createHash('sha256').update(bootSource).digest('hex').slice(0, 12)}.js`
@@ -15,6 +16,18 @@ export default defineConfig({
     assetsInlineLimit: (filePath) => /\.(woff2?|ttf|otf)$/i.test(filePath) ? false : undefined,
   },
   plugins: [react(), {
+    name: 'local-lecture',
+    apply: 'serve',
+    configureServer(server) {
+      const fixture = createLocalFixture()
+      server.middlewares.use((req, res, next) => {
+        if (!/^\/api\/lecture(?:[/?]|$)/.test(req.url)) return next()
+        const result = fixture.handle({ url: req.url, method: req.method })
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify(result.json))
+      })
+    },
+  }, {
     name: 'version-boot-script',
     apply: 'build',
     buildStart() {

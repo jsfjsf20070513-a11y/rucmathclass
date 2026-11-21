@@ -2,11 +2,11 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { normalizeRoutePath } from '../lib/routePath'
 
-// 2026-08 减法:站的核心是「读(每日定理与哲思)+ 练(背词)」,导航只留这两件。
+// 通用页眉保留扉页和每日阅读。
 // 中文与法语的并置是本站身份,不做单语化;法语以斜体作衬,中文承担功能重量。
 const navItems = [
   { to: '/', fr: 'Accueil', zh: '扉页' },
-  { to: '/vocabulary', fr: 'Vocabulaire', zh: '背词' },
+  { to: '/lecture', fr: 'Lecture', zh: '阅读' },
 ]
 
 export default function Layout() {
@@ -17,13 +17,14 @@ export default function Layout() {
   // 杂志刊页面自带角落导航/细导航条,不渲染通用页眉页脚。
   // `/` 是 100svh 翻页刊;内页与登录页同属一本书(Connexion 即杂志第 06 屏)。
   const pathname = normalizeRoutePath(location.pathname)
-  const isMagazinePage = ['/', '/vocabulary', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
+  const isMagazinePage = ['/', '/lecture', '/resources', '/assistant', '/login', '/reset-password'].includes(pathname)
+    || pathname.startsWith('/lecture/')
   if (isMagazinePage) {
     return <Outlet />
   }
 
   const resolvePrimaryNav = (pathname) => {
-    if (pathname.startsWith('/vocabulary') || pathname.startsWith('/assistant')) {
+    if (pathname.startsWith('/lecture') || pathname.startsWith('/assistant')) {
       return navItems[1]
     }
 

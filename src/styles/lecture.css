@@ -1,0 +1,308 @@
+/* ══ /lecture 每日阅读：一天一页，正面试卷、背面讲解 ══
+   间距只用四档：--s1 12px、--s2 24px、--s3 36px、--s4 48px。 */
+
+.lec {
+  --s1: 12px;
+  --s2: 24px;
+  --s3: 36px;
+  --s4: 48px;
+  height: 100vh;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #f4efe6;
+  color: var(--mag-ink-2);
+  font-family: "Cormorant Garamond", "EB Garamond", var(--font-cjk), serif;
+  font-variant-numeric: lining-nums proportional-nums;
+  overflow: hidden;
+  position: relative;
+}
+
+.lec-stack {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.lec-page {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #f4efe6;
+  will-change: transform;
+}
+
+.lec-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.lec-sheet {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: var(--s4) 28px calc(var(--s4) * 2);
+}
+
+.lec-title {
+  margin: 0 0 var(--s3);
+  text-align: center;
+  font-size: 28px;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--mag-ink);
+}
+
+.lec-p {
+  margin: 0 0 var(--s2);
+  font-size: 20px;
+  line-height: 1.75;
+}
+
+.lec-p:last-of-type { margin-bottom: 0; }
+
+.lec-rule {
+  height: 0;
+  margin: var(--s4) 0;
+  border: none;
+  border-top: 1px solid var(--mag-hairline);
+}
+
+.lec-questions,
+.lec-sentences,
+.lec-answers,
+.lec-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 正面题目 */
+.lec-q + .lec-q { margin-top: var(--s3); }
+
+.lec-stem {
+  margin: 0 0 var(--s1);
+  font-size: 19px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.lec-option {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 6px var(--s1);
+  border: none;
+  border-left: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #3a332c;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1.6;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.lec-option:hover { background: rgba(34, 29, 24, 0.04); }
+.lec-option.is-chosen {
+  border-left-color: var(--mag-wine);
+  background: rgba(125, 47, 40, 0.07);
+  color: var(--mag-ink);
+}
+.lec-key {
+  flex: 0 0 1.6em;
+  color: var(--mag-muted);
+}
+.lec-option.is-chosen .lec-key { color: var(--mag-wine); }
+
+.lec-note {
+  margin: var(--s1) 0 0 var(--s1);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--mag-muted);
+}
+
+.lec-turn,
+.lec-verso-top { text-align: center; }
+.lec-turn { margin-top: var(--s4); }
+.lec-verso-top { margin-bottom: var(--s3); }
+
+.lec-link {
+  padding: 4px 2px 6px;
+  border: none;
+  background: transparent;
+  color: var(--mag-wine);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 19px;
+  font-style: italic;
+  cursor: pointer;
+  box-shadow: inset 0 -1px 0 rgba(125, 47, 40, 0.35);
+}
+.lec-link:hover,
+.lec-link:focus-visible { box-shadow: inset 0 -1px 0 var(--mag-wine); }
+
+/* 背面：每一层之间只用 s1，块与块之间用 s3 */
+.lec-verso .lec-title { margin-bottom: var(--s1); font-size: 25px; }
+.lec-title-zh { text-align: center; }
+
+.lec-zh {
+  margin: 0;
+  font-family: var(--font-cjk), serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #3f3831;
+}
+
+.lec-sentences { margin-top: var(--s3); }
+.lec-sentence {
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--mag-hairline);
+}
+
+.lec-fr {
+  margin: 0 0 6px;
+  font-family: "EB Garamond", var(--font-cjk), serif;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 600;
+  color: var(--mag-ink);
+}
+
+.lec-points { margin-top: var(--s1); }
+.lec-points li {
+  position: relative;
+  padding-left: 18px;
+  font-family: var(--font-cjk), serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #3f3831;
+}
+.lec-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.8em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--mag-muted);
+}
+.lec-points li + li { margin-top: 6px; }
+
+.lec-term {
+  font-weight: 600;
+  color: var(--mag-ink);
+}
+.lec-latin {
+  font-family: "EB Garamond", var(--font-cjk), serif;
+  font-size: 1.05em;
+}
+.lec-term .lec-latin {
+  font-family: "EB Garamond", var(--font-cjk), serif;
+  font-size: 1.05em;
+  font-weight: 600;
+}
+
+.lec-star {
+  margin-right: 4px;
+  color: var(--mag-wine);
+  font-family: "Bodoni Moda", serif;
+  font-size: 0.8em;
+}
+
+.lec-block {
+  padding-top: var(--s3);
+  border-top: 1px solid var(--mag-hairline);
+}
+.lec-block + .lec-block { margin-top: var(--s3); }
+
+.lec-sec {
+  margin: 0 0 var(--s2);
+  text-align: center;
+  font-family: var(--font-cjk), serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--mag-wine);
+}
+
+.lec-answer + .lec-answer { margin-top: var(--s2); }
+
+.lec-verdict {
+  margin: 0 0 6px;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s1);
+}
+.lec-verdict-key {
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--mag-wine);
+}
+.lec-mine {
+  font-family: var(--font-cjk), serif;
+  font-size: 15px;
+  color: var(--mag-muted);
+}
+.lec-mine.is-right { color: var(--mag-wine); }
+
+.lec-quote {
+  margin: 0;
+  font-family: "EB Garamond", var(--font-cjk), serif;
+  font-size: 17px;
+  line-height: 1.65;
+  color: #3f3831;
+}
+.lec-quote + .lec-quote { margin-top: 4px; }
+
+@media (max-width: 640px) {
+  .lec-sheet { padding: var(--s3) 22px var(--s4); }
+  .lec-title { font-size: 25px; }
+  .lec-verso .lec-title { font-size: 23px; }
+  .lec-p { font-size: 19px; }
+}
+
+/* 档案列表：一天一条，最新在上 */
+.lec > .lec-scroll { flex: 1; min-height: 0; }
+
+.lec-archive {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: var(--s3) 28px var(--s4);
+  list-style: none;
+}
+.lec-archive li + li { border-top: 1px solid var(--mag-hairline); }
+
+.lec-entry {
+  display: block;
+  width: 100%;
+  padding: var(--s2) 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.lec-entry-date {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 16px;
+  color: var(--mag-muted);
+}
+.lec-entry-title {
+  display: block;
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--mag-ink);
+  transition: color 0.15s ease;
+}
+.lec-entry:hover .lec-entry-title,
+.lec-entry:focus-visible .lec-entry-title { color: var(--mag-wine); }
+
+@media (max-width: 640px) {
+  .lec-archive { padding: var(--s2) 22px var(--s4); }
+}

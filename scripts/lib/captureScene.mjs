@@ -33,27 +33,34 @@ export async function captureScene(browser, demo, viewport, path) {
       await page.locator('button[type="submit"]').click()
       await page.locator('.status-line').waitFor()
     }
-    if (demo.scene.answer || demo.scene.finish) {
-      const options = page.locator('.vpl-option')
-      await options.first().waitFor()
-      const labels = await options.allTextContents()
-      await options.nth(labels.findIndex((label) => !label.includes('你好'))).click()
-      if (demo.scene.finish) await page.getByRole('button', { name: /Terminer/ }).click()
-      else await page.getByRole('button', { name: '重试保存 →' }).waitFor()
+    // 改前的版本可能还没有阅读页，会落到 404：那就截 404，不再等阅读页元素。
+    let lectureMissing = false
+    if (demo.scene.path.startsWith('/lecture')) {
+      await page.locator('.lec, .notfound-code').first().waitFor()
+      lectureMissing = await page.locator('.lec').count() === 0
+    }
+    if (demo.scene.verso && !lectureMissing) {
+      const sheet = page.locator('.lec-page:not([inert])')
+      const groups = sheet.locator('.lec-options')
+      await groups.first().waitFor()
+      await groups.nth(0).locator('.lec-option').nth(1).click()
+      await groups.nth(1).locator('.lec-option').nth(0).click()
+      await groups.nth(1).locator('.lec-option[aria-checked="true"]').waitFor()
+      await sheet.getByRole('button', { name: /Verso/ }).click()
+      await sheet.locator('.lec-verso').waitFor()
     }
     if (demo.scene.chatStatus) {
       await page.getByRole('textbox', { name: '向 AI 助手提问' }).fill('解释一下导数。')
       await page.getByRole('button', { name: 'Envoyer', exact: true }).click()
       await page.getByRole('alert').waitFor()
     }
-    const ready = demo.scene.path.startsWith('/vocabulary') ? (demo.scene.queue ? '.vpl-match' : demo.scene.finish ? '.vpl-card-done' : demo.scene.study ? '.vpl-study-zh' : demo.scene.emptyReviews ? '.vpl-filters' : demo.scene.answer ? '.vpl-fb' : '.vpl-commencer')
+    const ready = demo.scene.path.startsWith('/lecture') ? (lectureMissing ? '.notfound-code' : demo.scene.verso ? '.lec-page:not([inert]) .lec-verso' : demo.scene.path === '/lecture' ? '.lec-entry' : '.lec-page:not([inert]) .lec-option')
       : demo.scene.path.startsWith('/assistant') ? (demo.scene.emptyHistory ? '.cor-masthead' : '.cor-r-text')
         : demo.scene.path.startsWith('/resources') ? '.bib-entry-title'
           : demo.scene.path === '/' ? '.mag-masthead' : '.lgn-title'
     await page.locator(ready).first().waitFor()
     if (demo.scene.resourcesUnavailable) await page.getByRole('button', { name: '重试', exact: true }).waitFor()
     if (demo.scene.path === '/reset-password') await page.locator('.password-field input').nth(1).waitFor()
-    if (demo.scene.emptyReviews) await page.locator('.vpl-card-notice .page-notice').waitFor()
     await page.evaluate(async () => {
       await document.fonts.ready
       await Promise.all([...document.images].filter((image) => image.src).map((image) => image.decode()))

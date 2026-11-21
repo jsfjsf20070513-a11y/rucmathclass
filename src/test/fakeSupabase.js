@@ -17,7 +17,7 @@ export function fakeSupabase(initial = []) {
         let data
         if (action === 'insert') {
           const additions = Array.isArray(payload) ? payload : [payload]
-          if (table === 'review_states' && additions.some((r) => rows.some((x) => x.user_id === r.user_id && x.word_id === r.word_id))) {
+          if (table === 'lecture_answers' && additions.some((r) => rows.some((x) => x.user_id === r.user_id && x.day === r.day))) {
             return { data: null, error: { code: '23505' } }
           }
           rows.push(...structuredClone(additions))

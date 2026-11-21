@@ -1,5 +1,8 @@
+import { lectureSamples } from '../../src/data/lectureSamples.js'
+import { lectureSummary } from '../../worker/src/lectureStore.js'
+
 // 本地演示、浏览器检查和截图共用。所有写入只保存在这个进程内。
-export const FIXTURE_TIME = '2026-10-05T04:00:00.000Z'
+export const FIXTURE_TIME = '2026-11-20T04:00:00.000Z'
 export const FIXTURE_PASSWORD = 'local-fixture-only'
 export const FIXTURE_USERS = ['browser', 'other'].map((name, index) => ({
   id: `${index + 1}`.repeat(8) + `-${`${index + 1}`.repeat(4)}-4111-8111-111111111111`,
@@ -16,12 +19,9 @@ export const SCENES = {
   resources: { title: '书架', path: '/resources', user: false },
   'resources-slash': { title: '书架地址末尾带斜线', path: '/resources/', user: false },
   'resources-error': { title: '增补书目读取失败', path: '/resources', user: false, resourcesUnavailable: true },
-  vocabulary: { title: '背词首页', path: '/vocabulary' },
-  'vocabulary-study': { title: '背词预习', path: '/vocabulary', study: true },
-  'vocabulary-empty': { title: '今日没有待学词', path: '/vocabulary', emptyReviews: true },
-  'vocabulary-save-error': { title: '背词保存失败', path: '/vocabulary', answer: true, reviewStatus: 503 },
-  'vocabulary-finish': { title: '背词完成', path: '/vocabulary', finish: true },
-  'vocabulary-match': { title: '配对热身', path: '/vocabulary', queue: ['fr-cependant', 'fr-toutefois', 'fr-voyage', 'fr-voyager', 'fr-bonjour', 'fr-merci'] },
+  lecture: { title: '每日阅读档案', path: '/lecture' },
+  'lecture-day': { title: '每日阅读正面', path: '/lecture/2026-11-20' },
+  'lecture-verso': { title: '每日阅读背面', path: '/lecture/2026-11-20', verso: true },
   assistant: { title: '已有对话', path: '/assistant' },
   'assistant-empty': { title: '新对话', path: '/assistant', emptyHistory: true },
   'assistant-error': { title: '答疑请求失败', path: '/assistant', emptyHistory: true, chatStatus: 429 },
@@ -43,11 +43,10 @@ const initialHistory = () => [
   { id: 2, role: 'model', content: '恒等式为 $1 + 1 = 2$。', created_at: '2026-01-01T00:00:01Z' },
 ]
 
-export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
+export function createLocalFixture(fault = {}) {
   const passwords = new Map(FIXTURE_USERS.map((user) => [user.id, FIXTURE_PASSWORD]))
   const histories = new Map(FIXTURE_USERS.map((user) => [user.id, fault.emptyHistory ? [] : initialHistory()]))
-  const reviews = new Map(FIXTURE_USERS.map((user) => [user.id, new Map(fault.emptyReviews
-    ? wordIds.map((word_id) => [word_id, { user_id: user.id, word_id, proficiency_level: 1, streak_count: 1, next_review_at: '2099-01-01T00:00:00Z', updated_at: FIXTURE_TIME, last_result: 'correct' }]) : [])]))
+  const answers = new Map(FIXTURE_USERS.map((user) => [user.id, new Map()]))
   let nextId = 3
   return {
     handle({ url: input, method = 'GET', headers = {}, body = {} }) {
@@ -68,6 +67,14 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
         if (method === 'PUT' && body.password) passwords.set(user.id, body.password)
         return response(user)
       }
+      if (path === '/api/lecture' || path.startsWith('/api/lecture/')) {
+        if (method !== 'GET') return response(null, 405)
+        if (fault.lectureStatus) return response(null, fault.lectureStatus)
+        const published = (fault.lectureDays || lectureSamples).filter((item) => item.date <= FIXTURE_TIME.slice(0, 10))
+        if (path === '/api/lecture') return response(published.map(lectureSummary))
+        const article = published.find((day) => path === '/api/lecture/' + day.date)
+        return article ? response(article) : response(null, 404)
+      }
       if (path === '/rest/v1/resources') return fault.resourcesUnavailable ? failure('fixture unavailable', 503) : response([])
       if (!user) return failure('登录状态已失效，请刷新页面并重新登录后再试。', 401)
       if (path === '/api/chat') {
@@ -76,21 +83,23 @@ export function createLocalFixture(fault = {}, { wordIds = [] } = {}) {
       }
       const owner = url.searchParams.get('user_id')
       if (owner && owner !== `eq.${user.id}`) return failure('假账号只能读取自己的记录。', 403)
-      if (path === '/rest/v1/review_states') {
-        const rows = reviews.get(user.id)
-        const wordFilter = url.searchParams.get('word_id')
-        if (method === 'GET') {
-          const result = [...rows.values()].sort((a, b) => a.word_id.localeCompare(b.word_id)).filter((row) => !wordFilter || (wordFilter.startsWith('gt.') ? row.word_id > wordFilter.slice(3) : row.word_id === wordFilter.slice(3)))
-          return response(headers.accept?.includes('vnd.pgrst.object') ? result[0] || null : result.slice(0, Number(url.searchParams.get('limit')) || 500))
-        }
-        if (body.user_id !== user.id) return failure('假账号不能修改别人的进度。', 403)
-        if (fault.reviewStatus && fault.reviewStatus !== 200) return failure('fixture save unavailable', fault.reviewStatus)
-        const previous = rows.get(body.word_id)
-        if (method === 'POST' && previous) return failure('duplicate key', 409, '23505')
-        if (method === 'PATCH' && (!previous || url.searchParams.get('updated_at') !== `eq.${previous.updated_at}`)) return response(null)
-        if (!['POST', 'PATCH'].includes(method)) return failure('本地演示不支持此操作。', 405)
-        rows.set(body.word_id, { ...body })
-        return response(headers.accept?.includes('vnd.pgrst.object') ? body : [body], method === 'POST' ? 201 : 200)
+      if (path === '/rest/v1/lecture_answers') {
+        if (fault.answersStatus) return failure('lecture_answers unavailable', fault.answersStatus)
+        const rows = answers.get(user.id)
+        const date = url.searchParams.get('day')?.slice(3) || body.day
+        const previous = rows.get(date)
+        const single = headers.accept?.includes('vnd.pgrst.object')
+        const result = (row, status) => response(single ? row || null : row ? [row] : [], status)
+        if (method === 'GET') return date ? result(previous) : response([...rows.values()])
+        if ((method === 'POST' || body.user_id) && body.user_id !== user.id) return failure('账号不符', 403)
+        if (method === 'POST') {
+          if (previous) return failure('duplicate key', 409, '23505')
+        } else if (method === 'PATCH') {
+          if (!previous || url.searchParams.get('updated_at') !== 'eq.' + previous.updated_at) return result(null)
+        } else return failure('本地演示不支持此操作。', 405)
+        const row = { ...previous, ...body }
+        rows.set(date, row)
+        return result(row, method === 'POST' ? 201 : 200)
       }
       if (path === '/rest/v1/ai_messages') {
         let history = histories.get(user.id)

@@ -5,8 +5,8 @@
 | 要改什么 | 从哪里看 |
 | --- | --- |
 | 登录与密码重置 | [AuthContext](../src/context/AuthContext.jsx)、[authSession](../src/lib/authSession.js)、[authBackend](../src/lib/authBackend.js)、[usePasswordReset](../src/hooks/usePasswordReset.js) |
-| 背词与保存 | [vocabularyTrainer](../src/lib/vocabularyTrainer.js)、[useVocabularyTrainer](../src/hooks/useVocabularyTrainer.js)、[vocabularyBackend](../src/lib/vocabularyBackend.js) |
-| 复习间隔与题型 | [srsScheduler](../src/lib/srsScheduler.js)、[exerciseGenerator](../src/lib/exerciseGenerator.js) |
+| 每日文章与档案 | [Lecture](../src/pages/Lecture.jsx)、[useLectureLibrary](../src/hooks/useLectureLibrary.js)、[Worker](../worker/README.md) |
+| 阅读作答与同步 | [lectureAnswers](../src/lib/lectureAnswers.js)、[本机记录](../src/lib/lectureAnswerStorage.js)、[云端保存](../src/lib/lectureAnswersBackend.js) |
 | 答疑与历史 | [assistantConversation](../src/lib/assistantConversation.js)、[assistantClient](../src/lib/assistantClient.js)、[aiAssistantBackend](../src/lib/aiAssistantBackend.js) |
 | 书架 | [useResourceCatalog](../src/hooks/useResourceCatalog.js)、[resourceBackend](../src/lib/resourceBackend.js) |
 | 首页与翻页 | [Home](../src/pages/Home.jsx)、[usePageFlip](../src/hooks/usePageFlip.js)、[useHomeWeather](../src/hooks/useHomeWeather.js) |
@@ -17,13 +17,15 @@
 
 页面、组件和 hook 通过 backend 调用服务。`lib`、`data` 不反过来依赖界面。这让保存和请求顺序可以脱离 React 单独验证。实际限制见 [.eslintrc.cjs](../.eslintrc.cjs)。
 
-每个账号各用一个背词或对话控制器。切换账号、退出或卸载后，旧请求不能改新页面的状态。初始化查询和登录事件可能先后返回，不能认定先发的请求就会先返回。
+阅读档案从 Worker 取得索引。打开文章时只请求当天和左右两篇正文。文章经检查后写入 KV，索引信息与正文一起保存。
 
-背词先保存“等待确认”的本机记录，再写入云端。云端写入和本机进度都确认后，才计分并允许下一题。失败重试必须复用同一次答案，不能算作又答了一遍。最后一题也遵守这个顺序。
+每个账号各用一个作答控制器和一个对话控制器。切换账号后，旧请求只能结束自己的工作。登录事件优先于延迟返回的初始化查询。
 
-`review_states.word_id` 对应词条 ID。整理词库不能改变这个对应关系。`streak_count` 表示单词连续答对次数，随每次作答保存；它不表示连续学习天数。每词一条最新进度也不能还原每天的学习历史。
+游客答案保存在浏览器里。登录时，本机游客答案一次归入该账号。每题按作答时间合并。旧版记录没有时间，只补空缺。云端按天存一行，写入时检查先前读到的版本。另一个设备已修改时，重新读取后再合并。
 
-本机保存的练习记录用于恢复未完成的一轮，不承担跨设备同步。普通练习记录按上海日期过期，等待云端确认的记录必须保留到核对结束。另一台设备可能已经更新进度，所以写入时要比较原来的 `updated_at`。
+选项在云端确认后才显示为选中。如果请求失败，浏览器成功写入本机也可确认。登录或恢复联网时，会补传所有待同步答案。重开一篇文章时，只同步这一天的作答。
+
+旧背词实现和原始词库见[背词归档](archive/vocabulary/)。既有词条 ID 仍与 `review_states.word_id` 对应。
 
 AI 收到回答与历史保存成功是两件事。图片只留在当前页面，历史中的文字会注明曾附图。Worker 不保存对话，个人历史由前端写入 Supabase。
 
@@ -31,7 +33,7 @@ AI 收到回答与历史保存成功是两件事。图片只留在当前页面�
 
 ## 数据和同机服务
 
-页面读写的表是 `review_states`、`ai_messages`、`resources`，登录由 Supabase Auth 处理。旧推荐、相册和 Web3 地址只是跳转。旧 SQL 和旧数据仍在，不代表产品入口应恢复。
+当前代码使用 `lecture_answers`、`ai_messages`、`resources`，登录由 Supabase Auth 处理。旧推荐、相册和 Web3 地址只是跳转。旧 SQL 和旧数据仍在，不代表产品入口应恢复。
 
 2026-09-27 已获授权收紧四张表的浏览器角色权限。个人进度和对话均开启行级安全检查（RLS），即数据库按登录账号判断可以读写哪些行。`resources` 允许公开读取，原管理员操作仍检查角色；`profiles` 只允许读自己的资料。只检查状态、不读取记录内容的匿名请求中，书架返回 200，三张个人表返回 401。没有用两个真实账号验证完整写入流程。
 

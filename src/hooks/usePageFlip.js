@@ -7,7 +7,7 @@ import { createPageFlipRenderer } from '../lib/pageFlipRenderer'
 // 页内滚动优先:当前页内 [data-flip-scroll] 未滚到边缘时,滚轮不翻页。
 // prefers-reduced-motion:翻页降级为淡入淡出(transform 直落,过渡只走 opacity)。
 
-export function usePageFlip({ count, sides = [], durationMs = 900, enabled = true, initialPage = 0 }) {
+export function usePageFlip({ count, sides = [], durationMs = 900, enabled = true, initialPage = 0, wheel = true, onPageChange }) {
   const [page, setPage] = useState(initialPage)
   const pagesRef = useRef([])
   const pageStateRef = useRef(initialPage)
@@ -20,6 +20,8 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
   const touchRef = useRef(null)
   const enabledRef = useRef(enabled)
   enabledRef.current = enabled
+  const wheelRef = useRef(wheel)
+  wheelRef.current = wheel
 
   const setPageEl = useCallback((index) => (el) => {
     pagesRef.current[index] = el
@@ -32,7 +34,8 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
     if (next === pageStateRef.current) return
     pageStateRef.current = next
     setPage(next)
-  }, [count])
+    onPageChange?.(next)
+  }, [count, onPageChange])
 
   useEffect(() => {
     rendererRef.current.apply({ pages: pagesRef.current, cur: page, sides, durationMs, instant: instantRef.current, enabled })
@@ -45,12 +48,14 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable
     }
     const onKey = (e) => {
-      if (!enabledRef.current || inField(e.target)) return
+      // 单选组里的方向键留给选项；带修饰键的是浏览器快捷键。
+      if (!enabledRef.current || inField(e.target) || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return
+      if (e.target?.closest?.('[role="radiogroup"]')) return
       if (e.key === 'ArrowRight') goTo(pageStateRef.current + 1)
       else if (e.key === 'ArrowLeft') goTo(pageStateRef.current - 1)
     }
     const onWheel = (e) => {
-      if (!enabledRef.current) return
+      if (!enabledRef.current || !wheelRef.current) return
       const now = Date.now()
       // 翻页在飞:静默吞掉触控板惯性尾,不累积(否则松手后连翻)。
       if (now < wheelLockRef.current) { wheelAccRef.current = 0; return }

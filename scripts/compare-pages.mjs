@@ -32,7 +32,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, async () => { a
 try {
   const { values } = parseArgs({ options: { base: { type: 'string' }, scene: { type: 'string', default: 'home' }, size: { type: 'string', default: 'both' }, help: { type: 'boolean' } } })
   if (values.help) {
-    console.log('用法：npm run compare -- --base <提交或分支> --scene vocabulary-study\n--scene all 可检查全部场景；--size mobile|desktop|both 选择尺寸。\n场景：' + Object.keys(SCENES).join('、'))
+    console.log('用法：npm run compare -- --base <提交或分支> --scene lecture-day\n--scene all 可检查全部场景；--size mobile|desktop|both 选择尺寸。\n场景：' + Object.keys(SCENES).join('、'))
   } else {
     if (!values.base) throw new Error('请用 --base 明确指定“改前”的提交或分支。')
     const scenes = values.scene === 'all' ? Object.keys(SCENES) : values.scene.split(',')
