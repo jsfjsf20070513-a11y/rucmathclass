@@ -37,6 +37,8 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 只有脚本确认代码、依赖和环境未变，且发布文件未被改动，才沿用上次结果。只改普通说明文档也可沿用；修改 `CLAUDE.md` 会重新检查。记录和发布文件保存在本机 `.cache/mathclass-release/`，不复用另一台机器的检查结果。检查脚本会恢复构建生成的 health 时间戳。
 
+本机仓库在 iCloud 同步的桌面目录里。`npm ci` 重建依赖后，iCloud 会逐个处理新文件，文件的状态时间随之改变，发布检查会因此判定依赖有变并停止上传。重装依赖后先运行 `xattr -w 'com.apple.fileprovider.ignore#P' 1 node_modules`，让 iCloud 跳过依赖目录。2026-11-21 发布时遇到这个问题，经作者同意按此处理。
+
 发布前设置 `MATHCLASS_DEPLOY_HOST`、`MATHCLASS_DEPLOY_USER` 和 `MATHCLASS_DEPLOY_SSH_KEY`。密钥必须使用绝对路径。获得明确上线授权后，运行 `bash deploy.sh --publish`。发布仅允许 `mathclass/main`，且本地提交必须与远端一致；上传前会再次核对。
 
 上传后核对用户平时访问的首页、版本文件、脚本和样式。Cloudflare 当前会给首页插入检测脚本。检查只在比较内容时去掉已核实的完整脚本，其余内容必须与构建一致。脚本模板变化也会报错。记录保存在 `.cache/mathclass-release/records/`，失败也会记录停止位置。文件核对通过不能代替真实账号和 AI 验证。上传失败可能只更新了部分文件，脚本不会自动回滚，也不会把失败记为成功。
