@@ -127,7 +127,19 @@ const FR_DATE = new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeri
 const frDate = (iso) => FR_DATE.format(new Date(`${iso}T00:00:00Z`))
 
 // 档案：像书架一样按日期列出全部往期，最新在上。
-function Archive({ days, onOpen, onHome, arrive }) {
+function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
+  // 空闲时先取最新三篇；手指按下时再取被点的那篇。
+  useEffect(() => {
+    if (!days.length) return undefined
+    const run = () => days.slice(-3).forEach((day) => onPrefetch(day.date))
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: 2000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = window.setTimeout(run, 300)
+    return () => window.clearTimeout(id)
+  }, [days, onPrefetch])
+
   return (
     <main className={`lec${arrive ? ' page-arrive' : ''}`}>
       <PageNav title="" onBack={onHome} />
@@ -135,7 +147,7 @@ function Archive({ days, onOpen, onHome, arrive }) {
         <ol className="lec-archive">
           {[...days].reverse().map((day) => (
             <li key={day.date}>
-              <button type="button" className="lec-entry" onClick={() => onOpen(day.date)}>
+              <button type="button" className="lec-entry" onPointerDown={() => onPrefetch(day.date)} onClick={() => onOpen(day.date)}>
                 <span className="lec-entry-date" lang="fr">{`${frDate(day.date)} · ${day.level}`}</span>
                 <span className="lec-entry-title" lang="fr">{day.title}</span>
               </button>
@@ -155,6 +167,16 @@ function Reader({ days, articles, date, answers, onChoose }) {
   const scrollers = useRef({})
   // 只在打开时定位；之后左右翻只改地址，不重建页面栈。
   const [initial] = useState(() => days.findIndex((day) => day.date === date))
+  // 从档案点进来时，正文到了再让这一页从下往上抽出；最多等 1.5 秒。换天仍是左右翻。
+  const [entering] = useState(() => wasFlipNav())
+  const [firstDate] = useState(date)
+  const [waitedOut, setWaitedOut] = useState(false)
+  useEffect(() => {
+    if (!entering) return undefined
+    const timer = window.setTimeout(() => setWaitedOut(true), 1500)
+    return () => window.clearTimeout(timer)
+  }, [entering])
+  const ready = Boolean(articles[firstDate]) || waitedOut
   const sides = useMemo(() => days.map((_, index) => (index === 0 ? 'none' : 'right')), [days])
   // 阅读时只认横向手势和方向键换天，读到页底继续滚不翻页。
   const fromArchive = Boolean(location.state?.fromArchive)
@@ -185,7 +207,7 @@ function Reader({ days, articles, date, answers, onChoose }) {
       <nav className="page-nav" aria-label="页内导航">
         <button type="button" className="page-nav-back" lang="fr" onClick={onArchive}>Archives</button>
       </nav>
-      <div className="lec-stack">
+      <div className={`lec-stack${entering ? (ready ? ' lec-rise' : ' is-waiting') : ''}`}>
         {days.map((entry, index) => {
           const day = articles[entry.date]
           const chosen = answers[entry.date] || {}
@@ -214,7 +236,7 @@ export default function Lecture({ account }) {
   const navigate = useNavigate()
   const { date } = useParams()
   const [arrive] = useState(() => wasFlipNav())
-  const { days, articles } = useLectureLibrary(date)
+  const { days, articles, prefetch } = useLectureLibrary(date)
   const availableDate = days?.some((day) => day.date === date) ? date : null
   const answers = useSyncExternalStore(account.subscribe, account.getSnapshot)
   useEffect(() => {
@@ -228,7 +250,10 @@ export default function Lecture({ account }) {
   }, [navigate])
 
   if (!date || !days) {
-    return <Archive days={days || []} arrive={arrive} onHome={goHome} onOpen={(day) => navigate(`/lecture/${day}`, { state: { fromArchive: true } })} />
+    return <Archive days={days || []} arrive={arrive} onHome={goHome} onPrefetch={prefetch} onOpen={(day) => {
+      markFlipNav('/lecture')
+      navigate(`/lecture/${day}`, { state: { fromArchive: true } })
+    }} />
   }
   if (!availableDate) return <Navigate to="/lecture" replace />
   return <Reader days={days} articles={articles} date={date} answers={answers} onChoose={account.choose} />

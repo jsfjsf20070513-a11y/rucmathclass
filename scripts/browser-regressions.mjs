@@ -115,10 +115,13 @@ export async function checkRegressions({ scenario, baseUrl, rendered }) {
     await page.waitForURL(baseUrl + '/lecture')
     await rendered(page, '.lec-entry')
     assert.equal(await page.locator('.lec-entry').count(), 7)
-    assert.equal(requests.size, 0)
+    // 档案空闲时只预取最新三篇，不一次拉全部。
+    await page.waitForFunction(() => performance.getEntriesByType('resource').filter((e) => /\/api\/lecture\/\d/.test(e.name)).length >= 3)
+    assert.deepEqual([...requests].sort(), ['2026-11-18','2026-11-19','2026-11-20'])
     await page.locator('.lec-entry').filter({ hasText: 'Lecture 17' }).click()
     await rendered(page, '.lec-page:not([inert]) .lec-title')
-    assert.deepEqual([...requests].sort(), ['2026-11-16','2026-11-17','2026-11-18'])
+    // 点开 17 日后补取它和前一天。
+    assert.deepEqual([...requests].sort(), ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20'])
     await page.locator('.lec').evaluate((target) => {
       const touch = (clientX) => new Touch({ identifier: 1, target, clientX, clientY: 200 })
       target.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [touch(250)] }))
