@@ -17,10 +17,6 @@
 
 2026-11-01 已实测 macOS Safari 登录、背词保存后刷新继续、真实 AI 回答和刷新读取对话。同一账号在 iPhone Safari 读到了电脑保存的测试问答；新建学习队列也未再从刚保存的 `bonjour` 开始。这次只核对了一题背词保存和一轮对话读取，不代替两个账号之间的切换或语音接口验证，也不保证模型以后仍有额度。
 
-## 待写入的阅读稿
-
-12 月这批 30 篇阅读稿已写好并审完。稿件覆盖 2026-11-23 至 2026-12-22。定稿保存在主工作目录的 `.cache/lecture-batch-202612/days/`。这批稿件待作者授权写入线上 KV。
-
 ## iCloud 同步冲突
 
-仓库位于 iCloud 同步的桌面目录。本地依赖设了 `com.apple.fileprovider.ignore#P` 后，iCloud 仍把它移到了 `node_modules 2/`。同步拉回的 `node_modules/` 不完整。`dist/` 和 `.cache/` 里也出现了带 ` 2` 或 ` 3` 后缀的冲突副本。建议将仓库移出 iCloud 同步目录。是否迁移待作者决定。
+仓库位于 iCloud 同步的桌面目录。本地依赖设了 `com.apple.fileprovider.ignore#P` 后，iCloud 仍把它移到了 `node_modules 2/`。同步拉回的 `node_modules/` 不完整。`dist/` 和 `.cache/` 里也出现了带 ` 2` 或 ` 3` 后缀的冲突副本。建议将仓库移出 iCloud 同步目录。2026-11-21 作者决定把仓库移出 iCloud，迁移范围待定。
