@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "where", "kind", "problem", "original", "fix"],
+        "properties": {
+          "date": { "type": "string" },
+          "where": { "type": "string" },
+          "kind": {
+            "type": "string",
+            "enum": ["法语错误", "翻译错误", "讲解错误", "答案或题目错误", "前后不一", "笔误或怪字", "说法生硬"]
+          },
+          "problem": { "type": "string" },
+          "original": { "type": "string" },
+          "fix": { "type": "string" }
+        }
+      }
+    }
+  }
+}

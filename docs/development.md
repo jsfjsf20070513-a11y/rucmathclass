@@ -7,7 +7,7 @@
 | 内容 | 应修改的输入 | 生成方式 |
 | --- | --- | --- |
 | 首页定理和引语 | [siteContent.js](../src/data/siteContent.js) | 定理运行 `npm run theorems:render`；引语直接读取 |
-| 每日法语阅读 | [样稿](../src/data/lectureSamples.js)、[出题要求](../worker/src/lecturePrompt.js) | 本地种子运行 `node scripts/seed-lecture.mjs --local`。日常文章由 Worker 定时生成。 |
+| 每日法语阅读 | [样稿](../src/data/lectureSamples.js)、[出题要求](../worker/src/lecturePrompt.js)、[批量写稿脚本](../scripts/lecture-batch/run.mjs) | 每月用 GPT 订阅批量写稿。自动检查通过后由 GPT 交叉审稿并改稿。人工核对后写入 KV。Worker 只在缺稿时兜底。见[每月写稿](#每月写稿)。 |
 | 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取 |
 | 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查。运行 `npm run portraits:fetch` 才联网补图。补图会转为 WebP，并去掉色彩配置等附加数据。 |
 
@@ -16,6 +16,40 @@
 旧背词的导入脚本和词库原样保存在[归档目录](archive/vocabulary/)。首页定理讲解由脚本生成，请修改输入文件。
 
 `public/health.json` 的 `ok` 只表示文件成功生成，不检查数据库或 AI。普通构建若只改变了它的时间戳，提交前执行 `git restore public/health.json`。不要一并还原手写文件。
+
+### 每月写稿
+
+用 ChatGPT 订阅账号登录 Codex CLI。在仓库根目录运行以下命令。例子按 2027 年 1 月的 31 天排稿。
+
+```bash
+batch=.cache/lecture-batch-2027-01-01
+node scripts/lecture-batch/run.mjs --start 2027-01-01 --days 31 \
+  --concurrency 4 --model gpt-6.2-astra --out "$batch"
+```
+
+省略 `--out` 时，稿件保存在仓库的 `.cache/lecture-batch-<起始日期>/`。加 `--dry-run` 可离线查看排期。加 `--previous 上一批目录` 可让 GPT 排题时避开近期写过的题材。
+
+| 产物 | 内容 |
+| --- | --- |
+| `plan.json` | 每天的题材和出题重心。题型与难度沿用 Worker 的轮换顺序。 |
+| `drafts/日期.json` | 通过自动检查的初稿。检查未通过时，脚本将问题交回 GPT 重写。每篇最多试写三次。 |
+| `review/日期.json` | 另开一次 GPT 会话独立审稿。每条意见列出位置、原文、问题和改法。 |
+| `review/日期-edits.json` | 有审稿意见时生成。文件保留修改后的全文和每条意见的处理说明。 |
+| `days/日期.json` | 供人工核对的完整稿件。重跑同一批次时，脚本会检查并沿用已保存的稿件。 |
+
+逐篇对照法语原文核对译文和讲解。讲解中的语法术语要换成平实中文。先独立做题，确认每题只有一个正确答案。再检查引文能否支持这个答案。对照审稿意见核实每处修改。人工修正写在 `days/` 中。
+
+核对完成后运行整批检查。脚本按题材表核对日期、题型和难度，并逐篇检查正文、逐句原文和引文。
+
+```bash
+node scripts/lecture-batch/check.mjs "$batch"
+```
+
+取得作者对该批次的明确授权后，运行以下命令写入线上 KV。脚本只写本批日期的正文和索引信息。已有同日期稿件会被覆盖。本地 KV 使用 `--local`。
+
+```bash
+node scripts/seed-lecture.mjs --remote --batch "$batch"
+```
 
 ## 检查的用途和限制
 
@@ -47,9 +81,13 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 ## 最近一次发布核验
 
-本次字体修正和发布核验器更新见 [PR #59](https://github.com/jsfjsf20070513-a11y/rucmathclass/pull/59)。合并提交、部署时间和公网核验结果记录在该 PR 中。本机详细记录保存在 `.cache/mathclass-release/records/`。
+2026-11-21 每日法语阅读随 PR #60 上线，网站发布文件已通过线上核对。[PR #60 上线记录](https://github.com/jsfjsf20070513-a11y/rucmathclass/pull/60#issuecomment-7055219112)
 
-下表保留 PR #58 于 2026-10-26 发布的记录，以及 2026-11-01 在本次部署前完成的公网复核结果。
+Worker 发布版本为 `0ba89e74-2c8d-4243-926e-8a42f637e318`（回滚版本 `8f15c4a9-fb54-4329-815a-07746138b82b`）。
+
+11 月 1 日的字体修正和发布核验器更新见 [PR #59](https://github.com/jsfjsf20070513-a11y/rucmathclass/pull/59)。合并提交、部署时间和公网核验结果记录在该 PR 中。本机详细记录保存在 `.cache/mathclass-release/records/`。
+
+下表保留 PR #58 于 2026-10-26 发布的记录，以及 2026-11-01 在 PR #59 部署前完成的公网复核结果。
 
 | 项目 | 结果 |
 | --- | --- |
