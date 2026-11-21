@@ -11,7 +11,7 @@
   overflow: hidden;
   background: var(--paper);
   color: var(--mag-ink-2);
-  font-family: "Cormorant Garamond", "EB Garamond", var(--font-cjk), serif;
+  font-family: var(--font-cormorant, Garamond), var(--font-eb, Georgia), var(--font-cjk), serif;
   font-variant-numeric: lining-nums proportional-nums;
 }
 
@@ -146,10 +146,7 @@
 }
 .cor-display-math { display: block; max-width: 100%; overflow-x: auto; }
 /* 成比例放大含小号上下标的整条算式，保留 KaTeX 计算的分数线和上下标位置。 */
-.cor-r-text .katex { font-size: max(1.1em, var(--cor-math-floor, 15px)); }
-.cor-r-text .katex:has(.sizing.size3) { --cor-math-floor: 21.5px; }
-.cor-r-text .katex:has(.sizing.size2) { --cor-math-floor: 25.1px; }
-.cor-r-text .katex:has(.sizing.size1) { --cor-math-floor: 30.1px; }
+.cor-r-text .katex { font-size: max(1.1em, var(--math-floor, 15px)); }
 .cor-r-text .katex-display { margin: 0; padding-block: 4px; }
 .cor-r-text .katex-display > .katex { width: max-content; min-width: 100%; }
 .cor-inline-math {

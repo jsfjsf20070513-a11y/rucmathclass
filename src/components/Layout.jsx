@@ -1,10 +1,15 @@
+import { useLayoutEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { pinPaperFonts } from '../lib/paperFonts'
 import PageNav from './PageNav'
 import { useAuth } from '../context/useAuth'
 import { normalizeRoutePath } from '../lib/routePath'
 
 export default function Layout() {
   const location = useLocation()
+  useLayoutEffect(() => {
+    pinPaperFonts(document.querySelector('.paper-current'))
+  }, [])
   const { user, signOut, isAuthEnabled, signingOut, signOutError } = useAuth()
   const displayName = user?.user_metadata?.nickname || user?.user_metadata?.real_name || user?.email || ''
 

@@ -215,6 +215,45 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await checkMotion(page, () => page.locator('.reset-state a').click(), ...back)
   })
 
+  await scenario(size + '-book-index', viewport, async (page) => {
+    await page.goto(baseUrl)
+    for (let i = 0; i < 3; i++) await page.getByRole('button', { name: '下一页' }).click()
+    const grid = page.locator('.paper-current .mag-biblio-grid')
+    await grid.evaluate(async (el) => {
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      await Promise.all(el.getAnimations().map(animation => animation.finished))
+      document.addEventListener('animationstart', function capture(event) {
+        if (event.animationName !== 'magArrive') return
+        const copy = document.querySelector('.paper-copy .mag-biblio-grid')
+        window.__bookIndexOpacity = copy && Number(getComputedStyle(copy).opacity)
+        document.removeEventListener('animationstart', capture, true)
+      }, true)
+    })
+    await checkMotion(page, () => grid.getByRole('button').first().click(), ...forward)
+    assert.equal(await page.evaluate(() => window.__bookIndexOpacity), 1, '新书架开始滑入时，旧书目仍须可读')
+    await checkMotion(page, () => page.getByRole('button', { name: '← Accueil' }).click(), ...back)
+    await checkMotion(page, () => page.goBack(), ...forward)
+  })
+
+  await scenario(size + '-public-header', viewport, async (page) => {
+    await page.goto(baseUrl + '/404')
+    const header = page.locator('.paper-current .site-header')
+    await checkMotion(page, () => header.getByRole('link', { name: 'Carnet de classe' }).click(), ...back)
+    await checkMotion(page, () => page.goBack(), ...forward)
+    let release
+    const delayed = new Promise(resolve => { release = resolve })
+    await page.route('**/api/lecture', async route => { await delayed; await route.fallback() })
+    await checkMotion(page, async () => {
+      await header.getByRole('link', { name: /Lecture/ }).click()
+      try {
+        await page.locator('.paper-wait .paper-copy .notfound-title').waitFor()
+        assert.equal(await page.locator('.paper-current').evaluate(el => getComputedStyle(el).opacity), '0')
+      } finally { release() }
+    }, ...forward)
+    await page.locator('.paper-current .lec-entry').first().waitFor()
+    await checkMotion(page, () => page.goBack(), ...back)
+  })
+
   await scenario(size + '-slow-flip', viewport, async (page, fault) => {
     fault.chunk = '/Resources-'
     fault.kind = 'slow'

@@ -47,7 +47,7 @@
   align-items: baseline;
   padding: 20px 36px 16px;
   border-bottom: 1px solid var(--mag-hairline);
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
+  font-family: var(--font-bodoni, Georgia), var(--font-cjk), serif;
   font-size: 16px;
   font-weight: 500;
   letter-spacing: normal;
@@ -75,8 +75,8 @@
   border: none;
   cursor: pointer;
   color: var(--mag-ink-2);
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 12px;
+  font-family: var(--font-bodoni, Georgia), var(--font-cjk), serif;
+  font-size: 15px;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   padding: 0 0 6px;
@@ -93,8 +93,8 @@
 .page-kicker {
   margin: 0 0 26px;
   color: var(--mag-wine);
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 11px;
+  font-family: var(--font-bodoni, Georgia), var(--font-cjk), serif;
+  font-size: 15px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
 }
@@ -106,8 +106,8 @@
   bottom: 24px;
   left: 28px;
   z-index: 40;
-  font-family: "Bodoni Moda", serif;
-  font-size: 12px;
+  font-family: var(--font-bodoni, Georgia), serif;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.18em;
   color: var(--mag-muted);
@@ -127,7 +127,7 @@
   border: none;
   background: transparent;
   color: var(--mag-muted);
-  font-family: "Bodoni Moda", serif;
+  font-family: var(--font-bodoni, Georgia), serif;
   font-size: 26px;
   line-height: 1;
   cursor: pointer;
@@ -143,13 +143,19 @@
 }
 
 @media (max-width: 640px) {
-  .page-folio { bottom: 18px; left: 18px; font-size: 10px; }
+  .page-folio { bottom: 18px; left: 18px; }
 }
 
 .paper-stage { position: relative; overflow: clip; isolation: isolate; }
 .paper-current, .paper-copy { padding-inline: var(--page-gutter, 0px); }
 .paper-current { position: relative; z-index: 1; }
 .paper-copy { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.paper-wait[data-motion^="page-arrive"] > .paper-current { opacity: 0; }
+/* 副本里的当前书页保留全部文字。复制节点会让行内的淡入动画从透明重播。 */
+.paper-copy :is(.mag-page, .bib-page):not([inert]) [data-animate] {
+  animation: none !important;
+  opacity: 1 !important;
+}
 .paper-copy:empty { display: none; }
 .paper-wait > .paper-copy,
 [data-motion="lec-retract"] > .paper-copy { z-index: 2; }

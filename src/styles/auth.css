@@ -137,7 +137,7 @@
   display: block;
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .login-form input {
@@ -168,6 +168,7 @@
 /* /login /reset-password 已脱离 Layout,自成杂志第 06 屏同款纸面:
    根容器铺满视口(封面同纸色),内容按 Connexion 屏收进居中窄列。 */
 .lgn {
+  font-family: var(--font-eb, Georgia), var(--font-cjk), serif;
   max-width: none;
   min-height: 100vh;
   min-height: 100svh;
@@ -191,7 +192,7 @@
 .lgn-masthead { margin-bottom: 30px; }
 .lgn-title {
   margin: 0 0 10px;
-  font-family: "Bodoni Moda", serif;
+  font-family: var(--font-bodoni, Georgia), serif;
   font-size: 44px;
   font-weight: 400;
   font-style: italic;
@@ -214,9 +215,10 @@
   padding: 0 0 3px;
   cursor: pointer;
   color: var(--mag-muted);
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-family: var(--font-bodoni, Georgia), var(--font-cjk), serif;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
   text-transform: uppercase;
   transition: color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -228,8 +230,8 @@
 .lgn .login-form label { display: flex; flex-direction: column; gap: 6px; }
 .lgn .login-form label > span,
 .lgn .password-field > span {
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 9px;
+  font-family: var(--font-bodoni, Georgia), var(--font-cjk), serif;
+  font-size: 15px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--mag-muted);
@@ -241,7 +243,7 @@
   border: none;
   border-bottom: 1px solid rgba(34, 29, 24, 0.28);
   border-radius: 0;
-  font-family: "Cormorant Garamond", var(--font-cjk), serif;
+  font-family: var(--font-cormorant, Garamond), var(--font-cjk), serif;
   font-size: 16px;
   color: var(--mag-ink-2);
   outline: none;
@@ -249,7 +251,7 @@
 }
 .lgn .login-form input:focus { border-bottom-color: var(--mag-wine); outline: none; }
 .lgn .password-field-control { position: relative; display: block; }
-.lgn .password-field-control input { padding-right: 44px; }
+.lgn .password-field-control input { padding-inline: 44px; }
 .lgn .password-toggle {
   position: absolute;
   right: 0;
@@ -259,14 +261,14 @@
   border: none;
   cursor: pointer;
   color: var(--mag-muted);
-  font-size: 11px;
+  font-size: 15px;
+  margin: 0;
   padding: 6px 2px;
 }
 .lgn .password-toggle:hover { color: var(--mag-ink); }
 .lgn .editorial-actions { display: flex; justify-content: center; gap: 20px; }
 .lgn .login-submit { margin-top: 4px; }
-.lgn .lgn-submit { font-size: 12px; }
-.lgn .status-line { margin: 4px 0 0; font-size: 13px; }
+.lgn .status-line { margin: 4px 0 0; font-size: 15px; }
 .lgn .status-line.is-error { color: var(--mag-wine); }
 .lgn .status-line.is-success { color: var(--ok); }
 
@@ -284,7 +286,7 @@
     flex-wrap: wrap;
     gap: 16px;
   }
-  .lgn .login-tabs { gap: 16px; }
+  .lgn .editorial-actions.login-tabs { flex-wrap: nowrap; gap: clamp(8px, 3vw, 16px); }
   .lgn .login-form { align-items: center; }
   .lgn .login-form label,
   .lgn .password-field { width: 100%; }

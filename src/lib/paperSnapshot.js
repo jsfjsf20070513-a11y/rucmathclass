@@ -1,6 +1,9 @@
+import { copyPaperFonts } from './paperFonts'
+
 // 只复制画面。滚动位置要在副本接入文档后还原，表单值随画面一起销毁。
 export function paperSnapshot(source) {
   const copy = source.cloneNode(true)
+  copyPaperFonts(source, copy)
   copy.setAttribute('aria-hidden', 'true')
   copy.inert = true
   const motions = ['lec-rise', 'lec-retract', 'page-arrive', 'page-arrive-back']

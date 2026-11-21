@@ -19,6 +19,9 @@ export function pageMotion(before, after) {
   if (from === '/reset-password') return 'page-arrive-back'
   if (to === '/login' && from !== to) return from === '/lecture' ? 'page-arrive-back' : 'page-arrive'
   if (from === '/login' && to !== from) return to === '/lecture' ? 'page-arrive' : 'page-arrive-back'
+  if (from === '/' && to === '/resources' && after.visit.action === 'POP') return 'page-arrive'
+  if (from === '/404') return to === '/' ? 'page-arrive-back' : 'page-arrive'
+  if (to === '/404') return from === '/' ? 'page-arrive' : 'page-arrive-back'
   if (after.visit.flip) return to === '/' ? 'page-arrive-back' : 'page-arrive'
   return null
 }
