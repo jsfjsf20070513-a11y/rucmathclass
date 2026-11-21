@@ -193,7 +193,7 @@ function Archive({ days, onOpen, onPrefetch, onHome, scrollRef }) {
 
   return (
     <main className="lec" data-page-ready={Boolean(days)}>
-      <PageNav title="" onBack={onHome} />
+      <PageNav onBack={onHome} />
       <div className="lec-scroll" ref={scrollRef}>
         <ol className="lec-archive">
           {[...(days || [])].reverse().map((day) => (
@@ -246,9 +246,7 @@ function Reader({ days, articles, date, failed, onRetry, answers, onChoose }) {
 
   return (
     <main className="lec" data-page-ready={ready}>
-      <nav className="page-nav" aria-label="页内导航">
-        <button type="button" className="page-nav-back" lang="fr" onClick={onArchive}>Archives</button>
-      </nav>
+      <PageNav label="Archives" onBack={onArchive} />
       <div className={`lec-stack${ready ? '' : ' is-waiting'}`} inert={ready ? undefined : ''}>
         {days.map((entry, index) => {
           const day = articles[entry.date]

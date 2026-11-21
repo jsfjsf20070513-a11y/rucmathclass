@@ -69,14 +69,14 @@ function Conversations({ userId, homeNav }) {
   const [revealed, reveal] = useState(null)
   const single = mode && mode !== 'official'
   const threadId = single ? LEGACY_ID : draft ? draftId : id
-  const listLink = <nav className="page-nav" aria-label="页内导航">
-    <Link className="page-nav-back" lang="fr" to="/assistant" onClick={(event) => {
+  const listLink = (
+    <PageNav label="Conversations" to="/assistant" onBack={(event) => {
       if (location.state?.fromAssistantList && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
         event.preventDefault()
         navigate(-1)
       }
-    }}>Conversations</Link>
-  </nav>
+    }} />
+  )
 
   if (!id) return (
     <main className="lec cor cor-archive" data-page-ready={Boolean(mode || error)}>
@@ -114,14 +114,13 @@ export default function Assistant() {
   const { user, loading, error } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const homeNav = <PageNav title="" onBack={() => { flipNavigation.mark('/assistant', '/'); navigate('/') }} />
+  const homeNav = <PageNav onBack={() => { flipNavigation.mark('/assistant', '/'); navigate('/') }} />
   if (user && !loading && !error) return <Conversations key={user.id} userId={user.id} homeNav={homeNav} />
   return (
     <main className="cor" data-page-ready={!loading}>
       {homeNav}
       <div className="cor-gate">
         {loading || error ? <AuthStatus className="page-notice" /> : <>
-          <p className="page-kicker" lang="fr">Connexion requise</p>
           <p className="page-notice">登录后即可使用班级 AI 助手 —— 双语数学答疑,可拍题问图。</p>
           <Link className="text-action" to="/login" state={{ returnTo: locationPath(location), gateKey: location.key }}>Connexion&nbsp;&nbsp;→</Link>
         </>}

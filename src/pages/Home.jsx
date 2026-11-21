@@ -180,14 +180,13 @@ export default function Home({ visit }) {
         <PortraitWall active={page === 0} />
         <div className="mag-fade mag-fade-top" aria-hidden="true" />
         <div className="mag-fade mag-fade-bottom" aria-hidden="true" />
-        <nav className="mag-cover-nav" aria-label="封面导航">
-          <span>Accueil</span>
-          {weather ? (
+        {weather && (
+          <div className="mag-cover-nav">
             <span className="mag-cover-weather" style={{ color: coverInk }}>
               {`Suzhou\u00A0${weather.temp}℃`}
             </span>
-          ) : <span />}
-        </nav>
+          </div>
+        )}
         <div ref={coverContentRef} className="mag-cover-content">
           <h1 className="mag-masthead">Math</h1>
           <div className="mag-edition">
@@ -201,7 +200,6 @@ export default function Home({ visit }) {
       {/* ── 02 Lecture(引导页,全页无汉字) ── */}
       <section ref={setPageEl(1)} className="mag-page mag-vocab" style={{ zIndex: 11, transform: entry.page >= 1 ? 'none' : 'translateX(105%) rotate(2.2deg)' }} aria-label="Lecture">
         <div className="mag-vocab-inner">
-          <div className="mag-pageno" data-animate=""><p>{`02 — 0${pageCount}`}</p></div>
           <div className="mag-rule" data-animate="" />
           <h2 className="mag-giant" lang="fr" data-animate="">Lecture</h2>
           <div className="mag-vocab-foot" data-animate="">
@@ -255,15 +253,6 @@ export default function Home({ visit }) {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            className="text-action mag-biblio-enter"
-            lang="fr"
-            data-animate=""
-            onClick={() => flipNavigate('/resources')}
-          >
-            Consulter&nbsp;&nbsp;→
-          </button>
         </div>
       </section>
 
@@ -276,7 +265,6 @@ export default function Home({ visit }) {
           aria-label="Correspondance"
         >
           <div className="mag-vocab-inner mag-cor-inner">
-            <div className="mag-pageno" data-animate=""><p>{`05 — 0${pageCount}`}</p></div>
             <div className="mag-rule" data-animate="" />
             <h2 className="mag-giant" lang="fr" data-animate="">Correspondance</h2>
             <div className="mag-vocab-foot" data-animate="">

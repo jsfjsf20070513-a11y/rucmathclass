@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
+import PageNav from '../components/PageNav'
 import AuthStatus from '../components/AuthStatus'
 import { usePasswordReset } from '../hooks/usePasswordReset'
 
@@ -10,9 +11,8 @@ import { usePasswordReset } from '../hooks/usePasswordReset'
 function Masthead({ summary }) {
   return (
     <header className="lgn-masthead">
-      <Link to="/login" className="lgn-back" lang="fr">← Connexion</Link>
       <h1 className="lgn-title" lang="fr">Réinitialisation</h1>
-      <p className="lgn-summary">{summary}</p>
+      {summary && <p className="lgn-summary">{summary}</p>}
     </header>
   )
 }
@@ -24,7 +24,6 @@ export default function ResetPassword({ direct }) {
   const [entering, setEntering] = useState(() => direct && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const motion = entering ? ' page-arrive' : ''
   const summaries = {
-    loading: '正在确认当前账号…',
     invalid: '链接已失效或账号发生了变化。请回到登录页重新申请重置邮件。',
     unavailable: '账号服务暂时不可用，请稍后再修改密码。',
     success: '密码已更新，当前账号仍保持登录。',
@@ -39,7 +38,6 @@ export default function ResetPassword({ direct }) {
     </div>
   } else if (pageState === 'success') {
     body = <div className="reset-state">
-      <p className="reset-ok">✓ 已更新</p>
       <p><Link to="/" className="text-action">返回首页 · Accueil →</Link></p>
     </div>
   } else {
@@ -74,8 +72,9 @@ export default function ResetPassword({ direct }) {
     )
   }
 
-  return <article className="page-column login-page lgn" data-page-ready={pageState !== 'loading'}
+  return <article className="page-column login-page lgn lgn-with-nav" data-page-ready={pageState !== 'loading'}
     onAnimationEnd={(event) => { if (event.animationName === 'magArrive') setEntering(false) }}>
+    <PageNav to="/login" label="← Connexion" />
     <Masthead summary={summaries[pageState]} />
     {body}
   </article>

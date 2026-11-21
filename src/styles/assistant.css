@@ -15,14 +15,6 @@
   font-variant-numeric: lining-nums proportional-nums;
 }
 
-.cor .page-nav {
-  flex: none;
-  font-size: 16px;
-  letter-spacing: normal;
-  text-transform: none;
-}
-.cor .page-nav-back { border: 0; color: var(--mag-muted); }
-.cor .page-nav-back:hover { color: var(--mag-ink); }
 .cor-archive { background: #f4efe6; }
 .cor-archive .lec-entry {
   display: flex;
@@ -74,7 +66,6 @@
   padding: 24px;
   text-align: center;
 }
-.cor-gate .page-kicker,
 .cor-gate .text-action {
   font-size: 16px;
   letter-spacing: normal;

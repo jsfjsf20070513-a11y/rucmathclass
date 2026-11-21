@@ -41,18 +41,20 @@
 .lec-rise { animation: lecRise 0.5s var(--flip-ease) both; }
 
 .page-nav {
+  flex: none;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   padding: 20px 36px 16px;
   border-bottom: 1px solid var(--mag-hairline);
   font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
 }
-.page-nav-back {
+.page-nav-back,
+.page-nav-back:visited {
   background: transparent;
   border: none;
   padding: 0;
@@ -63,9 +65,9 @@
   text-transform: inherit;
   transition: color 0.2s ease;
 }
-.page-nav-back:hover { color: #2a211c; }
+.page-nav-back:hover,
+.page-nav-back:focus-visible { color: var(--mag-ink); }
 .page-nav-title { color: #2a211c; }
-.page-nav-side { color: var(--mag-muted); letter-spacing: 0.18em; }
 
 .text-action {
   flex-shrink: 0;
@@ -137,7 +139,7 @@
 .page-arrow:disabled { opacity: 0.35; cursor: default; }
 
 @media (max-width: 880px) {
-  .page-nav { padding: 16px 18px 12px; font-size: 9px; }
+  .page-nav { padding: 16px 18px 12px; }
 }
 
 @media (max-width: 640px) {

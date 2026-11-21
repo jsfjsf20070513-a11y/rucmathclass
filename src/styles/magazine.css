@@ -95,7 +95,7 @@
   right: 0;
   z-index: 2;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 20px 28px;
   font-family: "Bodoni Moda", serif;
   font-size: 10px;
@@ -170,18 +170,6 @@
   max-width: 880px;
   width: 100%;
   padding: 0 4vw;
-}
-.mag-pageno {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-}
-.mag-pageno p {
-  margin: 0;
-  color: var(--mag-muted);
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  font-family: "Bodoni Moda", serif;
 }
 .mag-rule {
   height: 1px;
@@ -314,11 +302,9 @@
 .mag-biblio-row:focus-visible .mag-biblio-label {
   color: var(--mag-wine);
 }
-.mag-biblio-enter { margin-top: 36px; }
 
 /* ── 05 Correspondance(登录后才存在;镜像 02 的编辑页) ── */
 .mag-cor { background: #fdfcf8; }
-.mag-cor-inner .mag-pageno { justify-content: flex-start; }
 .mag-cor-inner .mag-giant {
   text-align: right;
   /* Correspondance 标题较长，同字号会溢出 */

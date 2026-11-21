@@ -137,7 +137,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     for (const mode of ['验证码', '找回密码', '注册']) {
       await page.getByRole('button', { name: mode, exact: true }).click()
     }
-    await checkMotion(page, () => page.locator('.lgn-back').click(), ...back)
+    await checkMotion(page, () => page.getByRole('link', { name: '← Accueil', exact: true }).click(), ...back)
     assert.ok(await page.getByRole('textbox', { name: '邮箱', exact: true }).isVisible())
     await checkMotion(page, () => page.goForward(), ...forward)
     await checkMotion(page, () => page.goBack(), ...back)
@@ -150,7 +150,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await page.goto(baseUrl + '/reset-password')
     await page.locator('.reset-state a').waitFor()
     await page.locator('.reset-state').evaluate(async (node) => Promise.all(node.getAnimations().map(a => a.finished)))
-    await checkMotion(page, () => page.locator('.lgn-back').click(), ...back)
+    await checkMotion(page, () => page.getByRole('link', { name: '← Connexion', exact: true }).click(), ...back)
     await checkMotion(page, () => page.goBack(), ...forward)
 
     await signIn(page)
@@ -159,7 +159,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await fields.nth(0).fill('local-new-password')
     await fields.nth(1).fill('local-new-password')
     await page.getByRole('button', { name: /保存新密码/ }).click()
-    await page.locator('.reset-ok').waitFor()
+    await page.getByText('密码已更新，当前账号仍保持登录。', { exact: true }).waitFor()
     await checkMotion(page, () => page.locator('.reset-state a').click(), ...back)
   })
 
@@ -171,7 +171,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     for (let i = 0; i < 3; i++) await page.getByRole('button', { name: '下一页' }).click()
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await checkMotion(page, () => page.getByRole('button', { name: /Consulter/ }).click(), ...forward)
+    await checkMotion(page, () => page.getByRole('button', { name: /数学分析与证明/ }).click(), ...forward)
     await page.goBack()
     await page.locator('.paper-current .mag').waitFor()
     assert.equal(await page.locator('.page-arrive, .page-arrive-back').count(), 0)
@@ -213,7 +213,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await fields.nth(0).fill('local-reset-password')
     await fields.nth(1).fill('local-reset-password')
     await page.getByRole('button', { name: /保存新密码/ }).click()
-    await page.locator('.reset-ok').waitFor()
+    await page.getByText('密码已更新，当前账号仍保持登录。', { exact: true }).waitFor()
     await instant()
     await page.locator('.reset-state a').click()
     await page.locator('.mag').waitFor()

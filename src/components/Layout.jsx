@@ -1,13 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import PageNav from './PageNav'
 import { useAuth } from '../context/useAuth'
 import { normalizeRoutePath } from '../lib/routePath'
-
-// 通用页眉保留扉页和每日阅读。
-// 中文与法语的并置是本站身份,不做单语化;法语以斜体作衬,中文承担功能重量。
-const navItems = [
-  { to: '/', fr: 'Accueil', zh: '扉页' },
-  { to: '/lecture', fr: 'Lecture', zh: '阅读' },
-]
 
 export default function Layout() {
   const location = useLocation()
@@ -23,42 +17,12 @@ export default function Layout() {
     return <Outlet />
   }
 
-  const resolvePrimaryNav = (pathname) => {
-    if (pathname.startsWith('/lecture') || pathname.startsWith('/assistant')) {
-      return navItems[1]
-    }
-
-    return navItems[0]
-  }
-
-  const primaryNav = resolvePrimaryNav(pathname)
-
   return (
     <div className="site-shell">
       <header className="site-header">
-        <div className="site-header-inner">
-          <div className="site-head-top">
-            <Link to="/" className="site-wordmark">Carnet de classe</Link>
-          </div>
-
-          <nav className="site-nav" aria-label="全站导航 · Plan du site">
-            {navItems.map((item) => {
-              const active = item.to === primaryNav?.to
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  className={active ? 'is-active' : ''}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <span className="site-nav-fr" lang="fr">{item.fr}</span>
-                  <span aria-hidden="true"> · </span>
-                  {item.zh}
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
+        <PageNav to="/" label="Carnet de classe">
+          <Link to="/lecture" className="page-nav-back"><span lang="fr">Lecture</span> · 阅读</Link>
+        </PageNav>
       </header>
 
       <main className="site-main">
@@ -66,7 +30,6 @@ export default function Layout() {
       </main>
 
       <footer className="site-footer">
-        <p className="site-footer-secondary">Pour la classe.</p>
         {/* 404 等通用布局页面显示账号状态。 */}
         <p className="site-footer-auth">
           {user ? (

@@ -410,7 +410,7 @@ try {
       await page.goto(`${baseUrl}/missing-browser-fixture`)
       await page.waitForURL(`${baseUrl}/404`)
       await rendered(page, '.notfound-title')
-      await rendered(page, '.site-nav')
+      await rendered(page, '.site-header .page-nav')
       await noHorizontalOverflow(page)
       await page.getByRole('link', { name: '资源 · 书目', exact: true }).click()
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')

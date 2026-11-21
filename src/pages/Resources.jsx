@@ -83,9 +83,7 @@ export default function Resources() {
 
   return (
     <main className="bib" data-page-ready="true">
-      <PageNav title="Bibliothèque" onBack={goHome}>
-        <span className="page-nav-side" lang="fr">{catalogItems.length}&nbsp;entrées</span>
-      </PageNav>
+      <PageNav title="Bibliothèque" onBack={goHome} />
 
       <div className="bib-stack">
         {/* ── 一架一页 ── */}

@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
+import PageNav from '../components/PageNav'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
 import { UserFacingError } from '../lib/userFacingError'
@@ -33,7 +34,6 @@ const COPY = {
   },
   forgot: {
     title: '找回密码 · Mot de passe oublié',
-    summary: '通过邮箱接收密码重置链接。',
     submit: '发送重置链接 · Envoyer le lien',
     submitting: '发送中…',
   },
@@ -233,7 +233,6 @@ function LoginForm({ aux, returnTo, onBack }) {
         <header className="lgn-masthead">
           <p className="page-kicker" lang="fr">Connecté · 已登录</p>
           <h1 className="lgn-title" lang="fr">Bienvenue</h1>
-          <p className="lgn-summary">接下来去哪儿?</p>
         </header>
         <div className="lgn-dest">
           <Link to="/lecture" className="text-action" lang="fr">Lecture&nbsp;&nbsp;→</Link>
@@ -248,11 +247,11 @@ function LoginForm({ aux, returnTo, onBack }) {
   }
 
   return (
-    <article className="page-column login-page lgn" data-page-ready={!sessionLoading}>
+    <article className="page-column login-page lgn lgn-with-nav" data-page-ready={!sessionLoading}>
+      <PageNav to={returnTo || '/'} label={returnTo ? '← Correspondance' : '← Accueil'} onBack={onBack} />
       <header className="lgn-masthead">
-        <Link to={returnTo || '/'} className="lgn-back" lang="fr" onClick={onBack}>{returnTo ? '← Correspondance' : '← Accueil'}</Link>
         <h1 className="lgn-title" lang="fr">{TITLES[mode]}</h1>
-        <p className="lgn-summary">{copy.summary}</p>
+        {copy.summary && <p className="lgn-summary">{copy.summary}</p>}
       </header>
 
       <AuthStatus />
