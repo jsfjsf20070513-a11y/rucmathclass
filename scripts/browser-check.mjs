@@ -193,6 +193,11 @@ try {
     await scenario(`${size}-lecture`, viewport, async (page) => {
       const current = '.lec-page:not([inert])'
       const path = () => page.evaluate(() => location.pathname)
+      // 正文故意晚到，检查点开时不会先露出空白页。
+      await page.route(/\/api\/lecture\/\d{4}-\d{2}-\d{2}$/, async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 600))
+        await route.fallback()
+      })
       await page.goto(baseUrl)
       await rendered(page, '.mag-masthead')
       await page.getByRole('button', { name: '下一页', exact: true }).click()
@@ -203,10 +208,23 @@ try {
       // 翻页进场动画结束后再量宽度。
       await page.waitForFunction(() => (document.querySelector('.lec')?.getAnimations() || []).every((animation) => animation.playState === 'finished'))
       await noHorizontalOverflow(page)
+      await page.evaluate(() => {
+        window.__blankFrames = 0
+        const tick = () => {
+          const stack = document.querySelector('.lec-stack')
+          if (stack && !stack.classList.contains('is-waiting') && !document.querySelector('.lec-page:not([inert]) .lec-title')) window.__blankFrames += 1
+          if (!window.__stopFrames) requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      })
       await page.locator('.lec-entry').nth(1).click()
       await page.waitForURL(/\/lecture\/\d{4}-\d{2}-\d{2}$/)
       const day = await path()
       await rendered(page, `${current} .lec-title`)
+      // 文章页从右边翻入（和首页进档案同一个动画），翻入时正文已经在。
+      assert.equal(await page.locator('.lec-stack.page-arrive').count(), 1)
+      await page.waitForFunction(() => document.querySelector('.lec-stack').getAnimations().every((animation) => animation.playState === 'finished'))
+      assert.equal(await page.evaluate(() => { window.__stopFrames = true; return window.__blankFrames }), 0)
       await page.locator(`${current} .lec-option`).first().click()
       await page.locator(`${current} .lec-option[aria-checked="true"]`).waitFor()
       assert.equal(await page.locator(`${current} .lec-option[aria-checked="true"]`).count(), 1)

@@ -23,6 +23,8 @@
   min-height: 0;
   position: relative;
 }
+/* 从档案点进来、正文还没到时先不露出空白页 */
+.lec-stack.is-waiting { visibility: hidden; }
 
 .lec-page {
   position: absolute;
