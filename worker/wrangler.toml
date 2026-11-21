@@ -29,9 +29,8 @@ crons = ["*/15 * * * *"]
 
 [[kv_namespaces]]
 binding = "LECTURE"
-# 部署前从仓库根目录执行 npx wrangler kv namespace create LECTURE --config worker/wrangler.toml
-# 用返回的 namespace id 替换以下占位值。
-id = "00000000000000000000000000000000"
+# 2026-11-21 用 npx wrangler kv namespace create LECTURE 建立。
+id = "177695e397db4f53b10655136cab231e"
 
 # 限流绑定:每 IP 每 60s 最多 30 次。
 # namespace_id 是自取的整数标识。绑定缺失或出错时返回 503，不调用模型。
