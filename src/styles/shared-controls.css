@@ -173,5 +173,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page-arrive, .page-arrive-back, .lec-rise, .lec-retract,
-  .connexion-open, .connexion-close, .lec-leaf-in, .lec-leaf-out { animation: none !important; }
+  .connexion-open, .connexion-close, .lec-paper.is-turning { animation: none !important; }
 }

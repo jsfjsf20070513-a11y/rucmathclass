@@ -67,7 +67,63 @@ async function checkMotion(page, action, className, animationName, { forbidWelco
       assert.fail(className + ' 第 ' + i + ' 帧未绘出正文，见 ' + file)
     }
   }
-  assert.equal(await page.locator('.paper-copy > *, .lec-leaves > *').count(), 0, '动画结束应移除所有副本')
+  assert.equal(await page.locator('.paper-copy > *').count(), 0, '动画结束应移除所有副本')
+}
+
+async function checkPaperTurn(page, sheet, toVerso, mobile) {
+  const paper = sheet.locator('.lec-paper')
+  const turn = paper.getByRole('button', { name: toVerso ? /Verso/ : /Recto/ })
+  await turn.scrollIntoViewIfNeeded()
+  const oldTop = await paper.locator('.lec-scroll').evaluate((face) => face.scrollTop)
+  if (toVerso) assert.ok(oldTop > 0, '从试卷末尾翻到背面')
+  await paper.evaluate((node) => {
+    node.addEventListener('animationstart', () => {
+      node.getAnimations()[0].pause()
+    }, { once: true })
+  })
+  await turn.click()
+  await page.waitForFunction(() => document.querySelector('.lec-paper.is-turning')?.getAnimations()[0]?.playState === 'paused')
+  const { duration, easing, expected } = await paper.evaluate((node) => {
+    const style = getComputedStyle(node)
+    const reference = document.createElement('div').style
+    reference.animationTimingFunction = style.getPropertyValue('--flip-ease')
+    return { duration: node.getAnimations()[0].effect.getTiming().duration, easing: style.animationTimingFunction, expected: reference.animationTimingFunction }
+  })
+  assert.equal(duration, 500)
+  assert.equal(easing, expected)
+  const offsets = await paper.locator('.lec-scroll').evaluateAll((faces) => faces.map((face) => face.scrollTop))
+  assert.deepEqual(offsets, toVerso ? [oldTop, 0] : [0, oldTop])
+  assert.equal(await paper.evaluate((node) => node.inert), true)
+  const direction = toVerso ? 'recto-verso' : 'verso-recto'
+  const bounds = await sheet.boundingBox()
+  for (const ms of [0, 150, 250, 350, 500]) {
+    if (ms === 500) {
+      await paper.evaluate((node) => node.getAnimations()[0].finish())
+      await sheet.locator('.is-turning').waitFor({ state: 'detached' })
+      assert.equal(await paper.locator('.lec-scroll').evaluate((face) => face.scrollTop), 0)
+      assert.ok(await paper.getByRole('button', { name: toVerso ? /Recto/ : /Verso/ }).isEnabled())
+    } else {
+      await paper.evaluate((node, time) => { node.getAnimations()[0].currentTime = time }, ms)
+    }
+    await page.evaluate(() => document.fonts.ready)
+    const frame = await page.screenshot()
+    if (mobile) await writeFile(new URL(`../output/playwright/${direction}-${ms}.png`, import.meta.url), frame)
+    if (ms === 0 || ms === 500) continue
+    const width = (await paper.boundingBox()).width
+    const top = Math.ceil(bounds.y)
+    const ink = await sharp(frame).extract({ left: 0, top, width: Math.floor(bounds.width), height: Math.floor(bounds.y + bounds.height) - top })
+      .greyscale().raw().toBuffer()
+    if (ms === 250) {
+      assert.ok(width < 1, '整张纸在中点转至侧面')
+      assert.ok(!ink.some((pixel) => pixel < 155), '纸边两侧应没有正文')
+    } else {
+      assert.ok(width > 1 && width < bounds.width, '整张纸应绕竖轴转动')
+      assert.ok(ink.some((pixel) => pixel < 100), '朝向读者的一面应有正文')
+      const hidden = (ms < 250) === toVerso ? '.lec-paper-back' : '.lec-scroll:not(.lec-paper-back)'
+      const oneFace = await page.screenshot({ style: `.lec-paper.is-turning > ${hidden} { visibility: hidden !important; }` })
+      assert.ok(frame.equals(oneFace), direction + ' 在 ' + ms + ' 毫秒露出了另一面的内容')
+    }
+  }
 }
 
 async function fillLogin(page) {
@@ -87,13 +143,8 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
   await scenario(size + '-paper-faces', viewport, async (page) => {
     await page.goto(baseUrl + '/lecture/2026-11-20')
     const sheet = page.locator('.paper-current .lec-page:not([inert])')
-    const turn = sheet.getByRole('button', { name: /Verso/ })
-    await turn.scrollIntoViewIfNeeded()
-    assert.ok(await sheet.locator('.lec-scroll').evaluate((node) => node.scrollTop > 0))
-    await checkMotion(page, () => turn.click(), 'lec-leaf-in', 'lecLeafIn')
-    assert.equal(await sheet.locator('.lec-scroll').evaluate((node) => node.scrollTop), 0)
-    await checkMotion(page, () => sheet.getByRole('button', { name: /Recto/ }).click(), 'lec-leaf-out', 'lecLeafOut')
-    assert.equal(await sheet.locator('.lec-scroll').evaluate((node) => node.scrollTop), 0)
+    await checkPaperTurn(page, sheet, true, size === 'mobile')
+    await checkPaperTurn(page, sheet, false, size === 'mobile')
   })
 
   await scenario(size + '-detail-return', viewport, async (page, fault) => {
@@ -183,7 +234,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await page.addInitScript(() => {
       window.__turns = []
       document.addEventListener('animationstart', ({ animationName }) => {
-        if (['lecLeafIn', 'lecLeafOut', 'lecRise', 'magArrive', 'magArriveBack', 'connexionHalf'].includes(animationName)) {
+        if (['lecTurn', 'lecRise', 'magArrive', 'magArriveBack', 'connexionHalf'].includes(animationName)) {
           window.__turns.push(animationName)
         }
       })
@@ -191,13 +242,18 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     const instant = async () => {
       await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))))
       assert.deepEqual(await page.evaluate(() => window.__turns), [])
-      assert.equal(await page.locator('.paper-copy > *, .lec-leaves > *').count(), 0)
+      assert.equal(await page.locator('.paper-copy > *, .lec-paper.is-turning').count(), 0)
     }
     await page.goto(baseUrl + '/lecture')
     await page.locator('.lec-entry').first().click()
     const sheet = page.locator('.paper-current .lec-page:not([inert])')
     await sheet.getByRole('button', { name: /Verso/ }).click()
     await sheet.getByRole('button', { name: /Recto/ }).waitFor()
+    assert.equal(await sheet.locator('.lec-scroll').evaluate((node) => node.scrollTop), 0)
+    await instant()
+    await sheet.getByRole('button', { name: /Recto/ }).click()
+    await sheet.getByRole('button', { name: /Verso/ }).waitFor()
+    assert.equal(await sheet.locator('.lec-scroll').evaluate((node) => node.scrollTop), 0)
     await instant()
     await page.goBack()
     await page.locator('.paper-current .lec-entry').first().waitFor()

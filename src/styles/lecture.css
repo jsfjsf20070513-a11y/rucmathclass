@@ -31,6 +31,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  perspective: max(1600px, 100vw);
   background: #f4efe6;
   will-change: transform;
 }
@@ -312,25 +313,32 @@
 
 .lec-load { height: 100%; display: grid; place-items: center; }
 .lec-paper { position: relative; height: 100%; }
-.lec-leaves {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  perspective: 1600px;
-  pointer-events: none;
+.lec-paper.is-turning {
+  transform-style: preserve-3d;
+  animation: lecTurn 0.5s var(--flip-ease) both;
 }
-.lec-leaves:empty { display: none; }
-.to-verso { --fixed-half: inset(0 50% 0 0); --turn-half: inset(0 0 0 50%); --turn-angle: -180deg; }
-.to-recto { --fixed-half: inset(0 0 0 50%); --turn-half: inset(0 50% 0 0); --turn-angle: 180deg; }
-.lec-leaves > .lec-scroll {
+.lec-paper.is-turning.to-recto { animation-direction: reverse; }
+.lec-paper.is-turning > .lec-scroll {
   position: absolute;
   inset: 0;
-  overflow: hidden;
   background: #f4efe6;
   backface-visibility: hidden;
+  box-shadow: 0 0 12px var(--mag-hairline);
 }
-.lec-leaf-fixed, .lec-leaf-in { clip-path: var(--fixed-half); }
-.lec-leaf-out { clip-path: var(--turn-half); animation: lecLeafOut 0.5s var(--flip-ease) both; }
-.lec-leaf-in { animation: lecLeafIn 0.5s var(--flip-ease) both; }
-@keyframes lecLeafOut { from { transform: rotateY(0); } to { transform: rotateY(var(--turn-angle)); } }
-@keyframes lecLeafIn { from { transform: rotateY(calc(-1 * var(--turn-angle))); } to { transform: rotateY(0); } }
+.lec-paper.is-turning > .lec-paper-back { transform: rotateY(180deg); }
+/* 纸转到正侧面时，只看得到纸边。 */
+.lec-paper.is-turning::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--mag-hairline-dark);
+  transform: translateX(-50%) rotateY(90deg);
+}
+@keyframes lecTurn {
+  from { transform: rotateY(0deg); }
+  50% { transform: rotateY(-90deg); }
+  to { transform: rotateY(-180deg); }
+}

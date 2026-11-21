@@ -5,7 +5,6 @@ import { archiveDate } from '../lib/archiveDate'
 import { useArchiveScroll } from '../hooks/useArchiveScroll'
 import { usePageFlip } from '../hooks/usePageFlip'
 import { flipNavigation } from '../lib/flipNav'
-import { paperSnapshot } from '../lib/paperSnapshot'
 import { useLectureLibrary } from '../hooks/useLectureLibrary'
 
 // 每日阅读 Lecture：一天一页，左右翻换天，最新一天在最上面。
@@ -126,54 +125,34 @@ function Verso({ day, chosen, onTurn }) {
   )
 }
 
-// 纸的右半边翻向左边时，下方已经是背面。翻回去时交换左右两半。
 function ReadingPaper({ day, chosen, onChoose }) {
   const [verso, setVerso] = useState(false)
-  const scroll = useRef(null)
-  const leaves = useRef(null)
-  const outgoing = useRef(null)
+  const [turning, setTurning] = useState(false)
+  const paper = useRef(null)
   const turn = () => {
-    if (leaves.current.childElementCount) return
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      outgoing.current = paperSnapshot(scroll.current)
-    }
+    if (turning) return
+    setTurning(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)
     setVerso(!verso)
   }
 
   useLayoutEffect(() => {
-    const face = scroll.current
-    face.scrollTop = 0
-    const oldFace = outgoing.current
-    if (!oldFace) return
-    outgoing.current = null
-    const layers = leaves.current
-    const stationary = oldFace(layers)
-    // 两片旧纸都保留翻面前的位置，新纸已经回到顶部。
-    paperSnapshot(stationary)(layers).classList.add('lec-leaf-out')
-    stationary.classList.add('lec-leaf-fixed')
-    const incoming = paperSnapshot(face)(layers)
-    incoming.classList.add('lec-leaf-in')
-    face.inert = true
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const finish = () => {
-      incoming.removeEventListener('animationend', finish)
-      incoming.removeEventListener('animationcancel', finish)
-      media.removeEventListener('change', finish)
-      layers.replaceChildren()
-      face.inert = false
-    }
-    incoming.addEventListener('animationend', finish)
-    incoming.addEventListener('animationcancel', finish)
-    media.addEventListener('change', finish)
-    return finish
-  }, [verso])
+    if (!turning) return
+    let active = true
+    const finish = () => { if (active) setTurning(false) }
+    const motion = paper.current.getAnimations()[0]
+    if (motion) motion.finished.then(finish, finish)
+    else finish()
+    return () => { active = false }
+  }, [turning])
 
-  return <div className={`lec-paper ${verso ? 'to-verso' : 'to-recto'}`}>
-    <div className="lec-scroll" data-flip-scroll="" ref={scroll}>
-      {verso ? <Verso day={day} chosen={chosen} onTurn={turn} />
-        : <Recto day={day} chosen={chosen} onChoose={onChoose} onTurn={turn} />}
-    </div>
-    <div ref={leaves} className="lec-leaves" aria-hidden="true" inert="" />
+  // 翻动时保留正在读的一面及其滚动位置。另一面刚挂载，从顶部开始。
+  return <div ref={paper} className={`lec-paper${turning ? ' is-turning' : ''}${verso ? '' : ' to-recto'}`} inert={turning ? '' : undefined}>
+    {(!verso || turning) && <div className="lec-scroll" data-flip-scroll="">
+      <Recto day={day} chosen={chosen} onChoose={onChoose} onTurn={turn} />
+    </div>}
+    {(verso || turning) && <div className="lec-scroll lec-paper-back" data-flip-scroll="">
+      <Verso day={day} chosen={chosen} onTurn={turn} />
+    </div>}
   </div>
 }
 
