@@ -238,7 +238,17 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
   await scenario(size + '-public-header', viewport, async (page) => {
     await page.goto(baseUrl + '/404')
     const header = page.locator('.paper-current .site-header')
-    await checkMotion(page, () => header.getByRole('link', { name: 'Carnet de classe' }).click(), ...back)
+    let releasePortraits
+    const portraits = new Promise(resolve => { releasePortraits = resolve })
+    await page.route('**/portraits/*.webp', async route => { await portraits; await route.fallback() })
+    await checkMotion(page, async () => {
+      await header.getByRole('link', { name: 'Carnet de classe' }).click()
+      try {
+        await page.locator('.paper-wait .paper-copy .notfound-title').waitFor()
+        assert.equal(await page.locator('.paper-current .mag-wall').isVisible(), false)
+      } finally { releasePortraits() }
+    }, ...back)
+    await page.locator('.paper-current .mag-wall').waitFor()
     await checkMotion(page, () => page.goBack(), ...forward)
     let release
     const delayed = new Promise(resolve => { release = resolve })
