@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { lectureProblems } from '../lib/lectureContent'
 import { withRequestDeadline } from '../lib/requestDeadline'
 
@@ -15,6 +15,8 @@ export function useLectureLibrary(date) {
   const [missing, setMissing] = useState([])
   const hasIndex = useRef(false)
   const [articles, setArticles] = useState({})
+  const [failed, setFailed] = useState({})
+  const [attempt, retry] = useReducer((count) => count + 1, 0)
   const cache = useRef(new Map())
   const inArchive = !date
 
@@ -22,6 +24,7 @@ export function useLectureLibrary(date) {
   const load = useCallback((key) => {
     let work = cache.current.get(key)
     if (!work) {
+      setFailed((prev) => prev[key] ? { ...prev, [key]: false } : prev)
       work = getJSON(`/api/lecture/${key}`).then((day) => {
         if (day?.date !== key || lectureProblems(day).length) throw new Error('文章格式错误')
         return day
@@ -29,7 +32,11 @@ export function useLectureLibrary(date) {
       cache.current.set(key, work)
       work.then(
         (day) => setArticles((prev) => prev[key] ? prev : { ...prev, [key]: day }),
-        () => { if (cache.current.get(key) === work) cache.current.delete(key) },
+        () => {
+          if (cache.current.get(key) !== work) return
+          cache.current.delete(key)
+          setFailed((prev) => ({ ...prev, [key]: true }))
+        },
       )
     }
     return work
@@ -65,11 +72,11 @@ export function useLectureLibrary(date) {
       })
     }
     return () => { active = false }
-  }, [date, index, load])
+  }, [date, index, load, attempt])
 
   // 预取失败不算缺篇：点开后照常再取一次。
   const prefetch = useCallback((key) => { load(key).catch(() => {}) }, [load])
 
   const days = useMemo(() => index?.filter((row) => !missing.includes(row.date)) ?? null, [index, missing])
-  return { days, articles, prefetch }
+  return { days, articles, failed, prefetch, retry }
 }

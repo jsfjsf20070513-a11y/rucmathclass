@@ -2,6 +2,7 @@
 
 :root {
   --flip-ease: cubic-bezier(0.72, 0, 0.22, 1);
+  --connexion-turn: 0.62s cubic-bezier(0.45, 0, 0.12, 1);
   --mag-ink: #1a130e;
   --mag-ink-2: #221d18;
   --mag-muted: #6f675e;
@@ -40,18 +41,20 @@
 .lec-rise { animation: lecRise 0.5s var(--flip-ease) both; }
 
 .page-nav {
+  flex: none;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   padding: 20px 36px 16px;
   border-bottom: 1px solid var(--mag-hairline);
   font-family: "Bodoni Moda", var(--font-cjk), serif;
-  font-size: 10px;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
 }
-.page-nav-back {
+.page-nav-back,
+.page-nav-back:visited {
   background: transparent;
   border: none;
   padding: 0;
@@ -62,9 +65,9 @@
   text-transform: inherit;
   transition: color 0.2s ease;
 }
-.page-nav-back:hover { color: #2a211c; }
+.page-nav-back:hover,
+.page-nav-back:focus-visible { color: var(--mag-ink); }
 .page-nav-title { color: #2a211c; }
-.page-nav-side { color: var(--mag-muted); letter-spacing: 0.18em; }
 
 .text-action {
   flex-shrink: 0;
@@ -136,9 +139,39 @@
 .page-arrow:disabled { opacity: 0.35; cursor: default; }
 
 @media (max-width: 880px) {
-  .page-nav { padding: 16px 18px 12px; font-size: 9px; }
+  .page-nav { padding: 16px 18px 12px; }
 }
 
 @media (max-width: 640px) {
   .page-folio { bottom: 18px; left: 18px; font-size: 10px; }
+}
+
+.paper-stage { position: relative; overflow: clip; isolation: isolate; }
+.paper-current, .paper-copy { padding-inline: var(--page-gutter, 0px); }
+.paper-current { position: relative; z-index: 1; }
+.paper-copy { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+.paper-copy:empty { display: none; }
+.paper-wait > .paper-copy,
+[data-motion="lec-retract"] > .paper-copy { z-index: 2; }
+[data-motion="lec-rise"].paper-wait > .paper-copy { z-index: 0; }
+.lec-retract { animation: lecRise 0.5s var(--flip-ease) reverse both; }
+[data-motion="lec-rise"] .paper-current > :is(.lec, .cor),
+[data-motion="lec-retract"] .paper-copy > :is(.lec, .cor) { background: transparent; }
+[data-motion="lec-retract"] .paper-copy .page-nav { visibility: hidden; }
+:is([data-motion="lec-rise"], [data-motion="lec-retract"]) .lec .page-nav { background: #f4efe6; }
+:is([data-motion="lec-rise"], [data-motion="lec-retract"]) .cor :is(.page-nav, .cor-body) { background: var(--paper); }
+
+[data-motion^="connexion-"] > .paper-copy { z-index: 2; }
+.paper-copy :is(.connexion-open, .connexion-close) {
+  position: absolute;
+  inset: 0;
+  inset-inline: var(--page-gutter, 0px);
+  animation: connexionHalf var(--connexion-turn) both;
+}
+.paper-copy .connexion-close { animation-direction: reverse; }
+@keyframes connexionHalf { from { transform: none; } to { transform: var(--half-open); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-arrive, .page-arrive-back, .lec-rise, .lec-retract,
+  .connexion-open, .connexion-close, .lec-paper.is-turning { animation: none !important; }
 }

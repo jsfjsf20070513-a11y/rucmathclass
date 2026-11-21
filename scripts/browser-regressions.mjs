@@ -156,7 +156,7 @@ export async function checkRegressions({ scenario, baseUrl, rendered, assistantT
     await rendered(page, '.lec-page:not([inert]) .lec-title')
     // 点开 17 日后补取它和前一天。
     assert.deepEqual([...requests].sort(), ['2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20'])
-    await page.locator('.lec').evaluate((target) => {
+    await page.locator('.paper-current .lec').evaluate((target) => {
       const touch = (clientX) => new Touch({ identifier: 1, target, clientX, clientY: 200 })
       target.dispatchEvent(new TouchEvent('touchstart', { bubbles: true, touches: [touch(250)] }))
       target.dispatchEvent(new TouchEvent('touchend', { bubbles: true, changedTouches: [touch(100)] }))

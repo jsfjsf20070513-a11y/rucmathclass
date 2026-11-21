@@ -4,9 +4,9 @@ import { createAssistantArchive, UNDO_MS } from './assistantArchive'
 const original = { id: 'math', title: '第一题', updated_at: '2026-11-20T08:00:00Z' }
 const reply = { role: 'model', content: '回答' }
 
-async function setup() {
+async function setup(entries = [original]) {
   const history = {
-    fetchConversations: vi.fn(async () => ({ mode: 'official', entries: [original] })),
+    fetchConversations: vi.fn(async () => ({ mode: 'official', entries })),
     fetchMessages: vi.fn(async () => ({ mode: 'official', messages: [{ role: 'user', content: '第一题' }, reply] })),
     saveTurn: vi.fn(async () => ({ mode: 'official', updated_at: '2026-11-21T08:00:00Z' })),
     deleteConversation: vi.fn(async () => ({ mode: 'official' })),
@@ -81,6 +81,27 @@ describe('按账号分段的答疑目录', () => {
     await vi.advanceTimersByTimeAsync(UNDO_MS)
     expect(history.deleteConversation).toHaveBeenLastCalledWith('alice', original)
     expect(archive.getSnapshot()).toMatchObject({ entries: [], pending: [] })
+  })
+
+  it('连续删除两段对话时，各自从点击起保留五秒撤销时间', async () => {
+    vi.useFakeTimers()
+    const other = { ...original, id: 'french', title: '第二题' }
+    const { archive, history } = await setup([original, other])
+    archive.remove(original.id)
+    await vi.advanceTimersByTimeAsync(2000)
+    archive.remove(other.id)
+    archive.remove(original.id)
+    await vi.advanceTimersByTimeAsync(2999)
+    expect(history.deleteConversation).not.toHaveBeenCalled()
+    expect(archive.getSnapshot().pending).toEqual([original.id, other.id])
+    expect(archive.canUndo(original.id)).toBe(true)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(archive.canUndo(original.id)).toBe(false)
+    expect(archive.canUndo(other.id)).toBe(true)
+    archive.undo(other.id)
+    await vi.runAllTimersAsync()
+    expect(history.deleteConversation.mock.calls).toEqual([['alice', original]])
+    expect(archive.getSnapshot()).toMatchObject({ entries: [other], pending: [] })
   })
 
   it('保存结果不明时从目录重开仍看得到回答，并继续阻止删除', async () => {

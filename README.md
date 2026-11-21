@@ -6,10 +6,9 @@
 
 ## 本地运行
 
-使用 `.nvmrc` 指定的 Node 版本，然后运行：
+使用 `.nvmrc` 指定的 Node 版本。本机新建工作目录时，按开发文档准备依赖。缺少依赖时运行 `npm install`。[本机依赖与 iCloud](docs/development.md#本机依赖与-icloud)
 
 ```bash
-npm ci
 npm run demo
 ```
 

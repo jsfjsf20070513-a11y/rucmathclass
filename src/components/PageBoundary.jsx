@@ -20,7 +20,6 @@ class Boundary extends Component {
     if (!this.state.failed) return this.props.children
     return (
       <main className="page-status" role="alert">
-        <p lang="fr">Un instant</p>
         <h1>页面暂时无法打开</h1>
         <p>请检查网络后重新加载。</p>
         <div className="page-status-actions">

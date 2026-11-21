@@ -24,12 +24,14 @@
   position: relative;
 }
 /* 从档案点进来：正文还没到时先不露出空白页；到了就像从档案袋里往上抽出一张纸 */
-.lec-stack.is-waiting { visibility: hidden; }
+/* 页栈会单独设置每一页的 visibility。等待时整层透明，档案才能透出来。 */
+.lec-stack.is-waiting { opacity: 0; }
 
 .lec-page {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  perspective: max(1600px, 100vw);
   background: #f4efe6;
   will-change: transform;
 }
@@ -307,4 +309,36 @@
 
 @media (max-width: 640px) {
   .lec-archive { padding: var(--s2) 22px var(--s4); }
+}
+
+.lec-load { height: 100%; display: grid; place-items: center; }
+.lec-paper { position: relative; height: 100%; }
+.lec-paper.is-turning {
+  transform-style: preserve-3d;
+  animation: lecTurn 0.5s var(--flip-ease) both;
+}
+.lec-paper.is-turning.to-recto { animation-direction: reverse; }
+.lec-paper.is-turning > .lec-scroll {
+  position: absolute;
+  inset: 0;
+  background: #f4efe6;
+  backface-visibility: hidden;
+  box-shadow: 0 0 12px var(--mag-hairline);
+}
+.lec-paper.is-turning > .lec-paper-back { transform: rotateY(180deg); }
+/* 纸转到正侧面时，只看得到纸边。 */
+.lec-paper.is-turning::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--mag-hairline-dark);
+  transform: translateX(-50%) rotateY(90deg);
+}
+@keyframes lecTurn {
+  from { transform: rotateY(0deg); }
+  50% { transform: rotateY(-90deg); }
+  to { transform: rotateY(-180deg); }
 }

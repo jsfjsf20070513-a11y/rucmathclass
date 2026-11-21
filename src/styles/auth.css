@@ -163,8 +163,6 @@
 
 .reset-state p:last-child { margin-bottom: 0; }
 
-.reset-ok { font-family: "JetBrains Mono", var(--font-cjk), monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ok); }
-
 /* ══ /login Connexion 视觉 ══ */
 
 /* /login /reset-password 已脱离 Layout,自成杂志第 06 屏同款纸面:
@@ -183,19 +181,14 @@
   font-variant-numeric: lining-nums tabular-nums;
 }
 .lgn > * { width: min(420px, 100%); }
-.lgn-masthead { margin-bottom: 30px; }
-.lgn-back,
-.lgn-back:visited {
-  display: inline-block;
-  margin-bottom: 26px;
-  border-bottom: none;
-  color: var(--mag-muted);
-  font-family: "Bodoni Moda", serif;
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
+.lgn-with-nav { position: relative; padding-top: 80px; }
+.lgn > .page-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  width: auto;
+  background: inherit;
 }
-.lgn-back:hover { color: #2a211c; }
+.lgn-masthead { margin-bottom: 30px; }
 .lgn-title {
   margin: 0 0 10px;
   font-family: "Bodoni Moda", serif;

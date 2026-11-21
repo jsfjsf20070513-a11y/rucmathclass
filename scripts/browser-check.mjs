@@ -9,6 +9,7 @@ import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
 import { swipeConversation } from './lib/captureScene.mjs'
 import { MATH_THREAD } from './lib/localFixture.mjs'
+import { checkTransitions } from './browser-transitions.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -54,7 +55,7 @@ async function noHorizontalOverflow(page) {
 }
 
 async function assistantType(page) {
-  const violations = await page.locator('.cor').evaluate((main) => [...main.querySelectorAll('*')]
+  const violations = await page.locator('.paper-current .cor').evaluate((main) => [...main.querySelectorAll('*')]
     .filter((el) => el.getClientRects().length && !el.closest('svg, .katex-mathml, [hidden]') &&
       (el.matches('button, textarea') || [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.replace(/\u200b/g, '').trim())))
     .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 15 || getComputedStyle(el).textTransform === 'uppercase')
@@ -122,6 +123,7 @@ try {
   browser = await chromium.launch()
   await checkRegressions({ scenario, baseUrl, rendered, assistantType })
   for (const [size, viewport] of [['mobile', { width: 390, height: 844 }], ['desktop', { width: 1280, height: 800 }]]) {
+    await checkTransitions({ scenario, baseUrl, size, viewport })
     await scenario(`${size}-home`, viewport, async (page) => {
       await page.goto(baseUrl)
       await rendered(page, '.mag-masthead')
@@ -280,6 +282,9 @@ try {
       await page.goto(`${baseUrl}/assistant`)
       const list = page.getByRole('list', { name: '对话列表' })
       const back = page.getByRole('link', { name: 'Conversations', exact: true })
+      const manage = page.getByRole('button', { name: '管理', exact: true })
+      const done = page.getByRole('button', { name: '完成', exact: true })
+      const activate = (button) => size === 'mobile' ? button.tap() : button.click()
       const math = list.locator(`a[href="/assistant/${MATH_THREAD}"]`)
       const french = list.getByRole('link', { name: /Le mot/ })
       await rendered(page, '.cor-entry')
@@ -287,7 +292,8 @@ try {
       assert.equal(await list.getByRole('link').count(), 4)
       assert.equal(await list.getByRole('link').first().innerText(), '新对话')
       assert.deepEqual(await list.locator('time').allTextContents(), ['vendredi 20 novembre', 'mercredi 18 novembre', 'lundi 16 novembre'])
-      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      assert.equal(await manage.getAttribute('aria-expanded'), 'false')
+      assert.equal(await list.getByRole('button').count(), 0)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-list.png`), fullPage: true })
 
@@ -302,7 +308,7 @@ try {
       assert.equal(await page.locator('.cor-body.lec-rise').count(), 1)
       assert.equal(await page.locator('.cor-turn').count(), 2)
       assert.equal(await page.locator('.cor-question').evaluate((element) => element === document.activeElement), true)
-      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      assert.equal(await page.locator('.paper-current .page-nav :is(a,button)').count(), 1)
       const proof = page.locator('.cor-r-text')
       await assistantType(page)
       assert.equal(renderRequests.length, 1)
@@ -320,18 +326,44 @@ try {
       assert.equal(await page.locator('.cor-turn').count(), 2)
       assert.equal(await page.locator('.cor-r-text strong').textContent(), '« une valeur singulière »')
       await back.click()
+      await page.waitForFunction(() => !document.querySelector('.paper-stage[data-motion]'))
       const row = list.locator('li').filter({ has: page.locator('a[href*="b2222222"]') })
       const remove = row.getByRole('button', { name: /^删除/ })
+      const undo = row.getByRole('button', { name: /^撤销/ })
       if (size === 'mobile') await swipeConversation(page, row)
       else await row.hover()
-      await rendered(page, '.cor-entry:has(a[href*="b2222222"]) .cor-delete')
+      await french.focus()
+      assert.equal(await list.locator('.cor-delete').count(), 0, '日常列表中的滑动、悬停和焦点都不显示删除')
+      await activate(manage)
+      assert.equal(await done.getAttribute('aria-expanded'), 'true')
+      assert.equal(await list.getByRole('button', { name: /^删除/ }).count(), 3)
+      assert.equal(await list.locator('li').first().getByRole('button').count(), 0, '新对话没有删除键')
+      await assistantType(page)
+      await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-delete.png`), fullPage: true })
-      await remove.click()
-      await row.getByRole('button', { name: /^撤销/ }).click()
+      await activate(remove)
+      assert.equal(await french.getAttribute('aria-disabled'), 'true')
+      assert.ok(await undo.isEnabled())
+      await page.screenshot({ path: join(output, `${size}-assistant-undo.png`), fullPage: true })
+      await activate(done)
+      assert.equal(await list.getByRole('button', { name: /^删除/ }).count(), 0)
+      await activate(undo)
       assert.equal(await french.getAttribute('aria-disabled'), null)
-      if (size === 'mobile') await swipeConversation(page, row)
-      else await row.hover()
-      await remove.click()
+      assert.equal(await list.getByRole('button').count(), 0)
+
+      await page.getByRole('button', { name: '← Accueil', exact: true }).focus()
+      await page.keyboard.press('Tab')
+      assert.ok(await manage.evaluate((button) => button.matches(':focus-visible')))
+      await page.keyboard.press('Space')
+      await done.waitFor()
+      await french.focus()
+      await page.keyboard.press('Tab')
+      assert.ok(await remove.evaluate((button) => button.matches(':focus-visible')))
+      await page.keyboard.press('Enter')
+      assert.ok(await undo.evaluate((button) => button === document.activeElement))
+      await page.keyboard.press('Space')
+      assert.ok(await remove.evaluate((button) => button === document.activeElement))
+      await page.keyboard.press('Enter')
       await row.waitFor({ state: 'detached' })
       await page.reload()
       await rendered(page, '.cor-entry')
@@ -408,7 +440,7 @@ try {
       await page.goto(`${baseUrl}/missing-browser-fixture`)
       await page.waitForURL(`${baseUrl}/404`)
       await rendered(page, '.notfound-title')
-      await rendered(page, '.site-nav')
+      await rendered(page, '.site-header .page-nav')
       await noHorizontalOverflow(page)
       await page.getByRole('link', { name: '资源 · 书目', exact: true }).click()
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')

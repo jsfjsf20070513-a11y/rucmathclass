@@ -72,7 +72,10 @@ export async function captureScene(browser, demo, viewport, path) {
       }
       if (archive && demo.scene.revealDelete) {
         const row = page.locator('.cor-entry').filter({ has: page.locator(`a[href="/assistant/${MATH_THREAD}"]`) })
-        if (viewport.width <= 480) await swipeConversation(page, row)
+        const manage = page.getByRole('button', { name: '管理', exact: true })
+        if (await manage.count()) await manage.click()
+        // 对比旧版本时，仍从当时的入口显示删除键。
+        else if (viewport.width <= 480) await swipeConversation(page, row)
         else await row.hover()
         await row.locator('.cor-delete').waitFor()
         await page.waitForFunction(() => getComputedStyle(document.querySelector('.cor-entry .cor-delete')).opacity === '1')

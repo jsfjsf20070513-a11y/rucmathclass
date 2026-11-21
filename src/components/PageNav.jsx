@@ -1,8 +1,14 @@
-export default function PageNav({ title, onBack, children }) {
+import { Link } from 'react-router-dom'
+
+export default function PageNav({ to, onBack, label = '← Accueil', title, children }) {
   return (
     <nav className="page-nav" aria-label="页内导航">
-      <button type="button" className="page-nav-back" onClick={onBack} lang="fr">← Accueil</button>
-      <span className="page-nav-title" lang="fr">{title}</span>
+      {to ? (
+        <Link to={to} className="page-nav-back" onClick={onBack} lang="fr">{label}</Link>
+      ) : (
+        <button type="button" className="page-nav-back" onClick={onBack} lang="fr">{label}</button>
+      )}
+      {title && <span className="page-nav-title" lang="fr">{title}</span>}
       {children}
     </nav>
   )

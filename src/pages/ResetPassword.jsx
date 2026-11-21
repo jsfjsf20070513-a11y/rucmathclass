@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
+import PageNav from '../components/PageNav'
 import AuthStatus from '../components/AuthStatus'
 import { usePasswordReset } from '../hooks/usePasswordReset'
 
@@ -9,57 +11,38 @@ import { usePasswordReset } from '../hooks/usePasswordReset'
 function Masthead({ summary }) {
   return (
     <header className="lgn-masthead">
-      <Link to="/login" className="lgn-back" lang="fr">← Connexion</Link>
       <h1 className="lgn-title" lang="fr">Réinitialisation</h1>
-      <p className="lgn-summary">{summary}</p>
+      {summary && <p className="lgn-summary">{summary}</p>}
     </header>
   )
 }
 
-export default function ResetPassword() {
+export default function ResetPassword({ direct }) {
   const { pageState, account, password, setPassword, confirmPassword, setConfirmPassword, submitting, uncertain, message, handleSubmit } = usePasswordReset()
 
-  if (pageState === 'loading') {
-    return (
-      <article className="page-column login-page lgn">
-        <Masthead summary="正在确认当前账号…" />
-        <AuthStatus />
-      </article>
-    )
+  // 从邮件打开是一次全页加载。保留刊头，等会话确认后再翻入表单或结果。
+  const [entering, setEntering] = useState(() => direct && !window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const motion = entering ? ' page-arrive' : ''
+  const summaries = {
+    invalid: '链接已失效或账号发生了变化。请回到登录页重新申请重置邮件。',
+    unavailable: '账号服务暂时不可用，请稍后再修改密码。',
+    success: '密码已更新，当前账号仍保持登录。',
+    form: `为当前账号 ${account?.email || ''} 设置新的登录密码。`,
   }
 
-  if (pageState === 'invalid' || pageState === 'unavailable') {
-    return (
-      <article className="page-column login-page lgn">
-        <Masthead
-          summary={pageState === 'invalid'
-            ? '链接已失效或账号发生了变化。请回到登录页重新申请重置邮件。'
-            : '账号服务暂时不可用，请稍后再修改密码。'}
-        />
-        <div className="reset-state">
-          <p><Link to="/login" className="text-action">重新申请 · 找回密码 →</Link></p>
-        </div>
-      </article>
-    )
-  }
-
-  if (pageState === 'success') {
-    return (
-      <article className="page-column login-page lgn">
-        <Masthead summary="密码已更新，当前账号仍保持登录。" />
-        <div className="reset-state">
-          <p className="reset-ok">✓ 已更新</p>
-          <p><Link to="/" className="text-action">返回首页 · Accueil →</Link></p>
-        </div>
-      </article>
-    )
-  }
-
-  return (
-    <article className="page-column login-page lgn">
-      <Masthead summary={`为当前账号 ${account.email || ''} 设置新的登录密码。`} />
-
-      <section className="login-section">
+  let body
+  if (pageState === 'loading') body = <AuthStatus />
+  else if (pageState === 'invalid' || pageState === 'unavailable') {
+    body = <div className={`reset-state${motion}`}>
+      <p><Link to="/login" className="text-action">重新申请 · 找回密码 →</Link></p>
+    </div>
+  } else if (pageState === 'success') {
+    body = <div className="reset-state">
+      <p><Link to="/" className="text-action">返回首页 · Accueil →</Link></p>
+    </div>
+  } else {
+    body = (
+      <section className={`login-section${motion}`}>
         <form className="editorial-form login-form" onSubmit={handleSubmit}>
           <PasswordField
             label="新密码 · Nouveau mot de passe"
@@ -86,6 +69,13 @@ export default function ResetPassword() {
           {uncertain ? <Link to="/login" className="text-action">前往登录页核对 →</Link> : null}
         </form>
       </section>
-    </article>
-  )
+    )
+  }
+
+  return <article className="page-column login-page lgn lgn-with-nav" data-page-ready={pageState !== 'loading'}
+    onAnimationEnd={(event) => { if (event.animationName === 'magArrive') setEntering(false) }}>
+    <PageNav to="/login" label="← Connexion" />
+    <Masthead summary={summaries[pageState]} />
+    {body}
+  </article>
 }

@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPageFlipRenderer } from '../lib/pageFlipRenderer'
 
 // 首页与内页共用翻页参数。
 // 页面栈:绝对定位互叠,zIndex = 10 + i;已到页 translate(0),未到页停在各自入场侧。
 // 交互:← → 键、滚轮(|deltaY|>24 防抖 950ms)、触摸横滑 >56px。
 // 页内滚动优先:当前页内 [data-flip-scroll] 未滚到边缘时,滚轮不翻页。
-// prefers-reduced-motion:翻页降级为淡入淡出(transform 直落,过渡只走 opacity)。
+// prefers-reduced-motion:直接切换到目标页。
 
 export function usePageFlip({ count, sides = [], durationMs = 900, enabled = true, initialPage = 0, wheel = true, onPageChange }) {
   const [page, setPage] = useState(initialPage)
@@ -37,7 +37,7 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
     onPageChange?.(next)
   }, [count, onPageChange])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     rendererRef.current.apply({ pages: pagesRef.current, cur: page, sides, durationMs, instant: instantRef.current, enabled })
     instantRef.current = false
   }, [page, sides, durationMs, enabled])

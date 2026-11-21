@@ -127,7 +127,6 @@ export const resourceCategories = [
   },
   {
     label: '概率、随机过程与数理统计',
-    intro: '概率、统计、随机过程。',
     items: [
       {
         title: 'MIT OCW — Introduction to Probability and Statistics',

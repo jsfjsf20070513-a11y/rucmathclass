@@ -30,7 +30,6 @@
 | `OPENAI_API_KEY` | 每日阅读缺稿时调用模型。 |
 | `SUPABASE_URL` | 班级站用于验证账号的 Supabase 项目地址。 |
 | `SUPABASE_ANON_KEY` | 验证账号时使用的公开项目密钥。 |
-| `ELEVENLABS_API_KEY` | 线上仍有该变量，代码未使用。 |
 
 模型密钥只配置在 Worker。认证项目应与班级站前端一致。anon key 不能用拥有管理权限的 service-role key 或用户令牌代替。前端的 `VITE_` 配置不会自动传给 Worker。
 
