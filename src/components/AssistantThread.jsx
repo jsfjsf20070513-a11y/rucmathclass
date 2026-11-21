@@ -126,7 +126,7 @@ export default function AssistantThread({ conversation, onStart, rise }) {
 
   let figureCounter = 0
   return (
-    <div ref={pageRef} className={`cor-body${rise && ready ? ' lec-rise' : ''}`} aria-busy={!ready}>
+    <div ref={pageRef} className="cor-body" aria-busy={!ready}>
       {messages.length === 0 && !busy ? (
         <div className="cor-cover">
           <h1 className="cor-masthead" lang="fr">De quoi veux-tu parler&#8239;?</h1>

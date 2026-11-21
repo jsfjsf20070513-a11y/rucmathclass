@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageNav from '../components/PageNav'
 import { archiveDate } from '../lib/archiveDate'
+import { useArchiveScroll } from '../hooks/useArchiveScroll'
 import { usePageFlip } from '../hooks/usePageFlip'
-import { markFlipNav, wasFlipNav } from '../lib/flipNav'
+import { flipNavigation } from '../lib/flipNav'
+import { paperSnapshot } from '../lib/paperSnapshot'
 import { useLectureLibrary } from '../hooks/useLectureLibrary'
 
 // 每日阅读 Lecture：一天一页，左右翻换天，最新一天在最上面。
@@ -124,11 +126,62 @@ function Verso({ day, chosen, onTurn }) {
   )
 }
 
+// 纸的右半边翻向左边时，下方已经是背面。翻回去时交换左右两半。
+function ReadingPaper({ day, chosen, onChoose }) {
+  const [verso, setVerso] = useState(false)
+  const scroll = useRef(null)
+  const leaves = useRef(null)
+  const outgoing = useRef(null)
+  const turn = () => {
+    if (leaves.current.childElementCount) return
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      outgoing.current = paperSnapshot(scroll.current)
+    }
+    setVerso(!verso)
+  }
+
+  useLayoutEffect(() => {
+    const face = scroll.current
+    face.scrollTop = 0
+    const oldFace = outgoing.current
+    if (!oldFace) return
+    outgoing.current = null
+    const layers = leaves.current
+    const stationary = oldFace(layers)
+    // 两片旧纸都保留翻面前的位置，新纸已经回到顶部。
+    paperSnapshot(stationary)(layers).classList.add('lec-leaf-out')
+    stationary.classList.add('lec-leaf-fixed')
+    const incoming = paperSnapshot(face)(layers)
+    incoming.classList.add('lec-leaf-in')
+    face.inert = true
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const finish = () => {
+      incoming.removeEventListener('animationend', finish)
+      incoming.removeEventListener('animationcancel', finish)
+      media.removeEventListener('change', finish)
+      layers.replaceChildren()
+      face.inert = false
+    }
+    incoming.addEventListener('animationend', finish)
+    incoming.addEventListener('animationcancel', finish)
+    media.addEventListener('change', finish)
+    return finish
+  }, [verso])
+
+  return <div className={`lec-paper ${verso ? 'to-verso' : 'to-recto'}`}>
+    <div className="lec-scroll" data-flip-scroll="" ref={scroll}>
+      {verso ? <Verso day={day} chosen={chosen} onTurn={turn} />
+        : <Recto day={day} chosen={chosen} onChoose={onChoose} onTurn={turn} />}
+    </div>
+    <div ref={leaves} className="lec-leaves" aria-hidden="true" inert="" />
+  </div>
+}
+
 // 档案：像书架一样按日期列出全部往期，最新在上。
-function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
+function Archive({ days, onOpen, onPrefetch, onHome, scrollRef }) {
   // 空闲时先取最新三篇；手指按下时再取被点的那篇。
   useEffect(() => {
-    if (!days.length) return undefined
+    if (!days?.length) return undefined
     const run = () => days.slice(-3).forEach((day) => onPrefetch(day.date))
     if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(run, { timeout: 2000 })
@@ -139,11 +192,11 @@ function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
   }, [days, onPrefetch])
 
   return (
-    <main className={`lec${arrive ? ' page-arrive' : ''}`}>
+    <main className="lec" data-page-ready={Boolean(days)}>
       <PageNav title="" onBack={onHome} />
-      <div className="lec-scroll">
+      <div className="lec-scroll" ref={scrollRef}>
         <ol className="lec-archive">
-          {[...days].reverse().map((day) => (
+          {[...(days || [])].reverse().map((day) => (
             <li key={day.date}>
               <button type="button" className="lec-entry" onPointerDown={() => onPrefetch(day.date)} onClick={() => onOpen(day.date)}>
                 <span className="lec-entry-date" lang="fr">{`${archiveDate(day.date)} · ${day.level}`}</span>
@@ -158,23 +211,19 @@ function Archive({ days, onOpen, onPrefetch, onHome, arrive }) {
 }
 
 // 阅读：一天一页，左右翻到相邻的日子，地址随当前这一天更新。
-function Reader({ days, articles, date, answers, onChoose }) {
+function Reader({ days, articles, date, failed, onRetry, answers, onChoose }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [turned, setTurned] = useState({})
-  const scrollers = useRef({})
   // 只在打开时定位；之后左右翻只改地址，不重建页面栈。
   const [initial] = useState(() => days.findIndex((day) => day.date === date))
-  // 从档案点进来时，正文到了再让这一页从下往上抽出；最多等 1.5 秒。换天仍是左右翻。
-  const [entering] = useState(() => wasFlipNav())
-  const [firstDate] = useState(date)
-  const [waitedOut, setWaitedOut] = useState(false)
+  const [waitingFor, setWaitingFor] = useState(null)
+  const article = articles[date]
   useEffect(() => {
-    if (!entering) return undefined
-    const timer = window.setTimeout(() => setWaitedOut(true), 1500)
+    if (article) return
+    const timer = window.setTimeout(() => setWaitingFor(date), 1500)
     return () => window.clearTimeout(timer)
-  }, [entering])
-  const ready = Boolean(articles[firstDate]) || waitedOut
+  }, [date, article])
+  const ready = Boolean(article || failed[date] || waitingFor === date)
   const sides = useMemo(() => days.map((_, index) => (index === 0 ? 'none' : 'right')), [days])
   // 阅读时只认横向手势和方向键换天，读到页底继续滚不翻页。
   const fromArchive = Boolean(location.state?.fromArchive)
@@ -195,17 +244,12 @@ function Reader({ days, articles, date, answers, onChoose }) {
     else navigate('/lecture')
   }, [fromArchive, navigate])
 
-  const turn = useCallback((date) => {
-    setTurned((current) => ({ ...current, [date]: !current[date] }))
-    scrollers.current[date]?.scrollTo({ top: 0 })
-  }, [])
-
   return (
-    <main className="lec">
+    <main className="lec" data-page-ready={ready}>
       <nav className="page-nav" aria-label="页内导航">
         <button type="button" className="page-nav-back" lang="fr" onClick={onArchive}>Archives</button>
       </nav>
-      <div className={`lec-stack${entering ? (ready ? ' lec-rise' : ' is-waiting') : ''}`}>
+      <div className={`lec-stack${ready ? '' : ' is-waiting'}`} inert={ready ? undefined : ''}>
         {days.map((entry, index) => {
           const day = articles[entry.date]
           const chosen = answers[entry.date] || {}
@@ -217,11 +261,11 @@ function Reader({ days, articles, date, answers, onChoose }) {
               style={{ zIndex: 10 + index, transform: index <= initial ? 'none' : 'translateX(105%) rotate(2.2deg)' }}
               aria-label={entry.title}
             >
-              <div className="lec-scroll" data-flip-scroll="" ref={(el) => { scrollers.current[entry.date] = el }}>
-                {day && (turned[day.date]
-                  ? <Verso day={day} chosen={chosen} onTurn={() => turn(day.date)} />
-                  : <Recto day={day} chosen={chosen} onChoose={(i, key) => onChoose(day.date, i, key)} onTurn={() => turn(day.date)} />)}
-              </div>
+              {day ? <ReadingPaper day={day} chosen={chosen} onChoose={(i, key) => onChoose(day.date, i, key)} /> :
+                entry.date === date && ready && <div className="lec-load" role="status">
+                  {failed[date] ? <button type="button" className="text-action" onClick={onRetry}>重试</button>
+                    : <span lang="fr">Chargement…</span>}
+                </div>}
             </section>
           )
         })}
@@ -233,8 +277,8 @@ function Reader({ days, articles, date, answers, onChoose }) {
 export default function Lecture({ account }) {
   const navigate = useNavigate()
   const { date } = useParams()
-  const [arrive] = useState(() => wasFlipNav())
-  const { days, articles, prefetch } = useLectureLibrary(date)
+  const archiveScroll = useArchiveScroll()
+  const { days, articles, failed, prefetch, retry } = useLectureLibrary(date)
   const availableDate = days?.some((day) => day.date === date) ? date : null
   const answers = useSyncExternalStore(account.subscribe, account.getSnapshot)
   useEffect(() => {
@@ -243,16 +287,15 @@ export default function Lecture({ account }) {
   }, [account, availableDate])
 
   const goHome = useCallback(() => {
-    markFlipNav('/lecture')
+    flipNavigation.mark('/lecture', '/')
     navigate('/')
   }, [navigate])
 
   if (!date || !days) {
-    return <Archive days={days || []} arrive={arrive} onHome={goHome} onPrefetch={prefetch} onOpen={(day) => {
-      markFlipNav('/lecture')
+    return <Archive days={days} scrollRef={archiveScroll} onHome={goHome} onPrefetch={prefetch} onOpen={(day) => {
       navigate(`/lecture/${day}`, { state: { fromArchive: true } })
     }} />
   }
   if (!availableDate) return <Navigate to="/lecture" replace />
-  return <Reader days={days} articles={articles} date={date} answers={answers} onChoose={account.choose} />
+  return <Reader days={days} articles={articles} date={date} failed={failed} onRetry={retry} answers={answers} onChoose={account.choose} />
 }

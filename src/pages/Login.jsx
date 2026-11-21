@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
 import { UserFacingError } from '../lib/userFacingError'
 import { signIn, signUp, requestEmailCode, verifyEmailCode, requestPasswordReset, authErrorMessage } from '../lib/authBackend'
-import { markFlipNav } from '../lib/flipNav'
+import { loginReturnPath } from '../lib/loginReturn'
+import { flipNavigation, locationPath } from '../lib/flipNav'
 
 const OTP_RESEND_SECONDS = 60
 
@@ -55,17 +56,38 @@ const ERRORS = {
   otpCodeRequired: '请输入邮箱收到的 6 位验证码。',
 }
 
-export default function Login() {
-  const { user } = useAuth()
-  return <LoginForm key={user?.id || 'guest'} />
+export default function Login({ visit }) {
+  const { user, loading, error } = useAuth()
+  const navigate = useNavigate()
+  const { location, previous, action } = visit
+  const returnTo = loginReturnPath(location.state?.returnTo)
+  const fromGate = returnTo && action === 'PUSH' && previous &&
+    previous.key === location.state?.gateKey && locationPath(previous) === returnTo
+  const aux = new URLSearchParams(location.search).get('aux') === '1'
+  const returned = useRef(null)
+  useLayoutEffect(() => {
+    if (!returnTo || !user || loading || error || returned.current === location) return
+    returned.current = location
+    if (fromGate) navigate(-1)
+    else navigate(returnTo, { replace: true })
+  }, [returnTo, user, loading, error, fromGate, location, navigate])
+
+  const back = (event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    if (fromGate || (previous?.pathname === '/' && action === 'PUSH' && !returnTo)) {
+      event.preventDefault()
+      navigate(-1)
+    } else if (!returnTo) flipNavigation.mark('/login', '/')
+  }
+  const formKey = (aux ? 'aux-' : '') + (returnTo ? 'gate' : user?.id || 'guest')
+  return <LoginForm key={formKey} aux={aux} returnTo={returnTo} onBack={back} />
 }
 
-function LoginForm() {
+function LoginForm({ aux, returnTo, onBack }) {
   const { user, loading: sessionLoading, error: sessionError, isAuthEnabled, signOut, signingOut, signOutError } = useAuth()
   const requestRef = useRef(false)
   // aux=1:从杂志撕开屏(它本身就是登录)跳来,本页只承担登录做不了的三件事:
   // 注册 / 验证码 / 找回密码,默认落注册;直接访问 /login 仍是完整四页签。
-  const [aux] = useState(() => new URLSearchParams(window.location.search).get('aux') === '1')
   const [mode, setMode] = useState(() => (aux ? 'signup' : 'login'))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -205,9 +227,9 @@ function LoginForm() {
     : (loading ? copy.submitting : copy.submit)
 
   // ── after a successful sign-in: where to? ──
-  if (user && !sessionLoading && !sessionError) {
+  if (!returnTo && user && !sessionLoading && !sessionError) {
     return (
-      <article className="page-column login-page lgn">
+      <article className="page-column login-page lgn" data-page-ready={!sessionLoading}>
         <header className="lgn-masthead">
           <p className="page-kicker" lang="fr">Connecté · 已登录</p>
           <h1 className="lgn-title" lang="fr">Bienvenue</h1>
@@ -226,9 +248,9 @@ function LoginForm() {
   }
 
   return (
-    <article className="page-column login-page lgn">
+    <article className="page-column login-page lgn" data-page-ready={!sessionLoading}>
       <header className="lgn-masthead">
-        <Link to="/" className="lgn-back" lang="fr" onClick={() => markFlipNav('/login')}>← Accueil</Link>
+        <Link to={returnTo || '/'} className="lgn-back" lang="fr" onClick={onBack}>{returnTo ? '← Correspondance' : '← Accueil'}</Link>
         <h1 className="lgn-title" lang="fr">{TITLES[mode]}</h1>
         <p className="lgn-summary">{copy.summary}</p>
       </header>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState } from 'react'
+import { useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DailyMeditation from '../components/DailyMeditation'
 import PageNav from '../components/PageNav'
@@ -8,7 +8,7 @@ import { resourceCategories } from '../data/resourceCatalog'
 import { useResourceCatalog } from '../hooks/useResourceCatalog'
 import { getResourceLead } from '../lib/resourceText'
 import { usePageFlip } from '../hooks/usePageFlip'
-import { markFlipNav, wasFlipNav } from '../lib/flipNav'
+import { flipNavigation } from '../lib/flipNav'
 
 // 书目 Resources — 按书架横向翻页:
 // 索引住在 Home 第 4 页(同一份索引不出现两次),本页直接一架一页(Ⅰ–Ⅷ)轻翻,
@@ -33,7 +33,6 @@ function buildShelfOrder(catalogItems) {
 export default function Resources() {
   const navigate = useNavigate()
   const { catalogItems, loading, error, refresh } = useResourceCatalog()
-  const [arrive] = useState(() => wasFlipNav())
 
   const shelves = useMemo(() => {
     const introByCategory = new Map(
@@ -76,14 +75,14 @@ export default function Resources() {
   }, [shelves.length, goTo])
 
   const goHome = useCallback(() => {
-    markFlipNav('/resources')
+    flipNavigation.mark('/resources', '/')
     navigate('/')
   }, [navigate])
 
   const folio = `${toRoman(page)} — ${toRoman(shelves.length - 1)}`
 
   return (
-    <main className={`bib${arrive ? ' page-arrive' : ''}`}>
+    <main className="bib" data-page-ready="true">
       <PageNav title="Bibliothèque" onBack={goHome}>
         <span className="page-nav-side" lang="fr">{catalogItems.length}&nbsp;entrées</span>
       </PageNav>

@@ -39,7 +39,7 @@ export function createPageFlipRenderer({ clock, reducedMotion = () => window.mat
       // 翻页进行中所有页保持可见(入场页要看得到,回翻要露出底页)。
       if (i === cur) {
         el.style.visibility = 'visible'
-      } else if (instant || !changed) {
+      } else if (instant || reduced || !changed) {
         el.style.visibility = 'hidden'
       } else {
         el.style.visibility = 'visible'
@@ -48,7 +48,7 @@ export function createPageFlipRenderer({ clock, reducedMotion = () => window.mat
       // 停靠在场外的页不带投影——多页叠停时投影会在页缘穿帮。
       el.style.boxShadow = i <= cur ? (SHADOW[side] || SHADOW.none) : 'none'
       if (reduced) {
-        el.style.transition = instant ? 'none' : 'opacity 0.3s ease'
+        el.style.transition = 'none'
         el.style.transform = 'none'
         el.style.opacity = i === cur ? '1' : i < cur ? '1' : '0'
       } else {

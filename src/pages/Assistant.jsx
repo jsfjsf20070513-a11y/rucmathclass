@@ -3,10 +3,11 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-route
 import AuthStatus from '../components/AuthStatus'
 import PageNav from '../components/PageNav'
 import { useAuth } from '../context/useAuth'
+import { useArchiveScroll } from '../hooks/useArchiveScroll'
 import { useAssistantArchive } from '../hooks/useAssistantArchive'
 import { LEGACY_ID } from '../lib/aiAssistantBackend'
 import { archiveDate } from '../lib/archiveDate'
-import { markFlipNav, wasFlipNav } from '../lib/flipNav'
+import { flipNavigation, locationPath } from '../lib/flipNav'
 import AssistantThread from '../components/AssistantThread'
 
 const fromList = { fromAssistantList: true }
@@ -57,8 +58,9 @@ function ConversationRow({ entry, open, reveal, pending, archive }) {
   )
 }
 
-function Conversations({ userId, homeNav, arrive }) {
+function Conversations({ userId, homeNav }) {
   const { id } = useParams()
+  const archiveScroll = useArchiveScroll()
   const location = useLocation()
   const navigate = useNavigate()
   const { archive, entries, pending, mode, error } = useAssistantArchive(userId)
@@ -77,9 +79,9 @@ function Conversations({ userId, homeNav, arrive }) {
   </nav>
 
   if (!id) return (
-    <main className={`lec cor cor-archive${arrive ? ' page-arrive' : ''}`}>
+    <main className="lec cor cor-archive" data-page-ready={Boolean(mode || error)}>
       {homeNav}
-      <div className="lec-scroll">
+      <div className="lec-scroll" ref={archiveScroll}>
         <ol className="lec-archive" aria-label="对话列表">
           {mode && (!single || !entries.length) && <li><Link className="lec-entry" to="/assistant/new" state={fromList}>
             <span className="lec-entry-title">新对话</span>
@@ -92,7 +94,7 @@ function Conversations({ userId, homeNav, arrive }) {
     </main>
   )
 
-  if (!mode) return <main className="cor">{listLink}{error && <p className="cor-error" role="alert">{error}</p>}</main>
+  if (!mode) return <main className="cor" data-page-ready={Boolean(error)}>{listLink}{error && <p className="cor-error" role="alert">{error}</p>}</main>
   if ((single && !draft && id !== LEGACY_ID) || (single && draft && entries.length)) {
     return <Navigate to={`/assistant/${LEGACY_ID}`} replace state={location.state} />
   }
@@ -111,17 +113,17 @@ function Conversations({ userId, homeNav, arrive }) {
 export default function Assistant() {
   const { user, loading, error } = useAuth()
   const navigate = useNavigate()
-  const [arrive] = useState(() => wasFlipNav())
-  const homeNav = <PageNav title="" onBack={() => { markFlipNav('/assistant'); navigate('/') }} />
-  if (user && !loading && !error) return <Conversations key={user.id} userId={user.id} homeNav={homeNav} arrive={arrive} />
+  const location = useLocation()
+  const homeNav = <PageNav title="" onBack={() => { flipNavigation.mark('/assistant', '/'); navigate('/') }} />
+  if (user && !loading && !error) return <Conversations key={user.id} userId={user.id} homeNav={homeNav} />
   return (
-    <main className={`cor${arrive ? ' page-arrive' : ''}`}>
+    <main className="cor" data-page-ready={!loading}>
       {homeNav}
       <div className="cor-gate">
         {loading || error ? <AuthStatus className="page-notice" /> : <>
           <p className="page-kicker" lang="fr">Connexion requise</p>
           <p className="page-notice">登录后即可使用班级 AI 助手 —— 双语数学答疑,可拍题问图。</p>
-          <Link className="text-action" to="/login">Connexion&nbsp;&nbsp;→</Link>
+          <Link className="text-action" to="/login" state={{ returnTo: locationPath(location), gateKey: location.key }}>Connexion&nbsp;&nbsp;→</Link>
         </>}
       </div>
     </main>

@@ -14,7 +14,8 @@ import { weatherInkFor } from '../lib/weatherCanvas'
 import { useHomeWeather } from '../hooks/useHomeWeather'
 import { useCoverAtmosphere } from '../hooks/useCoverAtmosphere'
 import { useConnexionTransition } from '../hooks/useConnexionTransition'
-import { flipNavFrom, markFlipNav } from '../lib/flipNav'
+import { flipNavigation } from '../lib/flipNav'
+import { normalizeRoutePath } from '../lib/routePath'
 
 // 扉页：全屏横翻，各页样式在 App.css 的 .mag 下。
 // 一本 5 页横翻的美术馆图录 + 撕开进入的 Connexion 屏。100svh 无纵向滚动。
@@ -68,15 +69,18 @@ function getEditionDateLabel() {
   }).format(new Date())
 }
 
-export default function Home() {
+export default function Home({ visit }) {
   const navigate = useNavigate()
   const { user, signOut, isAuthEnabled, loading: sessionLoading, error: sessionError, signingOut, signOutError } = useAuth()
   const weather = useHomeWeather()
   const hasAssistant = Boolean(user)
   // 站内返回:按来路直落对应页,整册从左侧翻入(反向对称)。
   const [entry] = useState(() => {
-    const from = flipNavFrom()
-    return { back: Boolean(from), from, page: from ? returnPageFor(from, Boolean(user)) : 0 }
+    const previous = visit.previous
+    const connexion = previous && normalizeRoutePath(previous.pathname) === '/login' &&
+      new URLSearchParams(previous.search).get('aux') === '1' && !user
+    const from = connexion ? '/login' : visit.flip?.from
+    return { connexion, from, page: from ? returnPageFor(from, Boolean(user)) : 0 }
   })
 
   // Connexion 屏(原地渲染,对接 Supabase auth)
@@ -100,7 +104,7 @@ export default function Home() {
   const coverContentRef = useRef(null)
   const paroleRef = useRef(null)
   const loginRef = useRef(null)
-  const { connexionOpen, splitParole } = useConnexionTransition({ paroleRef, loginRef, userId: user?.id })
+  const { connexionOpen, splitParole } = useConnexionTransition({ paroleRef, loginRef, userId: user?.id, initialOpen: entry.connexion })
 
   const corIdx = 4
   const paroleIdx = hasAssistant ? 5 : 4
@@ -138,7 +142,7 @@ export default function Home() {
   // 站内衔接:立即跳转,由目标页翻入盖上来——不翻出当前页,
   // 否则会先露出底下的肖像墙再切换(用户:不利落)。
   const flipNavigate = useCallback((to) => {
-    markFlipNav('/')
+    flipNavigation.mark('/', to)
     navigate(to)
   }, [navigate])
 
@@ -169,7 +173,7 @@ export default function Home() {
   const folio = `0${page + 1} — 0${pageCount}`
 
   return (
-    <div className={`mag${entry.back ? ' page-arrive-back' : ''}`}>
+    <div className="mag" data-page-ready="true">
       {/* ── 01 封面:肖像长墙 ── */}
       <section ref={setPageEl(0)} className="mag-page mag-cover" style={{ zIndex: 10 }} aria-label="封面">
         <canvas ref={canvasRef} className="mag-weather" />

@@ -9,6 +9,7 @@ import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
 import { swipeConversation } from './lib/captureScene.mjs'
 import { MATH_THREAD } from './lib/localFixture.mjs'
+import { checkTransitions } from './browser-transitions.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -54,7 +55,7 @@ async function noHorizontalOverflow(page) {
 }
 
 async function assistantType(page) {
-  const violations = await page.locator('.cor').evaluate((main) => [...main.querySelectorAll('*')]
+  const violations = await page.locator('.paper-current .cor').evaluate((main) => [...main.querySelectorAll('*')]
     .filter((el) => el.getClientRects().length && !el.closest('svg, .katex-mathml, [hidden]') &&
       (el.matches('button, textarea') || [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.replace(/\u200b/g, '').trim())))
     .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 15 || getComputedStyle(el).textTransform === 'uppercase')
@@ -122,6 +123,7 @@ try {
   browser = await chromium.launch()
   await checkRegressions({ scenario, baseUrl, rendered, assistantType })
   for (const [size, viewport] of [['mobile', { width: 390, height: 844 }], ['desktop', { width: 1280, height: 800 }]]) {
+    await checkTransitions({ scenario, baseUrl, size, viewport })
     await scenario(`${size}-home`, viewport, async (page) => {
       await page.goto(baseUrl)
       await rendered(page, '.mag-masthead')
@@ -287,7 +289,7 @@ try {
       assert.equal(await list.getByRole('link').count(), 4)
       assert.equal(await list.getByRole('link').first().innerText(), '新对话')
       assert.deepEqual(await list.locator('time').allTextContents(), ['vendredi 20 novembre', 'mercredi 18 novembre', 'lundi 16 novembre'])
-      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      assert.equal(await page.locator('.paper-current .page-nav :is(a,button)').count(), 1)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-list.png`), fullPage: true })
 
@@ -302,7 +304,7 @@ try {
       assert.equal(await page.locator('.cor-body.lec-rise').count(), 1)
       assert.equal(await page.locator('.cor-turn').count(), 2)
       assert.equal(await page.locator('.cor-question').evaluate((element) => element === document.activeElement), true)
-      assert.equal(await page.locator('.page-nav :is(a,button)').count(), 1)
+      assert.equal(await page.locator('.paper-current .page-nav :is(a,button)').count(), 1)
       const proof = page.locator('.cor-r-text')
       await assistantType(page)
       assert.equal(renderRequests.length, 1)

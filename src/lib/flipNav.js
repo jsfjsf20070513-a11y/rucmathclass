@@ -1,21 +1,20 @@
-// 站内翻页衔接标记。离开页在 navigate 前 markFlipNav(fromPath),
-// 到达页在挂载时读取:
-// - 到达页播放翻入动画(正向从右、返回从左),读作同一个翻页动作;
-// - Home 用 flipNavFrom() 按来路落页(/lecture→02、/resources→04、/login→05)。
-// 标记 1.5s 自动过期,非破坏性读取——多个消费者都能看到同一次导航。
+// 标记只在本标签页传递。路由一变就消费，页面下载多久都不影响这次到达记录。
+export const locationPath = ({ pathname, search = '', hash = '' }) => pathname + search + hash
 
-let flipAt = 0
-let flipFrom = ''
-
-export function markFlipNav(from = '') {
-  flipAt = Date.now()
-  flipFrom = from
+export function createFlipNavigation() {
+  let pending = null
+  let visit = null
+  return {
+    mark(from, to) { pending = { from, to } },
+    read(location, action) {
+      if (visit?.location === location) return visit
+      const previous = visit?.location
+      const flip = action !== 'POP' && pending?.to === locationPath(location) ? pending : null
+      pending = null
+      visit = { location, previous, flip, action }
+      return visit
+    },
+  }
 }
 
-export function wasFlipNav() {
-  return Date.now() - flipAt < 1500
-}
-
-export function flipNavFrom() {
-  return wasFlipNav() ? flipFrom : ''
-}
+export const flipNavigation = createFlipNavigation()

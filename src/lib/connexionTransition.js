@@ -1,5 +1,10 @@
 import { createAnimationTasks } from './animationTasks'
 
+export const connexionHalves = [
+  { clipPath: 'inset(0 50% 0 0)', transform: 'translateX(-58%) rotate(-1.6deg)' },
+  { clipPath: 'inset(0 0 0 50%)', transform: 'translateX(58%) rotate(1.6deg)' },
+]
+
 // Own only the temporary split-page visuals. The form and account remain React's.
 export function createConnexionTransition({ getParole, getLogin, onPhase, reducedMotion, clock }) {
   const tasks = createAnimationTasks(clock)
@@ -23,14 +28,13 @@ export function createConnexionTransition({ getParole, getLogin, onPhase, reduce
     }
     publish(open ? 'opening' : 'closing')
     login.style.visibility = 'visible'
-    const out = ['translateX(-58%) rotate(-1.6deg)', 'translateX(58%) rotate(1.6deg)']
-    clones = out.map((transform, index) => {
+    clones = connexionHalves.map(({ transform, clipPath }) => {
       const clone = parole.cloneNode(true)
       clone.setAttribute('aria-hidden', 'true')
       clone.inert = true
       Object.assign(clone.style, {
         zIndex: '60', transition: 'none', transform: open ? 'none' : transform,
-        clipPath: index ? 'inset(0 0 0 50%)' : 'inset(0 50% 0 0)',
+        clipPath,
         pointerEvents: 'none', willChange: 'transform', opacity: '1', visibility: 'visible',
       })
       parole.parentElement.appendChild(clone)
@@ -39,8 +43,8 @@ export function createConnexionTransition({ getParole, getLogin, onPhase, reduce
     tasks.frame(() => {
       clones[0].getBoundingClientRect()
       clones.forEach((clone, index) => {
-        clone.style.transition = 'transform 0.62s cubic-bezier(0.45, 0, 0.12, 1)'
-        clone.style.transform = open ? out[index] : 'translateX(0) rotate(0deg)'
+        clone.style.transition = 'transform var(--connexion-turn)'
+        clone.style.transform = open ? connexionHalves[index].transform : 'translateX(0) rotate(0deg)'
       })
     })
     tasks.timeout(() => {
