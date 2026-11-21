@@ -22,11 +22,21 @@ function textProblems(text, where) {
   return problems
 }
 
+// 讲解和译文是完整的句子，必须以标点收尾。模型偶尔会在句号后面多吐出几个无关的词，
+// 比如「……我坐公交车。电影院」，或者「。,」，这类尾巴要拦下来重写。
+const SENTENCE_END = /[。！？…）」”)!?.»]$/
+function endingProblems(text, where) {
+  if (typeof text !== 'string' || !text.trim()) return []
+  const trimmed = text.trim()
+  return SENTENCE_END.test(trimmed) && !/[。！？][,，、]$/.test(trimmed) ? [] : [`${where}：结尾多出了字或标点`]
+}
+
 function pointProblems(points, where) {
   if (!Array.isArray(points) || !points.length) return [`${where}：没有要点`]
   return points.flatMap((point, index) => [
     ...textProblems(point?.term, `${where} 第 ${index + 1} 条词`),
     ...textProblems(point?.note, `${where} 第 ${index + 1} 条解释`),
+    ...endingProblems(point?.note, `${where} 第 ${index + 1} 条解释`),
   ])
 }
 
@@ -72,7 +82,7 @@ export function lectureProblems(day) {
   sentences.forEach((sentence, index) => {
     const where = `第 ${index + 1} 句`
     problems.push(...textProblems(sentence?.fr, `${where}原文`))
-    problems.push(...textProblems(sentence?.zh, `${where}翻译`))
+    problems.push(...textProblems(sentence?.zh, `${where}翻译`), ...endingProblems(sentence?.zh, `${where}翻译`))
     problems.push(...pointProblems(sentence?.points, where))
   })
   if (sentences.map((sentence) => sentence?.fr).join(' ') !== article) problems.push('逐句原文与正文不一致')

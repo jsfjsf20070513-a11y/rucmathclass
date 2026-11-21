@@ -10,7 +10,7 @@ describe('lectureProblems', () => {
   it('拦下 Markdown、表情、套话和黑话', () => {
     const day = structuredClone(lectureSamples[0])
     day.sentences[0].points[0].note = '**离开**。'
-    day.sentences[1].points[0].note = '从那时起一直如此 😊'
+    day.sentences[1].points[0].note = '从那时起一直如此 😊。'
     day.sentences[2].points[0].note = '仅供参考。'
     day.sentences[3].points[0].note = '这是赘词。'
     expect(lectureProblems(day)).toEqual([
@@ -18,6 +18,18 @@ describe('lectureProblems', () => {
       '第 2 句 第 1 条解释：含表情符号',
       '第 3 句 第 1 条解释：含「仅供参考」',
       '第 4 句 第 1 条解释：含「赘词」',
+    ])
+  })
+
+  it('拦下句号后面多出来的字', () => {
+    const day = structuredClone(lectureSamples[0])
+    day.sentences[0].points[0].note = '我坐公交车。电影院'
+    day.sentences[1].points[0].note = '腾出空间。,'
+    day.sentences[2].zh = '她平时都从集市广场进站'
+    expect(lectureProblems(day)).toEqual([
+      '第 1 句 第 1 条解释：结尾多出了字或标点',
+      '第 2 句 第 1 条解释：结尾多出了字或标点',
+      '第 3 句翻译：结尾多出了字或标点',
     ])
   })
 
