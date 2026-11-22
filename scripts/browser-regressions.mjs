@@ -28,7 +28,7 @@ export async function checkRegressions({ scenario, baseUrl, rendered, assistantT
       assert.equal(await paper.getAttribute('data-paper-fonts'), fail ? 'fallback' : 'web')
       const tab = page.locator('.login-tabs button').first()
       const css = await tab.evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize])
-      assert.equal(css[1], '14px')
+      assert.equal(css[1], '10px')
       assert.match(css[0], fail ? /^Georgia, .*Songti SC/ : /Bodoni Moda.*Noto Serif SC/)
       assert.equal(await page.locator('.lgn-submit').evaluate(el => getComputedStyle(el).fontSize), '12px')
     })

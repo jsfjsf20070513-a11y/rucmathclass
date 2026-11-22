@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { labelScript } from '../lib/labelScript'
 import { paroles } from '../data/siteContent'
 
 // 每次挂载时，从 siteContent 的引语中随机取一句。
@@ -14,7 +13,7 @@ export default function DailyMeditation({ className = '' }) {
         {entry.text}
       </p>
       <p className="section-coda-translation">{entry.note}</p>
-      <p className="section-coda-author" data-script={labelScript(entry.author, entry.src)}>
+      <p className="section-coda-author">
         — {entry.author}
         {entry.src ? <span className="section-coda-src"> · {entry.src}</span> : null}
       </p>

@@ -213,7 +213,7 @@
   margin-right: 4px;
   color: var(--mag-wine);
   font-family: var(--font-bodoni), var(--font-cjk), serif;
-  font-size: 12px;
+  font-size: 0.8em;
 }
 
 .lec-block {

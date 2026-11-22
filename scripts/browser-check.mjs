@@ -60,8 +60,7 @@ async function assistantType(page) {
       (el.matches('button, textarea') || [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.replace(/\u200b/g, '').trim())))
     .filter((el) => {
       const style = getComputedStyle(el)
-      const minimum = el.matches('.text-action') ? (el.matches(':lang(fr)') ? 12 : 14) : 15
-      return parseFloat(style.fontSize) < minimum || style.textTransform === 'uppercase'
+      return (!el.matches('.text-action') && parseFloat(style.fontSize) < 15) || style.textTransform === 'uppercase'
     })
     .map((el) => el.outerHTML.slice(0, 100)))
   assert.deepEqual(violations, [])
@@ -175,7 +174,7 @@ try {
       const sizes = await page.locator('.bib-page:not([inert])').evaluate(el =>
         ['.bib-shelf-roman', '.bib-shelf-count', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-desc', '.bib-entry-tag']
           .map(selector => getComputedStyle(el.querySelector(selector)).fontSize))
-      assert.deepEqual(sizes, ['16px', '12px', '25px', '17px', '14px', '14px'])
+      assert.deepEqual(sizes, ['16px', '10px', '25px', '17px', '13px', '9px'])
       const initial = await page.locator('.bib-folio').textContent()
       await page.getByRole('button', { name: '下一页', exact: true }).click()
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')

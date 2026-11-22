@@ -137,7 +137,7 @@
   display: block;
   margin-bottom: 8px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .login-form input {
@@ -215,7 +215,7 @@
   cursor: pointer;
   color: var(--mag-muted);
   font-family: var(--font-bodoni), var(--font-cjk), serif;
-  font-size: 14px;
+  font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   transition: color 0.15s ease, box-shadow 0.15s ease;
@@ -229,7 +229,7 @@
 .lgn .login-form label > span,
 .lgn .password-field > span {
   font-family: var(--font-bodoni), var(--font-cjk), serif;
-  font-size: 14px;
+  font-size: 9px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--mag-muted);
@@ -259,14 +259,14 @@
   border: none;
   cursor: pointer;
   color: var(--mag-muted);
-  font-size: 14px;
-  margin: 0;
+  font-size: 11px;
   padding: 6px 2px;
 }
 .lgn .password-toggle:hover { color: var(--mag-ink); }
 .lgn .editorial-actions { display: flex; justify-content: center; gap: 20px; }
 .lgn .login-submit { margin-top: 4px; }
-.lgn .status-line { margin: 4px 0 0; font-size: 14px; }
+.lgn .lgn-submit { font-size: 12px; }
+.lgn .status-line { margin: 4px 0 0; font-size: 13px; }
 .lgn .status-line.is-error { color: var(--mag-wine); }
 .lgn .status-line.is-success { color: var(--ok); }
 

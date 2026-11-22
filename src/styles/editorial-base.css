@@ -19,10 +19,10 @@
   justify-content: center;
   gap: 10px;
   margin-top: 10px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--muted);
 }
-.site-auth-note { color: var(--muted); font-size: 14px; }
+.site-auth-note { color: var(--muted); font-size: 13px; }
 .site-auth-link,
 .site-auth-link:visited {
   border: none;
@@ -31,7 +31,7 @@
   padding: 0;
   color: var(--muted);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -79,7 +79,7 @@
 .section-coda-kicker {
   margin: 0 0 8px;
   color: var(--accent);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .section-coda-quote {
@@ -89,7 +89,7 @@
 .section-coda-author {
   margin: 12px 0 0;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
   letter-spacing: 0.04em;
 }
 .section-coda-src { color: var(--muted); }
@@ -147,7 +147,7 @@
   }
 }
 .notfound-page { text-align: center; }
-.notfound-code { margin: 0; font-family: var(--font-mono), var(--font-cjk), serif; font-size: 12px; letter-spacing: 0.3em; color: var(--accent); }
+.notfound-code { margin: 0; font-family: var(--font-mono), var(--font-cjk), serif; font-size: 13px; letter-spacing: 0.3em; color: var(--accent); }
 .notfound-title { margin: 18px 0 0; font-family: var(--font-cjk), serif; font-size: 36px; font-weight: 500; }
 .notfound-quote { margin: 30px auto 0; max-width: 34rem; color: var(--ink); font-size: 19px; line-height: 1.55; }
 .notfound-quote-zh { margin: 10px auto 0; max-width: 30rem; color: var(--muted); font-size: 15px; }

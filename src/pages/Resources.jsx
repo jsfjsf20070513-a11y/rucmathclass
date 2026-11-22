@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react'
-import { labelScript } from '../lib/labelScript'
 import { useNavigate } from 'react-router-dom'
 import DailyMeditation from '../components/DailyMeditation'
 import PageNav from '../components/PageNav'
@@ -117,7 +116,7 @@ export default function Resources() {
                       <li key={item.id} className="bib-entry" data-animate="">
                         <div className="bib-entry-row">
                           <a {...externalLinkProps(item.url)} className="bib-entry-title">{item.title}</a>
-                          {item.tag ? <span className="bib-entry-tag" data-script={labelScript(item.tag)}>{item.tag}</span> : null}
+                          {item.tag ? <span className="bib-entry-tag">{item.tag}</span> : null}
                         </div>
                         {lead ? <p className="bib-entry-desc">{lead}</p> : null}
                       </li>
