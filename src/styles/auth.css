@@ -204,6 +204,7 @@
 
 /* 模式/方式切换:发丝线 chips */
 .lgn .login-tabs {
+  position: relative;
   justify-content: center;
   gap: 18px;
   margin-bottom: 8px;
@@ -218,10 +219,19 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  transition: color 0.15s ease, box-shadow 0.15s ease;
+  transition: color 0.15s ease;
 }
 .lgn .login-tabs .text-button:hover { color: var(--mag-ink); }
-.lgn .login-tabs .text-button.active { color: var(--mag-ink); box-shadow: inset 0 -1px 0 var(--mag-wine); }
+.lgn .login-tabs .text-button[aria-pressed="true"] { color: var(--mag-ink); }
+.login-underline {
+  position: absolute;
+  height: 1px;
+  background: var(--mag-wine);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .login-underline { transition: left .5s var(--flip-ease), top .5s var(--flip-ease), width .5s var(--flip-ease); }
+}
 
 /* 表单:小型 Bodoni 眉头标签 + 居中发丝线输入框 */
 .lgn .login-form { display: flex; flex-direction: column; gap: 26px; margin-top: 26px; }
@@ -289,4 +299,22 @@
   .lgn .login-form label,
   .lgn .password-field { width: 100%; }
   .lgn .lgn-submit { align-self: center; }
+}
+
+/* 各模式共用一个页眉起点。找回密码没有摘要，也保留这一行。 */
+.lgn-modes {
+  justify-content: flex-start;
+  padding-top: max(80px, calc(50svh - 11rem));
+}
+.lgn-modes .lgn-summary { display: grid; }
+.lgn-modes .lgn-summary > span { grid-area: 1 / 1; }
+.lgn-modes .lgn-summary > [aria-hidden] { visibility: hidden; }
+
+.lgn .login-mode-form { --field-gap: 26px; gap: 0; }
+.login-mode-form > :not(.login-fields, :last-child) { margin-bottom: var(--field-gap); }
+.login-fields { width: 100%; }
+.login-field-stack {
+  display: grid;
+  gap: var(--field-gap);
+  padding-bottom: var(--field-gap);
 }
