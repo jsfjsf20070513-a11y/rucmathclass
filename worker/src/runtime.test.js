@@ -88,3 +88,26 @@ it('runs the cron against local KV and serves only public metadata through the W
   }
   expect((await runtime.dispatchFetch('https://rucmathclass.com/api/lecture/pending:' + date)).status).toBe(404)
 })
+
+it('streams the Gemini fallback through workerd when the budget service is unavailable', async () => {
+  authRequest().reply(200, user)
+  const gemini = upstream.get('https://generativelanguage.googleapis.com')
+  gemini.intercept({ method: 'GET', path: '/v1beta/models?pageSize=1000' }).reply(200, {
+    models: [{ name: 'models/gemini-fixture-flash', supportedGenerationMethods: ['generateContent'] }],
+  })
+  const events = [
+    { candidates: [{ content: { parts: [{ text: '第一步' }] } }] },
+    { candidates: [{ content: { parts: [{ text: '。' }] }, finishReason: 'STOP' }] },
+  ]
+  gemini.intercept({ method: 'POST', path: '/v1beta/models/gemini-fixture-flash:streamGenerateContent?alt=sse' })
+    .reply(200, events.map(event => 'data: ' + JSON.stringify(event) + '\n\n').join(''))
+  const response = await runtime.dispatchFetch('https://rucmathclass.com/api/chat', {
+    method: 'POST', headers: { Authorization: 'Bearer fixture-token', Accept: 'application/x-ndjson' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: '问题' }] }),
+  })
+  expect(response.headers.get('Content-Type')).toContain('application/x-ndjson')
+  expect((await response.text()).trim().split('\n').map(line => JSON.parse(line))).toEqual([
+    { reset: true }, { delta: '第一步' }, { delta: '。' }, { done: true, text: '第一步。' },
+  ])
+  upstream.assertNoPendingInterceptors()
+})

@@ -110,3 +110,21 @@ describe('assistant conversation lifecycle', () => {
     expect(conversation.getSnapshot().messages).toHaveLength(202)
   })
 })
+
+it('keeps partial text out of history and ignores deltas after disposal', async () => {
+  const { conversation, request, history } = setup()
+  const response = deferred()
+  await conversation.initialize()
+  request.mockImplementationOnce((messages, { onPartial }) => { onPartial('部分回答'); return response.promise })
+  const sent = conversation.send('问题')
+  const { onPartial } = request.mock.calls[0][1]
+  expect(conversation.getSnapshot().partial).toBe('部分回答')
+  expect(history.saveTurn).not.toHaveBeenCalled()
+  conversation.dispose()
+  const previous = conversation.getSnapshot()
+  onPartial('迟到的文字')
+  response.resolve(reply)
+  expect(await sent).toBe(false)
+  expect(conversation.getSnapshot()).toBe(previous)
+  expect(history.saveTurn).not.toHaveBeenCalled()
+})

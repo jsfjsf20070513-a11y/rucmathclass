@@ -122,6 +122,9 @@ export function watchPaperFonts(current) {
   }
   const observer = new MutationObserver(records => {
     const affectsPaper = records.some(({ type, target, attributeName }) => {
+      // 正在生成的纯文本使用已载入的字体。逐字变化时不必隐藏整页并重新扫描。
+      const element = target.nodeType === Node.TEXT_NODE ? target.parentElement : target
+      if (element?.closest('[data-streaming-reply]')) return false
       if (type === 'childList') return true
       if (target === current) return false
       return attributeName !== 'style' || target.parentElement === current || target.matches?.('.mag-connexion')
