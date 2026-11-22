@@ -33,7 +33,7 @@ async function compressImage(file) {
 
 export default function AssistantThread({ conversation, onStart, rise }) {
   const [input, setInput] = useState('')
-  const { messages, ready, busy, loading, error: conversationError, notice } =
+  const { messages, ready, busy, loading, partial, error: conversationError, notice } =
     useSyncExternalStore(conversation.subscribe, conversation.getSnapshot)
   useEffect(() => { conversation.initialize() }, [conversation])
   const [error, setError] = useState('')
@@ -73,6 +73,7 @@ export default function AssistantThread({ conversation, onStart, rise }) {
   }, [input])
 
   const sendingHere = useRef(false)
+  const followReply = useRef(true)
   const firstQuestion = useRef(null)
   const focused = useRef(false)
   const mounted = useRef(true)
@@ -81,16 +82,17 @@ export default function AssistantThread({ conversation, onStart, rise }) {
     return () => { mounted.current = false; imageGeneration.current += 1 }
   }, [])
   useEffect(() => {
-    if (sendingHere.current) {
+    if (sendingHere.current && followReply.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
     } else if (rise && !focused.current && firstQuestion.current && ready) {
       return focusOnPaper(firstQuestion.current, { preventScroll: true })
     }
-  }, [messages, loading, ready, rise])
+  }, [messages, partial, loading, ready, rise])
 
   const send = async (text) => {
     if (busy || (!text.trim() && !image)) return
     sendingHere.current = true
+    followReply.current = true
     imageGeneration.current += 1
     setError('')
     const sent = conversation.send(text, image)
@@ -132,7 +134,9 @@ export default function AssistantThread({ conversation, onStart, rise }) {
           <h1 className="cor-masthead" lang="fr">De quoi veux-tu parler&#8239;?</h1>
         </div>
       ) : (
-        <div className="cor-thread" ref={scrollRef}>
+        <div className="cor-thread" ref={scrollRef} onScroll={({ currentTarget: el }) => {
+          followReply.current = el.scrollHeight - el.scrollTop - el.clientHeight < 64
+        }}>
           <div className="cor-thread-inner">
             {messages.map((m, idx) => {
               if (m.role === 'user') {
@@ -157,7 +161,8 @@ export default function AssistantThread({ conversation, onStart, rise }) {
                 </article>
               )
             })}
-            {loading ? <div className="cor-waiting" role="status" aria-label="正在回复">…</div> : null}
+            {partial && <article className="cor-turn cor-reply-pending" data-streaming-reply="" aria-label="助手回复">{partial}</article>}
+            {loading && !partial ? <div className="cor-waiting" role="status" aria-label="正在回复">…</div> : null}
           </div>
         </div>
       )}

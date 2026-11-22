@@ -1,86 +1,18 @@
-import { json } from './http.js'
+import { corsHeaders, json } from './http.js'
 import { readChatBody } from './requestBody.js'
 import { createRequestScope } from './requestScope.js'
+import { answerWithSol } from './solChat.js'
+import { geminiChat } from './geminiChat.js'
 
-// 动态查询聊天模型，失败时使用下面的候选列表。
-// 每小时从 ListModels 拉一次当前可用模型,自动排序(flash 新版本优先 → pro →
-// flash-lite → gemma 兜底);Google 上新模型自动收编,不用改代码。
-// ListModels 失败时用静态兜底链(2026-08 快照)。
-const CHAIN_TTL_MS = 3600 * 1000
-const CHAIN_MAX = 10
-const FALLBACK_CHAIN = [
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3-flash',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemma-3-27b-it',
-  'gemma-3-12b-it',
-]
-// 排除:别名(latest 与具体版本重复)、特种模态与实验通道。
-const CHAIN_EXCLUDE = /latest|tts|image|imagen|veo|embed|audio|live|dialog|native|computer|research|robotic|banana|antigravity|thinking|-exp|preview-\d|aqa|learnlm/i
-
-let chainCache = null
-let chainCacheAt = 0
-
-function rankModel(name) {
-  const m = /gemini-(\d+(?:\.\d+)?)/.exec(name)
-  const ver = m ? parseFloat(m[1]) : 0
-  let family = 0 // gemma
-  if (/flash-lite/.test(name)) family = 1
-  else if (/pro/.test(name)) family = 2
-  else if (/flash/.test(name)) family = 3
-  return family * 100 + ver
-}
-
-async function getChatModels(env, signal) {
-  signal.throwIfAborted()
-  const now = Date.now()
-  if (chainCache && now - chainCacheAt < CHAIN_TTL_MS) return chainCache
-  const scope = createRequestScope(signal, 3000)
-  try {
-    const r = await scope.run(() => fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', {
-      headers: { 'X-goog-api-key': env.GEMINI_API_KEY },
-      signal: scope.signal,
-    }))
-    if (r.ok) {
-      const data = await scope.run(() => r.json())
-      const names = (data.models || [])
-        .filter((m2) => Array.isArray(m2.supportedGenerationMethods)
-          && m2.supportedGenerationMethods.includes('generateContent'))
-        .map((m2) => `${m2.name || ''}`.replace(/^models\//, ''))
-        .filter((n) => (n.startsWith('gemini-') || n.startsWith('gemma-')) && !CHAIN_EXCLUDE.test(n))
-      if (names.length) {
-        names.sort((a, b) => rankModel(b) - rankModel(a))
-        chainCache = names.slice(0, CHAIN_MAX)
-        chainCacheAt = now
-        return chainCache
-      }
-    }
-  } catch { /* 请求仍有效时才走兜底 */ } finally { scope.close() }
-  signal.throwIfAborted()
-  return FALLBACK_CHAIN
-}
 const MAX_MESSAGES = 20
 const MAX_CHARS = 4000
 // 图片问答(多模态):只收常见图片类型,base64 体积设上限防刷配额。
 const ALLOWED_IMAGE = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_IMAGE_B64 = 7000000 // ≈5MB 二进制
 
-const SYSTEM_PROMPT = [
-  "Tu es l'assistant bilingue (中文 / français) de la classe de mathématiques 2025 du campus sino-français.",
-  'Public : des élèves qui apprennent les mathématiques ET le français (du niveau A1 au C2).',
-  'Règles :',
-  "- Réponds dans la langue de la question ; si on te le demande, donne le terme dans l'autre langue.",
-  '- Pour les maths : sois rigoureux, montre les étapes clés, utilise la notation LaTeX entre $...$ quand c\'est utile.',
-  '- Pour le français : explique le sens, le genre des noms, et donne un exemple court.',
-  '- Reste concis et bienveillant. Si tu n\'es pas sûr, dis-le.',
-  '- Refuse poliment ce qui sort du cadre scolaire (maths / français / méthode d\'étude).',
-].join('\n')
-
-export async function handleChat(request, env, origin) {
+export async function handleChat(request, env, origin, userId) {
   if (request.method !== 'POST') return json({ error: '暂不支持这种发送方式，请刷新页面后重试。' }, 405, origin)
-  if (!env.GEMINI_API_KEY) return json({ error: '答疑暂时不可用，请稍后再试。' }, 500, origin)
+  if (!env.GEMINI_API_KEY && !env.OPENAI_API_KEY) return json({ error: '答疑暂时不可用，请稍后再试。' }, 500, origin)
 
   let body
   try {
@@ -127,72 +59,39 @@ export async function handleChat(request, env, origin) {
   }
   if (!contents.length) return json({ error: '请先填写问题或选择图片。' }, 400, origin)
 
-  // 组装上游模型请求；调度和错误归因独立于前端对话状态。
-  const buildBody = (model) => {
-    if (model.startsWith('gemma')) {
-      // Gemma 不支持 systemInstruction:把系统提示折进第一条 user 消息。
-      const firstUser = contents.findIndex((c) => c.role === 'user')
-      const folded = contents.map((c, k) => (k === firstUser
-        ? { ...c, parts: [{ text: `${SYSTEM_PROMPT}\n\n---\n\n` }, ...c.parts] }
-        : c))
-      return JSON.stringify({ contents: folded, generationConfig: { temperature: 0.5, maxOutputTokens: 8192 } })
+  const streaming = request.headers.get('Accept')?.includes('application/x-ndjson')
+  const scope = createRequestScope(request.signal, 120000)
+  async function answer(emit) {
+    if (env.OPENAI_API_KEY && userId) {
+      const primary = createRequestScope(scope.signal, 75000)
+      try {
+        const reply = await primary.run(() => answerWithSol(contents, {
+          env, userId, signal: primary.signal, authorization: request.headers.get('Authorization'),
+        }, event => { if (!primary.signal.aborted) emit(event) }))
+        return json(reply, 200, origin)
+      } catch {
+        emit({ reset: true })
+      } finally { primary.close() }
     }
-    return JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents,
-      generationConfig: { temperature: 0.5, maxOutputTokens: 8192 },
-    })
+    if (scope.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
+    if (!env.GEMINI_API_KEY) return json({ error: '答疑暂时不可用，请稍后再试。' }, 503, origin)
+    return geminiChat(contents, env, scope.signal, origin, streaming ? emit : undefined)
   }
-
-  let chatModels
-  try { chatModels = await getChatModels(env, request.signal) } catch {
-    return json({ error: '请求已取消。' }, 499, origin)
+  if (!streaming) {
+    try { return await answer(() => {}) } finally { scope.close() }
   }
-
-  const failures = []
-  const tryModel = async (model, signal) => {
-    const upstream = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-goog-api-key': env.GEMINI_API_KEY },
-        body: buildBody(model),
-        signal,
-      },
-    )
-    if (!upstream.ok) throw Object.assign(new Error(`status ${upstream.status}`), { status: upstream.status })
-    const data = await upstream.json()
-    const parts = (((data.candidates || [])[0] || {}).content || {}).parts || []
-    const text = parts.map((p) => p.text).filter(Boolean).join('')
-    if (!text.trim()) throw new Error('empty')
-    return { text, model }
-  }
-
-  // 并发赛跑而非串行降级:被限流的模型往往不是秒回 429 而是挂满超时,
-  // 串行等三个就是一分钟(用户感知 = "AI 没反应")。同时发给前 3 个,
-  // 谁先给出正文用谁;全败再补第二梯队。
-  const race = async (models, timeoutMs) => {
-    const scope = createRequestScope(request.signal, timeoutMs)
-    try {
-      return await scope.run(() => Promise.any(models.map((model) => tryModel(model, scope.signal))))
-    } catch (error) {
-      failures.push(...(error.errors || [error]))
-      return null
-    } finally {
-      scope.close()
-    }
-  }
-
-  let win = await race(chatModels.slice(0, 3), 18000)
-  if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
-  if (!win && chatModels.length > 3) win = await race(chatModels.slice(3, 6), 15000)
-  if (request.signal.aborted) return json({ error: '请求已取消。' }, 499, origin)
-  if (win) return json(win, 200, origin)
-
-  const limited = failures.length > 0 && failures.every((error) => error.status === 429)
-  return json(
-    { error: limited ? '请求太频繁，请稍后再试。' : '答疑暂时不可用，请稍后再试。' },
-    limited ? 429 : 503,
-    origin,
-  )
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      const emit = event => { if (!scope.signal.aborted) controller.enqueue(encoder.encode(JSON.stringify(event) + '\n')) }
+      try {
+        const response = await answer(emit)
+        const result = await response.json()
+        emit(response.ok ? { done: true, text: result.text } : { error: response.status })
+      } catch { emit({ error: 503 }) }
+      finally { try { controller.close() } catch { /* 客户端已关闭 */ } scope.close() }
+    },
+    cancel() { scope.close() },
+  })
+  return new Response(stream, { headers: { ...corsHeaders(origin), 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' } })
 }

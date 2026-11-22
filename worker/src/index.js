@@ -24,9 +24,9 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin) })
     }
     if (request.method !== method) return json({ error: 'Method not allowed' }, 405, origin)
-    const rejection = await checkRequestAccess(request, env, origin)
-    if (rejection) return rejection
+    const access = await checkRequestAccess(request, env, origin)
+    if (access instanceof Response) return access
     if (url.pathname === '/api/speak') return handleSpeak(request, env, ctx, url, origin)
-    return handleChat(request, env, origin)
+    return handleChat(request, env, origin, access)
   },
 }
