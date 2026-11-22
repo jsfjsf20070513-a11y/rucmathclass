@@ -343,7 +343,6 @@ try {
       await page.waitForFunction(() => !document.querySelector('.paper-stage[data-motion]'))
       const row = list.locator('li').filter({ has: page.locator('a[href*="b2222222"]') })
       const remove = row.getByRole('button', { name: /^删除/ })
-      const undo = row.getByRole('button', { name: /^撤销/ })
       if (size === 'mobile') await swipeConversation(page, row)
       else await row.hover()
       await french.focus()
@@ -352,17 +351,33 @@ try {
       assert.equal(await done.getAttribute('aria-expanded'), 'true')
       assert.equal(await list.getByRole('button', { name: /^删除/ }).count(), 3)
       assert.equal(await list.locator('li').first().getByRole('button').count(), 0, '新对话没有删除键')
+      assert.ok(await list.locator('.cor-entry').evaluateAll((rows) => rows.every((item) =>
+        item.querySelector('button').getBoundingClientRect().right <= item.getBoundingClientRect().right + 1)), '长标题保留行末按钮的位置')
       await assistantType(page)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-delete.png`), fullPage: true })
-      await activate(remove)
-      assert.equal(await french.getAttribute('aria-disabled'), 'true')
-      assert.ok(await undo.isEnabled())
-      await page.screenshot({ path: join(output, `${size}-assistant-undo.png`), fullPage: true })
+      // 模拟另一设备续写后的空删除结果，在回执到达前退出管理。
+      const conflict = list.locator('.cor-entry').last()
+      const deletion = '**/rest/v1/ai_conversations?**'
+      const intercepted = new Promise((resolve) => page.route(deletion, resolve, { times: 1 }))
+      await activate(conflict.getByRole('button', { name: /^删除/ }))
+      const route = await intercepted
+      assert.equal(route.request().method(), 'DELETE')
+      assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), 'true')
+      assert.equal(await conflict.getByRole('button').count(), 0)
+      await page.waitForFunction(() => {
+        const strike = document.querySelector('.is-pending .cor-strike')
+        return strike && getComputedStyle(strike).clipPath === 'inset(0px)'
+      })
       await activate(done)
-      assert.equal(await list.getByRole('button', { name: /^删除/ }).count(), 0)
-      await activate(undo)
-      assert.equal(await french.getAttribute('aria-disabled'), null)
+      await route.fulfill({ json: [] })
+      await page.getByRole('alert').getByText('删除结果未确认。请刷新后核对这段对话。').waitFor()
+      await page.waitForFunction(() => {
+        const title = document.querySelector('.cor-entry:last-child .lec-entry-title')
+        const strike = title.querySelector('.cor-strike')
+        return getComputedStyle(strike).clipPath.includes('100%') && !title.getAnimations({ subtree: true }).length
+      })
+      assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), null)
       assert.equal(await list.getByRole('button').count(), 0)
 
       await page.getByRole('button', { name: '← Accueil', exact: true }).focus()
@@ -373,12 +388,23 @@ try {
       await french.focus()
       await page.keyboard.press('Tab')
       assert.ok(await remove.evaluate((button) => button.matches(':focus-visible')))
+      if (size === 'mobile') await page.emulateMedia({ reducedMotion: 'reduce' })
+      const observed = await row.evaluateHandle((element) => {
+        const properties = []
+        element.addEventListener('transitionrun', (event) => properties.push(event.propertyName))
+        return properties
+      })
+      const requested = page.waitForRequest((req) => req.method() === 'DELETE' && req.url().includes('ai_conversations'))
       await page.keyboard.press('Enter')
-      assert.ok(await undo.evaluate((button) => button === document.activeElement))
-      await page.keyboard.press('Space')
-      assert.ok(await remove.evaluate((button) => button === document.activeElement))
-      await page.keyboard.press('Enter')
+      await requested
       await row.waitFor({ state: 'detached' })
+      const transitions = await observed.jsonValue()
+      if (size === 'mobile') {
+        assert.deepEqual(transitions, [], '减少动态效果时直接移除')
+        await page.emulateMedia({ reducedMotion: null })
+      } else {
+        assert.ok(transitions.includes('clip-path') && transitions.includes('grid-template-rows'), '划线后收起行高')
+      }
       await page.reload()
       await rendered(page, '.cor-entry')
       assert.equal(await french.count(), 0)

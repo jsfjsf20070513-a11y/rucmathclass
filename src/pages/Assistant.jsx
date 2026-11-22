@@ -14,31 +14,49 @@ const fromList = { fromAssistantList: true }
 
 const noThreadSubscription = () => () => {}
 
+async function collapseRow(row) {
+  // 等当前划线结束。离开列表或切换到减少动态效果时，浏览器会取消过渡。
+  const title = row.querySelector('.cor-strike')
+  await Promise.allSettled(title.getAnimations().map((animation) => animation.finished))
+  if (!row.isConnected) return
+  row.classList.add('is-collapsing')
+  await Promise.allSettled(row.getAnimations().map((animation) => animation.finished))
+}
+
 function ConversationRow({ entry, managing, pending, archive }) {
   const thread = archive.cachedThread(entry.id)
   const busy = useSyncExternalStore(thread?.subscribe || noThreadSubscription, () => thread?.getSnapshot().busy || false)
   return (
     <li className={`cor-entry${pending ? ' is-pending' : ''}`}>
-      <Link className="lec-entry" to={`/assistant/${entry.id}`} state={fromList}
-        aria-disabled={pending || undefined} tabIndex={pending ? -1 : undefined}
-        onClick={pending ? (event) => event.preventDefault() : undefined}
-      >
-        <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
-        <span className="lec-entry-title">{entry.title}</span>
-      </Link>
-      {(pending || managing) && (
-        <button type="button" className="cor-delete" disabled={pending ? !archive.canUndo(entry.id) : busy}
-          aria-label={`${pending ? '撤销删除' : '删除'}“${entry.title}”`}
-          onClick={() => pending ? archive.undo(entry.id) : archive.remove(entry.id)}>
-          {pending ? '撤销' : '删除'}
-        </button>
-      )}
+      <div className="cor-entry-clip">
+        <div className="cor-entry-content">
+          <Link className="lec-entry" to={`/assistant/${entry.id}`} state={fromList}
+            aria-disabled={pending || undefined} tabIndex={pending ? -1 : undefined}
+            onClick={pending ? (event) => event.preventDefault() : undefined}
+          >
+            <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
+            <span className="lec-entry-title">
+              {entry.title}<span className="cor-strike" aria-hidden="true" data-title={entry.title} />
+            </span>
+          </Link>
+          {(pending || managing) && (
+            <button type="button" className="cor-delete" disabled={pending || busy}
+              aria-label={`删除“${entry.title}”`}
+              onClick={(event) => {
+                const row = event.currentTarget.closest('li')
+                archive.remove(entry.id, () => collapseRow(row))
+              }}>
+              删除
+            </button>
+          )}
+        </div>
+      </div>
     </li>
   )
 }
 
 function ConversationList({ history, scrollRef, onHome }) {
-  const { archive, entries, pending, mode, error } = history
+  const { archive, entries, deletions, mode, error } = history
   const [managing, setManaging] = useState(false)
   return (
     <main className="lec cor cor-archive" data-page-ready={Boolean(mode || error)}>
@@ -54,7 +72,7 @@ function ConversationList({ history, scrollRef, onHome }) {
             <span className="lec-entry-title">新对话</span>
           </Link></li>}
           {entries.map((entry) => <ConversationRow key={entry.id} entry={entry} managing={managing}
-            pending={pending.includes(entry.id)} archive={archive} />)}
+            pending={Boolean(deletions[entry.id])} archive={archive} />)}
         </ol>
         {error && <p className="cor-error" role="alert">{error}</p>}
       </div>
@@ -68,7 +86,7 @@ function Conversations({ userId, onHome }) {
   const location = useLocation()
   const navigate = useNavigate()
   const history = useAssistantArchive(userId)
-  const { archive, entries, pending, mode, error } = history
+  const { archive, entries, deletions, mode, error } = history
   const draft = id === 'new'
   const draftId = useMemo(() => draft ? crypto.randomUUID() : null, [draft])
   const single = mode && mode !== 'official'
@@ -87,7 +105,7 @@ function Conversations({ userId, onHome }) {
   if ((single && !draft && id !== LEGACY_ID) || (single && draft && entries.length)) {
     return <Navigate to={`/assistant/${LEGACY_ID}`} replace state={location.state} />
   }
-  if (pending.includes(threadId) || (!draft && !entries.some((entry) => entry.id === threadId) && !archive.cachedThread(threadId))) {
+  if (deletions[threadId] || (!draft && !entries.some((entry) => entry.id === threadId) && !archive.cachedThread(threadId))) {
     return <Navigate to="/assistant" replace />
   }
   return (

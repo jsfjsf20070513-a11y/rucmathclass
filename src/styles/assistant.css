@@ -15,7 +15,11 @@
   font-variant-numeric: lining-nums proportional-nums;
 }
 
-.cor-archive { background: #f4efe6; }
+.cor-archive {
+  --cor-strike-duration: 300ms;
+  --cor-collapse-duration: 250ms;
+  background: #f4efe6;
+}
 .cor-archive .lec-entry {
   display: flex;
   flex-direction: column;
@@ -26,9 +30,19 @@
 .cor-manage { min-width: 44px; padding-block: 10px; margin-block: -10px; }
 .cor-manage:disabled,
 .cor-delete:disabled { opacity: 0.5; cursor: default; }
-.cor-entry { display: flex; align-items: center; gap: 12px; }
+.cor-entry { display: grid; grid-template-rows: 1fr; }
+.lec-archive li + .cor-entry { border-top: 0; }
+.lec-archive li + .cor-entry .cor-entry-content { border-top: 1px solid var(--mag-hairline); }
+.cor-entry-clip { min-width: 0; min-height: 0; }
+.cor-entry-content { display: flex; align-items: center; gap: 12px; }
+.cor-entry.is-collapsing {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.cor-entry.is-collapsing .cor-entry-clip { overflow: visible clip; }
 .cor-entry .lec-entry { flex: 1; min-width: 0; }
 .cor-entry .lec-entry-title {
+  position: relative;
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;
@@ -46,7 +60,40 @@
   font-size: 16px;
   cursor: pointer;
 }
-.cor-entry.is-pending .lec-entry-title { color: var(--mag-muted); text-decoration: line-through; }
+/* 和原来的删除线共用字体度量，省略号也由同一个排版宽度决定。 */
+.cor-strike {
+  position: absolute;
+  inset: 0;
+  width: fit-content;
+  max-width: 100%;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: transparent;
+  clip-path: inset(0 100% 0 0);
+  pointer-events: none;
+}
+.cor-strike::before {
+  content: attr(data-title);
+  text-decoration: line-through var(--mag-muted);
+}
+.cor-entry.is-pending .lec-entry-title { color: var(--mag-muted); }
+.cor-entry.is-pending .cor-strike { clip-path: inset(0); }
+.cor-entry.is-pending .cor-delete { visibility: hidden; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cor-delete { transition: visibility 0s var(--cor-strike-duration); }
+  .cor-entry.is-pending .cor-delete { transition-delay: 0s; }
+  .cor-strike { transition: clip-path var(--cor-strike-duration) var(--flip-ease); }
+  .cor-entry {
+    transition: grid-template-rows var(--cor-collapse-duration) var(--flip-ease),
+      opacity var(--cor-collapse-duration) var(--flip-ease);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cor-archive .cor-entry,
+  .cor-archive .cor-entry * { transition-property: none; }
+}
 
 .cor-body[aria-busy="true"] { visibility: hidden; }
 .cor-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
