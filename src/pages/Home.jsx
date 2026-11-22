@@ -4,8 +4,7 @@ import { useAuth } from '../context/useAuth'
 import { signIn, authErrorMessage } from '../lib/authBackend'
 import AuthStatus from '../components/AuthStatus'
 import PageControls from '../components/PageControls'
-import { dailyTheoremNotes } from '../data/dailyTheoremNotes.generated'
-import { paroles } from '../data/siteContent'
+import { useDailyContent } from '../hooks/useDailyContent'
 import PortraitWall from '../components/PortraitWall'
 import { prefetchPage } from '../routes/pageLoaders'
 import { resourceCategories } from '../data/resourceCatalog'
@@ -22,8 +21,6 @@ import { normalizeRoutePath } from '../lib/routePath'
 // 01 封面(60 人肖像墙 + 天气 canvas)/ 02 Lecture / 03 Théorème /
 // 04 Bibliothèque / 05 Parole(木色)→ 撕开 → 06 Connexion(原地对接 auth)。
 
-const DAY_IN_MS = 24 * 60 * 60 * 1000
-const THEOREM_ROTATION_START_DAY = Math.floor(Date.UTC(2025, 8, 1) / DAY_IN_MS)
 // 未登录 5 页;登录后插入 05 Correspondance(AI 答疑之门),Parole 顺延为 06 压卷。
 const SIDES_BASE = ['none', 'right', 'left', 'top', 'bottom']
 const SIDES_FULL = ['none', 'right', 'left', 'top', 'left', 'bottom']
@@ -35,31 +32,6 @@ const returnPageFor = (from, hasAssistant) => ({
   '/login': hasAssistant ? 5 : 4,
 }[from] ?? 0)
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII']
-
-function getShanghaiDaySerial(reference = new Date()) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Shanghai',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-      .formatToParts(reference)
-      .filter(({ type }) => type !== 'literal')
-      .map(({ type, value }) => [type, Number(value)]),
-  )
-
-  return Math.floor(Date.UTC(parts.year, parts.month - 1, parts.day) / DAY_IN_MS)
-}
-
-function getRotatingTheoremIndex(length) {
-  if (!length) {
-    return 0
-  }
-
-  const dayOffset = getShanghaiDaySerial() - THEOREM_ROTATION_START_DAY
-  return ((dayOffset % length) + length) % length
-}
 
 function getEditionDateLabel() {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -135,9 +107,8 @@ export default function Home({ visit }) {
     }
   }, [hasAssistant, page, entry.from, jumpTo])
 
-  const dailyTheorem = dailyTheoremNotes[getRotatingTheoremIndex(dailyTheoremNotes.length)]
+  const { theorem: dailyTheorem, parole } = useDailyContent()
   const editionDateLabel = getEditionDateLabel()
-  const [parole] = useState(() => paroles[Math.floor(Math.random() * paroles.length)])
   const coverInk = weatherInkFor(weather)
   const displayName = user?.user_metadata?.nickname || user?.user_metadata?.real_name || user?.email || ''
 
@@ -231,7 +202,7 @@ export default function Home({ visit }) {
             <div
               className="mag-theorem-formula"
               data-animate=""
-              dangerouslySetInnerHTML={{ __html: dailyTheorem.displayHtml || dailyTheorem.fallback }}
+              dangerouslySetInnerHTML={{ __html: dailyTheorem.displayHtml }}
             />
           </div>
         </div>

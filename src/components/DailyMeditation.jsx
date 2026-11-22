@@ -1,10 +1,7 @@
-import { useState } from 'react'
-import { paroles } from '../data/siteContent'
+import { useDailyContent } from '../hooks/useDailyContent'
 
-// 每次挂载时，从 siteContent 的引语中随机取一句。
 export default function DailyMeditation({ className = '' }) {
-  const [index] = useState(() => Math.floor(Math.random() * paroles.length))
-  const entry = paroles[index]
+  const { parole: entry } = useDailyContent()
 
   return (
     <aside className={['section-coda', className].filter(Boolean).join(' ')} aria-label="Parole du jour · 每日一句">

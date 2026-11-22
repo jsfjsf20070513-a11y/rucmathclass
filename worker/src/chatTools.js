@@ -1,7 +1,6 @@
-import { dailyTheoremNotes } from '../../src/data/dailyTheoremNotes.generated.js'
-import { paroles } from '../../src/data/siteContent.js'
+import { getDailyContent } from './dailyStore.js'
 import { staticResourceCatalog } from '../../src/data/resourceCatalog.js'
-import { dayMs, firstLectureDate, isLectureDate, lectureIndex } from './lectureStore.js'
+import { firstLectureDate, isLectureDate, lectureIndex } from './lectureStore.js'
 
 const dateArg = '北京时间的 YYYY-MM-DD，留空表示今天。'
 function tool(name, description, fields) {
@@ -14,7 +13,7 @@ function tool(name, description, fields) {
 
 export const siteTools = [
   tool('theorem', '查当天的定理、公式和讲解。', { date: dateArg }),
-  tool('parole', '从网站现有句库按日期选一句 Parole。首页目前随机展示。', { date: dateArg }),
+  tool('parole', '查指定日期首页展示的 Parole。', { date: dateArg }),
   tool('lecture', '查已发布的每日阅读。日期留空时列出最近的文章。', { date: '要读全文的日期，或 null。' }),
   tool('resources', '按关键词查班级书架，留空列出全部书目。', { query: '书名、学科或标签。' }),
   tool('my_answers', '查提问者的阅读作答，含原题、所选选项和正确答案。每次最多返回所选时段内最近 31 个作答日。', {
@@ -22,16 +21,6 @@ export const siteTools = [
   }),
   tool('my_chats', '查提问者最近的对话，或按对话 ID 读取消息。', { conversation_id: '对话 ID，留空时列出最近的对话。' }),
 ]
-
-// 任务 B 接入按月发布的内容时，从这里替换两项来源。
-export function dailySiteItem(name, date) {
-  const days = (Date.parse(date) - Date.UTC(2025, 8, 1)) / dayMs
-  const items = name === 'theorem' ? dailyTheoremNotes : paroles
-  const item = items[((days % items.length) + items.length) % items.length]
-  if (name === 'parole') return { date, ...item }
-  const { title, prelude, fallback, note } = item
-  return { date, title, prelude, formula: fallback, note }
-}
 
 function checkedDate(value) {
   if (!isLectureDate(value)) throw new Error('无效日期')
@@ -53,8 +42,13 @@ export async function runSiteTool(call, { env, today, userId, authorization, sig
 
   switch (call.name) {
     case 'theorem':
-    case 'parole':
-      return dailySiteItem(call.name, checkedDate(args.date || today))
+    case 'parole': {
+      const day = await getDailyContent(env, args.date ?? today)
+      if (!day) return null
+      if (call.name === 'parole') return { date: day.date, ...day.parole }
+      const { title, prelude, fallback, note } = day.theorem
+      return { date: day.date, title, prelude, formula: fallback, note }
+    }
     case 'resources': {
       const query = (args.query || '').trim().toLowerCase()
       return staticResourceCatalog.filter(item =>

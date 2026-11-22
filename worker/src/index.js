@@ -4,6 +4,7 @@ import { corsHeaders, json } from './http.js'
 import { checkRequestAccess } from './requestAccess.js'
 
 import { generateLectures } from './lectureGeneration.js'
+import { readDaily } from './dailyRoute.js'
 import { readLecture } from './lectureRoute.js'
 
 export default {
@@ -13,6 +14,7 @@ export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || ''
     const url = new URL(request.url)
+    if (url.pathname.startsWith('/api/daily/')) return readDaily(request, env)
     if (url.pathname === '/api/lecture' || url.pathname.startsWith('/api/lecture/')) {
       return readLecture(request, env, ctx)
     }

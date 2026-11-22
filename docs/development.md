@@ -21,14 +21,14 @@ cp -R ../../../node_modules ./node_modules &&
 
 | 内容 | 应修改的输入 | 生成方式 |
 | --- | --- | --- |
-| 首页定理和引语 | [siteContent.js](../src/data/siteContent.js) | 定理运行 `npm run theorems:render`；引语直接读取 |
+| 今日定理和 Parole | [批量写稿脚本](../scripts/daily-batch/run.mjs)、[静态后备稿](../src/data/siteContent.js) | 每月写好后存入 KV。修改静态定理后运行 `npm run theorems:render`。 |
 | 每日法语阅读 | [样稿](../src/data/lectureSamples.js)、[出题要求](../worker/src/lecturePrompt.js)、[批量写稿脚本](../scripts/lecture-batch/run.mjs) | 每月用 GPT 订阅批量写稿。自动检查通过后由 GPT 交叉审稿并改稿。人工核对后写入 KV。Worker 只在缺稿时兜底。见[每月写稿](#每月写稿)。 |
 | 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取 |
 | 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查。运行 `npm run portraits:fetch` 才联网补图。补图会转为 WebP，并去掉色彩配置等附加数据。 |
 
 `npm run dev` 和 `npm run demo` 的阅读接口都使用三篇样稿。
 
-旧背词的导入脚本和词库原样保存在[归档目录](archive/vocabulary/)。首页定理讲解由脚本生成，请修改输入文件。
+旧背词的导入脚本和词库原样保存在[归档目录](archive/vocabulary/)。
 
 `public/health.json` 的 `ok` 只表示文件成功生成，不检查数据库或 AI。普通构建若只改变了它的时间戳，提交前执行 `git restore public/health.json`。不要一并还原手写文件。
 
@@ -65,6 +65,33 @@ node scripts/lecture-batch/check.mjs "$batch"
 ```bash
 node scripts/seed-lecture.mjs --remote --batch "$batch"
 ```
+
+### 定理和 Parole 每月写稿
+
+作者于 2026-11-22 确认按月写稿。用已登录 ChatGPT 订阅账号的 Codex CLI，在仓库根目录运行。以下命令写完 12 月的 31 天。
+
+```bash
+node scripts/daily-batch/run.mjs --start 2026-12-01 --days 31
+```
+
+加 `--dry-run` 只看日期。默认目录为 `.cache/daily-batch-2026-12-01/`。排期时核对定理名，写稿时核对法语原句。两次检查都参考静态稿，以及默认批次目录里起始日期前 30 天的稿件。用过 `--out` 自定目录时，下一批可用 `--previous 上一批目录` 指明来源。
+
+| 文件 | 核对内容 |
+| --- | --- |
+| `history.json`、`plan.json` | 用于查重的定理名、法语原句，以及本批每天的定理和例子。 |
+| `drafts/日期.json` | 每天一条定理和一句 Parole。写稿时检查字段、公式、重复内容和常见中文套话。 |
+| `review/日期.json`、`review/日期-edits.json` | 另开 GPT 会话审稿。有意见时，改稿文件保留全文和逐条处理说明。 |
+| `days/日期.json` | 定稿保留 LaTeX、纯文本和 KaTeX 生成的 HTML。重跑同一命令可接着写。 |
+
+核对定理的适用条件，再把例子算一遍。到所列作品中找到法语原句，核对署名和中文译文。逐条查看改稿记录，再检查整批。人工修改了 LaTeX 时，给检查命令加 `--render`，重新生成定稿里的公式 HTML。
+
+```bash
+batch=.cache/daily-batch-2026-12-01
+node scripts/daily-batch/check.mjs "$batch"
+node scripts/seed-daily.mjs --local --batch "$batch"
+```
+
+取得作者对该批稿件的明确授权后，运行 `node scripts/seed-daily.mjs --remote --batch "$batch"`。写入前会再检查整批。每个日期写入现有 `LECTURE` 的一个 `daily:日期` 键，同日旧稿会被覆盖。提前写好的稿件在北京时间当天零点开放。
 
 ## 检查的用途和限制
 

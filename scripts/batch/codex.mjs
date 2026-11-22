@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 async function askCodex(model, schema, prompt) {
-  const dir = mkdtempSync(join(tmpdir(), 'lecture-codex-'))
+  const dir = mkdtempSync(join(tmpdir(), 'batch-codex-'))
   try {
     writeFileSync(join(dir, 'schema.json'), JSON.stringify(schema))
     writeFileSync(join(dir, 'prompt.md'), `${prompt}\n只输出符合格式的 JSON。不要运行命令或读写文件。`)

@@ -1,3 +1,4 @@
+import { staticDaily } from '../src/lib/dailyContent.js'
 import { lectureSamples } from '../src/data/lectureSamples.js'
 import assert from 'node:assert/strict'
 import { fixtureSession, FIXTURE_PASSWORD, FIXTURE_USERS } from './lib/localFixture.mjs'
@@ -6,6 +7,34 @@ export async function checkRegressions({ scenario, baseUrl, rendered, assistantT
   const viewport = { width: 390, height: 844 }
   const session = fixtureSession()
   const signIn = (page) => page.addInitScript((session) => localStorage.setItem('sb-fixture-auth-token', JSON.stringify(session)), session)
+  await scenario('daily-cover-and-parole', viewport, async page => {
+    const date = '2026-11-22'
+    const day = staticDaily(date)
+    const monthly = {
+      ...day, theorem: { ...day.theorem, title: '本月定稿' },
+      parole: { ...day.parole, text: 'Un jour de plus.' },
+    }
+    await page.clock.setFixedTime(new Date(date + 'T08:00:00+08:00'))
+    let release
+    const held = new Promise(resolve => { release = resolve })
+    await page.route('**/api/daily/' + date, async route => {
+      await held
+      await route.fulfill({ json: monthly })
+    })
+    await page.goto(baseUrl, { waitUntil: 'domcontentloaded' })
+    try {
+      await rendered(page, '.mag-masthead')
+      assert.equal(await page.locator('.mag-theorem-title').textContent(), day.theorem.title)
+    } finally { release() }
+    await page.waitForFunction(title => document.querySelector('.mag-theorem-title').textContent === title, monthly.theorem.title)
+    assert.equal(await page.locator('.mag-parole-text').textContent(), monthly.parole.text)
+    const shelves = await page.locator('.mag-biblio-grid button').count()
+    await page.goto(baseUrl + '/resources#shelf-' + shelves)
+    await page.locator('.bib-coda .section-coda-quote').scrollIntoViewIfNeeded()
+    await rendered(page, '.bib-coda .section-coda-quote')
+    await page.waitForFunction(text => document.querySelector('.section-coda-quote')?.textContent === text, monthly.parole.text)
+  })
+
   for (const fail of [false, true]) {
     await scenario('paper-fonts-' + (fail ? 'failure' : 'delay'), viewport, async page => {
       let release

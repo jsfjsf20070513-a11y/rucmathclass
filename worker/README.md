@@ -1,6 +1,6 @@
 # 班级站 AI Worker
 
-这是单独发布的 Cloudflare 服务。它提供答疑、语音和每日法语阅读。前端发布命令不会发布它。
+这是单独发布的 Cloudflare 服务。它提供答疑、语音、每日法语阅读、今日定理和 Parole。前端发布命令不会发布它。
 
 | 要找什么 | 入口 |
 | --- | --- |
@@ -38,6 +38,12 @@
 生产变更需要明确授权。认证协议有变化时，一起准备前端和 Worker，并核对真实账号流程。检查未通过时保留现场，不通过关闭认证来恢复访问。
 
 最近的生产版本和已验事项见 [发布记录](../docs/development.md#最近一次发布核验)。真实认证、模型可用性、Cloudflare 缓存和连接中断仍需线上验证。本仓不用于判断或发布 Raccord。
+
+## 今日定理和 Parole
+
+作者于 2026-11-22 确认按月写稿。`GET /api/daily/YYYY-MM-DD` 允许匿名读取，返回 `{ date, theorem, parole }`。定理包含标题、条件与结论、纯文本公式、讲解，以及预先生成的 `displayHtml`。Parole 包含原文、译文、作者和可选出处。按北京时间零点换日，无效日期和未来日期返回 404。
+
+路由和答疑工具都可调用 `getDailyContent(env, date)`。省略日期可读今天，日期无效或尚未到来时返回 `null`。函数读取现有 `LECTURE` 中的 `daily:YYYY-MM-DD`。缺稿或 KV 暂时不可用时，返回该日期的静态稿。[读取函数](src/dailyStore.js) · [写稿与写入命令](../docs/development.md#定理和-parole-每月写稿)
 
 ## 每日法语阅读
 
@@ -84,7 +90,7 @@ curl -fsS 'http://127.0.0.1:8787/__scheduled'
 
 ## 助手如何取资料
 
-聊天入口先向 Supabase 验证用户身份。Sol 通过 Responses API 按需查询站内资料。每日定理和 Parole 共用 `dailySiteItem` 这个读取入口。现有首页随机展示 Parole，工具按日期从同一份句库取一句。任务 B 接入月稿时替换此入口。
+聊天入口先向 Supabase 验证用户身份。Sol 通过 Responses API 按需查询站内资料。首页和答疑工具都通过 `getDailyContent` 读取指定日期的定理和 Parole。KV 缺稿时，两处都使用该日期的静态稿。
 
 阅读工具从 `LECTURE` 读取已发布的索引和全文。书目工具使用网站静态目录。个人作答和历史对话通过 PostgREST 查询，每次只传来访者的 JWT 和项目 anon key。查询固定带上已验证的用户 ID，数据库按三张表各自的 RLS 策略检查归属。
 
