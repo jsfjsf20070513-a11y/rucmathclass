@@ -49,7 +49,7 @@ AI 收到回答与历史保存成功是两件事。图片只留在当前页面�
 
 ## 数据和同机服务
 
-当前代码使用 `lecture_answers`、`ai_conversations`、`ai_messages`、`resources`，登录由 Supabase Auth 处理。旧推荐、相册和 Web3 地址只是跳转。旧 SQL 和旧数据仍在，不代表产品入口应恢复。
+当前代码使用 `lecture_answers`、`ai_conversations`、`ai_messages`，登录由 Supabase Auth 处理。旧推荐、相册和 Web3 地址只是跳转。旧 SQL 和旧数据仍在，不代表产品入口应恢复。
 
 2026-09-27 已获授权收紧四张表的浏览器角色权限。个人进度和对话均开启行级安全检查（RLS），即数据库按登录账号判断可以读写哪些行。`resources` 允许公开读取，原管理员操作仍检查角色；`profiles` 只允许读自己的资料。只检查状态、不读取记录内容的匿名请求中，书架返回 200，三张个人表返回 401。没有用两个真实账号验证完整写入流程。
 

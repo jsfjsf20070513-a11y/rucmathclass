@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, it } from 'vitest'
 import { createFetchMock, fetch as mockFetch, Miniflare } from 'miniflare'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { staticResourceCatalog } from '../../src/data/resourceCatalog.js'
+import { resourcesCron } from './resourceUpdate.js'
 import { lectureSamples } from '../../src/data/lectureSamples.js'
 import { lectureAssignment } from './lecturePrompt.js'
 import { lectureSummary } from './lectureStore.js'
@@ -130,5 +132,31 @@ it('streams the Gemini fallback through workerd when the budget service is unava
   expect((await response.text()).trim().split('\n').map(line => JSON.parse(line))).toEqual([
     { reset: true }, { delta: '第一步' }, { delta: '。' }, { done: true, text: '第一步。' },
   ])
+  upstream.assertNoPendingInterceptors()
+})
+
+it('runs the weekly cron in workerd, verifies the seed, saves a backup and exposes only the public items', async () => {
+  const route = 'https://rucmathclass.com/api/resources'
+  expect(await (await runtime.dispatchFetch(route)).json()).toEqual(staticResourceCatalog)
+  for (const item of staticResourceCatalog) {
+    const url = new URL(item.url)
+    upstream.get(url.origin).intercept({ path: url.pathname + url.search, method: 'GET' })
+      .reply(200, '<html><title>课程讲义</title></html>', { headers: { 'content-type': 'text/html' } })
+  }
+  for (const decision of [{ remove: [], add: [], reason: '留用初版。' }, { approved: true }]) {
+    const output = [{ type: 'web_search_call', status: 'completed' },
+      { type: 'message', content: [{ type: 'output_text', text: JSON.stringify(decision) }] }]
+    upstream.get('https://api.openai.com').intercept({ path: '/v1/responses', method: 'POST' })
+      .reply(200, 'data: ' + JSON.stringify({ type: 'response.completed', response: {
+        status: 'completed', output, usage: { input_tokens: 100, output_tokens: 20 },
+      } }) + '\n\n')
+  }
+  const params = new URLSearchParams({ cron: resourcesCron, time: String(Date.parse('2026-11-22T21:07:00Z')) })
+  expect((await runtime.dispatchFetch('http://localhost/cdn-cgi/handler/scheduled?' + params)).ok).toBe(true)
+  const kv = await runtime.getKVNamespace('LECTURE')
+  expect(await kv.get('resources:current', 'json')).toMatchObject({ week: '2026-11-23', items: staticResourceCatalog })
+  expect(await kv.get('resources:backup:seed', 'json')).toMatchObject({ items: staticResourceCatalog })
+  expect(await (await runtime.dispatchFetch(route)).json()).toEqual(staticResourceCatalog)
+  expect((await runtime.dispatchFetch(route, { method: 'POST' })).status).toBe(405)
   upstream.assertNoPendingInterceptors()
 })

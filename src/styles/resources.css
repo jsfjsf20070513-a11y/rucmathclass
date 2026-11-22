@@ -93,14 +93,6 @@
   color: var(--mag-ink-2);
 }
 .bib-entry-title:hover { color: var(--mag-wine); }
-.bib-entry-tag {
-  font-family: var(--font-bodoni), var(--font-cjk), serif;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  color: var(--mag-wine-hover);
-  text-transform: uppercase;
-  white-space: nowrap;
-}
 .bib-entry-desc {
   margin: 3px 0 0;
   font-size: 13px;

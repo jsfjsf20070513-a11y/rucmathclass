@@ -7,7 +7,7 @@ export function createAccountFixture(fault) {
     async handle(route, localOrigin) {
       const request = route.request()
       const url = new URL(request.url())
-      if (url.hostname !== 'fixture.invalid' && !(url.origin === localOrigin && /^\/api\/lecture(?:\/|$)/.test(url.pathname))) return false
+      if (url.hostname !== 'fixture.invalid' && !(url.origin === localOrigin && /^\/api\/(?:lecture|resources)(?:\/|$)/.test(url.pathname))) return false
       const result = fixture.handle({
         url: request.url(), method: request.method(), headers: request.headers(),
         body: request.postData() ? request.postDataJSON() : {},

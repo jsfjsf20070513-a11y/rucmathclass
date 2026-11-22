@@ -1,3 +1,4 @@
+import { staticResourceCatalog } from '../../src/data/resourceCatalog.js'
 import { lectureSamples } from '../../src/data/lectureSamples.js'
 import { lectureSummary } from '../../worker/src/lectureStore.js'
 
@@ -20,7 +21,7 @@ export const SCENES = {
   'signup-submitted': { title: '注册请求已提交', path: '/login?aux=1', user: false, signupSubmitted: true },
   resources: { title: '书架', path: '/resources', user: false },
   'resources-slash': { title: '书架地址末尾带斜线', path: '/resources/', user: false },
-  'resources-error': { title: '增补书目读取失败', path: '/resources', user: false, resourcesUnavailable: true },
+  'resources-error': { title: '书目读取失败', path: '/resources', user: false, resourcesUnavailable: true },
   lecture: { title: '每日阅读档案', path: '/lecture' },
   'lecture-day': { title: '每日阅读正面', path: '/lecture/2026-11-20' },
   'lecture-verso': { title: '每日阅读背面', path: '/lecture/2026-11-20', verso: true },
@@ -119,7 +120,10 @@ export function createLocalFixture(fault = {}) {
         const article = published.find((day) => path === '/api/lecture/' + day.date)
         return article ? response(article) : response(null, 404)
       }
-      if (path === '/rest/v1/resources') return fault.resourcesUnavailable ? failure('fixture unavailable', 503) : response([])
+      if (path === '/api/resources') {
+        if (method !== 'GET') return response(null, 405)
+        return fault.resourcesUnavailable ? failure('fixture unavailable', 503) : response(staticResourceCatalog)
+      }
       if (!user) return failure('登录状态已失效，请刷新页面并重新登录后再试。', 401)
       if (path === '/api/chat') {
         if (fault.chatStatus && fault.chatStatus !== 200) return failure(fault.chatError || (fault.chatStatus === 401 ? '登录状态已失效，请刷新页面并重新登录后再试。' : '请求太频繁，请稍后再试。'), fault.chatStatus)

@@ -28,8 +28,12 @@ zone_name = "rucmathclass.com"
 pattern = "rucmathclass.com/api/daily/*"
 zone_name = "rucmathclass.com"
 
+[[routes]]
+pattern = "rucmathclass.com/api/resources"
+zone_name = "rucmathclass.com"
+
 [triggers]
-crons = ["*/15 * * * *"]
+crons = ["*/15 * * * *", "7 21 * * SUN"]
 
 [[kv_namespaces]]
 binding = "LECTURE"

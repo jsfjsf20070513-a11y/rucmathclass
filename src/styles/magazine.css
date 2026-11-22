@@ -264,7 +264,7 @@
 .mag-biblio-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(4, auto);
+  grid-template-rows: repeat(3, auto);
   grid-auto-flow: column;
   column-gap: 56px;
   text-align: left;
@@ -281,8 +281,8 @@
   text-align: left;
   font: inherit;
 }
-.mag-biblio-row:nth-child(4),
-.mag-biblio-row:nth-child(8) {
+.mag-biblio-row:nth-child(3),
+.mag-biblio-row:nth-child(6) {
   border-bottom: 1px solid rgba(34, 29, 24, 0.14);
 }
 .mag-biblio-roman {
@@ -487,13 +487,9 @@
     margin-top: 6vh;
     margin-top: 6svh;
   }
-  .mag-biblio-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: none;
-    grid-auto-flow: row;
-  }
-  .mag-biblio-row:nth-child(4) { border-bottom: none; }
-  .mag-biblio-row:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }
+  .mag-biblio-grid { column-gap: 18px; }
+  .mag-biblio-row { gap: 6px; }
+  .mag-biblio-roman { width: 19px; }
   .mag-biblio-zh { margin-bottom: 24px; }
   .mag-connexion-box { width: min(320px, 86vw); }
 }

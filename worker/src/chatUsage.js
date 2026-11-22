@@ -80,3 +80,9 @@ export async function settleUsage(env, ticket, usage, searches) {
   await recordUsage(env.LECTURE, ticket.key + ':settle', { day: ticket.day, userId: ticket.userId,
     inputTokens: usage.input_tokens, outputTokens: usage.output_tokens, searches, costMicros: charge.amount })
 }
+
+// 周更在探测外链前先看余额。每次实际调用仍要重新预留额度。
+export async function canReserveSearch(env, userId, today, input) {
+  const totals = await monthUsage(env.LECTURE, 'usage:' + today.slice(0, 7) + ':', today, userId)
+  return Boolean(planUsage({ ...totals, inputTokens: reserveTokens(input, []), wantSearch: true })?.search)
+}

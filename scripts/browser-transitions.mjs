@@ -272,7 +272,7 @@ export async function checkTransitions({ scenario, baseUrl, size, viewport }) {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     for (let i = 0; i < 3; i++) await page.getByRole('button', { name: '下一页' }).click()
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await checkMotion(page, () => page.getByRole('button', { name: /数学分析与证明/ }).click(), ...forward)
+    await checkMotion(page, () => page.getByRole('button', { name: /分析与微分方程/ }).click(), ...forward)
     await page.goBack()
     await page.locator('.paper-current .mag').waitFor()
     assert.equal(await page.locator('.page-arrive, .page-arrive-back').count(), 0)

@@ -23,7 +23,7 @@ cp -R ../../../node_modules ./node_modules &&
 | --- | --- | --- |
 | 今日定理和 Parole | [批量写稿脚本](../scripts/daily-batch/run.mjs)、[静态后备稿](../src/data/siteContent.js) | 每月写好后存入 KV。修改静态定理后运行 `npm run theorems:render`。 |
 | 每日法语阅读 | [样稿](../src/data/lectureSamples.js)、[出题要求](../worker/src/lecturePrompt.js)、[批量写稿脚本](../scripts/lecture-batch/run.mjs) | 每月用 GPT 订阅批量写稿。自动检查通过后由 GPT 交叉审稿并改稿。人工核对后写入 KV。Worker 只在缺稿时兜底。见[每月写稿](#每月写稿)。 |
-| 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 页面直接读取 |
+| 书目 | [resourceCatalog.js](../src/data/resourceCatalog.js) | 六架初版，也是 Worker 与页面的静态后备 |
 | 封面肖像 | [portraits.json](../src/data/portraits.json)、`public/portraits/` | 平时离线检查。运行 `npm run portraits:fetch` 才联网补图。补图会转为 WebP，并去掉色彩配置等附加数据。 |
 
 `npm run dev` 和 `npm run demo` 的阅读接口都使用三篇样稿。
