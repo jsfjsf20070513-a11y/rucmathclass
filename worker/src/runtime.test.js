@@ -51,6 +51,27 @@ it('allows a verified session through to input validation without a model reques
   upstream.assertNoPendingInterceptors()
 })
 
+it('uses Sol after authentication and records its charge in the local LECTURE KV', async () => {
+  authRequest().reply(200, user)
+  const completed = { type: 'response.completed', response: { status: 'completed',
+    output: [{ type: 'message', content: [{ type: 'output_text', text: '回答' }] }],
+    usage: { input_tokens: 100, output_tokens: 30 } } }
+  upstream.get('https://api.openai.com').intercept({ method: 'POST', path: '/v1/responses' })
+    .reply(200, 'data: ' + JSON.stringify(completed) + '\n\n')
+  const response = await runtime.dispatchFetch('https://rucmathclass.com/api/chat', {
+    method: 'POST', headers: { Authorization: 'Bearer fixture-token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: '你好' }] }),
+  })
+  expect(await response.json()).toEqual({ model: 'gpt-6.2-sol', text: '回答' })
+  const kv = await runtime.getKVNamespace('LECTURE')
+  const { keys } = await kv.list({ prefix: 'usage:' })
+  expect(keys).toHaveLength(2)
+  expect(keys.find(key => key.name.endsWith(':settle')).metadata).toMatchObject({
+    userId: user.id, searches: 0, costMicros: 550,
+  })
+  upstream.assertNoPendingInterceptors()
+})
+
 it('rejects an auth redirect without forwarding the session to another host', async () => {
   let followed = false
   authRequest().reply(302, '', { headers: { location: 'https://redirect.example.invalid/user' } })
@@ -87,4 +108,27 @@ it('runs the cron against local KV and serves only public metadata through the W
     expect(await index.json()).toEqual(published ? [lectureSummary(article)] : [])
   }
   expect((await runtime.dispatchFetch('https://rucmathclass.com/api/lecture/pending:' + date)).status).toBe(404)
+})
+
+it('streams the Gemini fallback through workerd when the budget service is unavailable', async () => {
+  authRequest().reply(200, user)
+  const gemini = upstream.get('https://generativelanguage.googleapis.com')
+  gemini.intercept({ method: 'GET', path: '/v1beta/models?pageSize=1000' }).reply(200, {
+    models: [{ name: 'models/gemini-fixture-flash', supportedGenerationMethods: ['generateContent'] }],
+  })
+  const events = [
+    { candidates: [{ content: { parts: [{ text: '第一步' }] } }] },
+    { candidates: [{ content: { parts: [{ text: '。' }] }, finishReason: 'STOP' }] },
+  ]
+  gemini.intercept({ method: 'POST', path: '/v1beta/models/gemini-fixture-flash:streamGenerateContent?alt=sse' })
+    .reply(200, events.map(event => 'data: ' + JSON.stringify(event) + '\n\n').join(''))
+  const response = await runtime.dispatchFetch('https://rucmathclass.com/api/chat', {
+    method: 'POST', headers: { Authorization: 'Bearer fixture-token', Accept: 'application/x-ndjson' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: '问题' }] }),
+  })
+  expect(response.headers.get('Content-Type')).toContain('application/x-ndjson')
+  expect((await response.text()).trim().split('\n').map(line => JSON.parse(line))).toEqual([
+    { reset: true }, { delta: '第一步' }, { delta: '。' }, { done: true, text: '第一步。' },
+  ])
+  upstream.assertNoPendingInterceptors()
 })

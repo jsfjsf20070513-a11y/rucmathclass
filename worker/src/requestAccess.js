@@ -39,7 +39,7 @@ export async function checkRequestAccess(request, env, origin) {
     if (!response.ok) return unavailable(origin)
     const user = await scope.run(() => response.json())
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(user?.id || '')) return unavailable(origin)
-    return null
+    return user.id
   } catch {
     return request.signal.aborted
       ? json({ error: '请求已取消。' }, 499, origin)

@@ -20,7 +20,7 @@ const HTTP_MESSAGES = {
   499: '请求已取消。',
 }
 
-export async function requestAssistant(messages, { signal, userId } = {}) {
+export async function requestAssistant(messages, { signal, userId, onPartial } = {}) {
   // A complete recent turn starts with a user message, including for Gemma.
   const context = messages.slice(-MAX_CONTEXT)
   while (context.length && context[0].role !== 'user') context.shift()
@@ -32,9 +32,12 @@ export async function requestAssistant(messages, { signal, userId } = {}) {
     const token = await getAccessToken(userId, { signal: requestSignal })
     requestSignal.throwIfAborted()
     const response = await fetch(AI_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      method: 'POST', headers: { Accept: 'application/x-ndjson', 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(body), signal: requestSignal,
     })
+    if (response.ok && response.headers.get('content-type')?.includes('application/x-ndjson')) {
+      return readReplyStream(response.body, onPartial)
+    }
     let data
     try { data = await response.json() } catch { /* handled below */ }
     if (!response.ok) {
@@ -45,8 +48,36 @@ export async function requestAssistant(messages, { signal, userId } = {}) {
     const text = `${data?.text || ''}`.trim()
     if (!text) throw new UserFacingError('没有收到有效回复，请重试。')
     return { role: 'model', content: text }
-  }, { signal, timeoutMs: 45000 }).catch((error) => {
+  }, { signal, timeoutMs: 130000 }).catch((error) => {
     if (error.name === 'AbortError' && !signal?.aborted) throw new UserFacingError('等待回复超时，请重试。问题和图片仍保留在输入区。')
     throw error
   })
+}
+
+async function readReplyStream(body, onPartial) {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = '', text = '', timer
+  try {
+    for (;;) {
+      const { value, done } = await reader.read()
+      buffer += decoder.decode(value, { stream: !done })
+      const lines = buffer.split('\n')
+      buffer = lines.pop()
+      for (const line of lines) {
+        const event = JSON.parse(line)
+        if (event.error) throw new UserFacingError(HTTP_MESSAGES[event.error] || '答疑暂时不可用，请稍后再试。')
+        if (event.done && typeof event.text === 'string' && event.text.trim()) return { role: 'model', content: event.text.trim() }
+        if (event.reset) text = ''
+        if (typeof event.delta === 'string') text += event.delta
+        // 手机每 80 毫秒更新一次；完整回复到达后才排版公式和表格。
+        if (onPartial && !timer) timer = setTimeout(() => { timer = null; onPartial(text) }, 80)
+      }
+      if (done) throw new UserFacingError('回复中断，请重试。')
+    }
+  } finally {
+    clearTimeout(timer)
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
+  }
 }

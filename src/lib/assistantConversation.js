@@ -3,7 +3,7 @@
 import { userErrorMessage } from './userFacingError'
 
 export function createAssistantConversation({ userId, history, request, onFirstQuestion, onAnswered }) {
-  let state = { messages: [], ready: false, busy: !!userId, loading: false, error: '', notice: '' }
+  let state = { messages: [], ready: false, busy: !!userId, loading: false, partial: '', error: '', notice: '' }
   const listeners = new Set()
   let generation = 0
   let initialized = false
@@ -48,9 +48,12 @@ export function createAssistantConversation({ userId, history, request, onFirstQ
       emit({ messages: [...previous, userMessage], busy: true, loading: true, error: '' })
       try {
         if (!previous.length) onFirstQuestion?.(userMessage)
-        const reply = await request([...previous, userMessage], { signal: controller.signal })
+        const reply = await request([...previous, userMessage], {
+          signal: controller.signal,
+          onPartial: partial => { if (token === generation) emit({ partial }) },
+        })
         if (token !== generation) return false
-        emit({ messages: [...previous, userMessage, reply], loading: false })
+        emit({ messages: [...previous, userMessage, reply], partial: '', loading: false })
         let saved
         if (mode === 'official') {
           try {
@@ -71,7 +74,7 @@ export function createAssistantConversation({ userId, history, request, onFirstQ
         }
         return false
       } finally {
-        if (token === generation) emit({ busy: false, loading: false })
+        if (token === generation) emit({ busy: false, loading: false, partial: '' })
       }
     },
     async clear() {

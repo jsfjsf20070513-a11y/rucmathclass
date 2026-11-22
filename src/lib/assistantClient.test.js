@@ -25,7 +25,7 @@ describe('assistant HTTP client', () => {
       signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
     })))
     const result = expect(requestAssistant([{ role: 'user', content: 'question' }], { userId: 'a' })).rejects.toThrow('超时')
-    await vi.advanceTimersByTimeAsync(45000)
+    await vi.advanceTimersByTimeAsync(130000)
     await result
     expect(vi.getTimerCount()).toBe(0)
   })
@@ -52,4 +52,26 @@ describe('assistant HTTP client', () => {
     vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error }, { status })))
     await expect(requestAssistant([{ role: 'user', content: 'question' }], { userId: 'a' })).rejects.toThrow(expected)
   })
+})
+
+it('shows streamed UTF-8 before completion and replaces an interrupted model preview', async () => {
+  let controller
+  const body = new ReadableStream({ start(c) { controller = c } })
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(body, { headers: { 'content-type': 'application/x-ndjson' } })))
+  const onPartial = vi.fn()
+  const result = requestAssistant([{ role: 'user', content: '问题' }], { userId: 'a', onPartial })
+  const encoded = new TextEncoder().encode('{"delta":"第一段"}\n')
+  controller.enqueue(encoded.slice(0, 12))
+  controller.enqueue(encoded.slice(12))
+  await vi.waitFor(() => expect(onPartial).toHaveBeenCalledWith('第一段'))
+  controller.enqueue(new TextEncoder().encode('{"reset":true}\n{"delta":"新回答"}\n'))
+  await vi.waitFor(() => expect(onPartial).toHaveBeenCalledWith('新回答'))
+  controller.enqueue(new TextEncoder().encode('{"done":true,"text":"新回答。"}\n'))
+  controller.close()
+  expect(await result).toEqual({ role: 'model', content: '新回答。' })
+})
+
+it('rejects a stream that ends after a partial answer', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => new Response('{"delta":"开头"}\n', { headers: { 'content-type': 'application/x-ndjson' } })))
+  await expect(requestAssistant([{ role: 'user', content: '问题' }])).rejects.toThrow('回复中断')
 })
