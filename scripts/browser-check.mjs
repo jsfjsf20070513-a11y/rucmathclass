@@ -181,9 +181,9 @@ try {
       await page.getByRole('button', { name: '重试', exact: true }).click()
       await page.getByRole('button', { name: '重试', exact: true }).waitFor({ state: 'hidden' })
       const sizes = await page.locator('.bib-page:not([inert])').evaluate(el =>
-        ['.bib-shelf-roman', '.bib-shelf-count', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-desc']
+        ['.bib-shelf-roman', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-subject']
           .map(selector => getComputedStyle(el.querySelector(selector)).fontSize))
-      assert.deepEqual(sizes, ['16px', '10px', '25px', '17px', '13px'])
+      assert.deepEqual(sizes, ['16px', '25px', '17px', '13px'])
       assert.equal(await page.locator('.bib-entry-tag').count(), 0)
       assert.equal(await page.locator('.bib-shelf').count(), 6)
       const initial = await page.locator('.bib-folio').textContent()
@@ -366,16 +366,16 @@ try {
       assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), 'true')
       assert.equal(await conflict.getByRole('button').count(), 0)
       await page.waitForFunction(() => {
-        const strike = document.querySelector('.is-pending .cor-strike')
-        return strike && getComputedStyle(strike).clipPath === 'inset(0px)'
+        const strike = document.querySelector('.is-pending .cor-strike mask path')
+        return strike && parseFloat(getComputedStyle(strike).strokeDashoffset) === 0
       })
       await activate(done)
       await route.fulfill({ json: [] })
       await page.getByRole('alert').getByText('删除结果未确认。请刷新后核对这段对话。').waitFor()
       await page.waitForFunction(() => {
         const title = document.querySelector('.cor-entry:last-child .lec-entry-title')
-        const strike = title.querySelector('.cor-strike')
-        return getComputedStyle(strike).clipPath.includes('100%') && !title.getAnimations({ subtree: true }).length
+        const strike = title.querySelector('.cor-strike mask path')
+        return parseFloat(getComputedStyle(strike).strokeDashoffset) === 1 && !title.getAnimations({ subtree: true }).length
       })
       assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), null)
       assert.equal(await list.getByRole('button').count(), 0)
@@ -403,7 +403,7 @@ try {
         assert.deepEqual(transitions, [], '减少动态效果时直接移除')
         await page.emulateMedia({ reducedMotion: null })
       } else {
-        assert.ok(transitions.includes('clip-path') && transitions.includes('grid-template-rows'), '划线后收起行高')
+        assert.ok(transitions.includes('stroke-dashoffset') && transitions.includes('grid-template-rows'), '划线后收起行高')
       }
       await page.reload()
       await rendered(page, '.cor-entry')
@@ -425,11 +425,15 @@ try {
       const question = page.getByRole('textbox', { name: '向 AI 助手提问', exact: true })
       const send = page.getByRole('button', { name: '发送', exact: true })
       assert.equal(await send.isDisabled(), true)
+      const sendInk = () => send.locator('path').first().evaluate(path => getComputedStyle(path).stroke)
+      assert.equal(await sendInk(), 'rgb(111, 103, 94)')
       const fieldHeight = () => question.evaluate((field) => field.clientHeight)
       const oneLine = await fieldHeight()
       assert.equal(oneLine, await send.evaluate((button) => button.clientHeight))
       assert.equal(oneLine, await page.getByRole('button', { name: '添加图片' }).evaluate((button) => button.clientHeight))
       await question.fill('第一行\n第二行')
+      assert.equal(await sendInk(), 'rgb(125, 47, 40)')
+      assert.equal(await question.evaluate(field => getComputedStyle(field).outlineStyle), 'none')
       assert.ok(await fieldHeight() > oneLine)
       await question.fill('第一行\n'.repeat(35))
       assert.equal(await question.evaluate((field) => field.scrollHeight > field.clientHeight), true)

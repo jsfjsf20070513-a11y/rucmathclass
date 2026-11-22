@@ -55,7 +55,6 @@ export default function Resources() {
                 <div className="bib-shelf-head" data-animate="">
                   <span className="bib-shelf-roman">{ROMAN[index]}</span>
                   <h2 className="bib-shelf-title">{shelf.title}</h2>
-                  <span className="bib-shelf-count">{shelf.items.length}</span>
                 </div>
                 {shelf.intro ? <p className="bib-shelf-intro" data-animate="">{shelf.intro}</p> : null}
                 {error && index === page ? (
@@ -71,8 +70,9 @@ export default function Resources() {
                     <li key={item.id} className="bib-entry" data-animate="">
                       <div className="bib-entry-row">
                         <a {...externalLinkProps(item.url)} className="bib-entry-title">{item.title}</a>
+                        {item.textbookUrl && <a className="bib-textbook" {...externalLinkProps(item.textbookUrl)}>免费教材</a>}
                       </div>
-                      <p className="bib-entry-desc">{item.description}{item.textbookUrl && <> <a {...externalLinkProps(item.textbookUrl)}>免费教材</a></>}</p>
+                      {item.subject && <p className="bib-entry-subject">{item.subject}</p>}
                     </li>
                   ))}
                 </ol>

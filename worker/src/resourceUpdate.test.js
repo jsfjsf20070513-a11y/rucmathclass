@@ -106,7 +106,7 @@ it('retains eight full editions, supports consecutive rollbacks and refuses a st
   let state = first
   const editions = []
   for (let i = 0; i < 10; i++) {
-    const items = state.items.map((item, index) => index === 0 ? { ...item, description: '第' + i + '版说明。' } : item)
+    const items = state.items.map((item, index) => index === 0 ? { ...item, subject: '专题数学' + i } : item)
     state = await publishResources(kv, state, items, '2026-11-23')
     editions.push(items)
   }
@@ -147,4 +147,25 @@ it('can repair a broken green-book link without changing its identity or trustin
   upstream({ ...weekly, greenUrl }, { approved: true }, green.url)
   expect(await updateResources(env, time)).toBe('published')
   expect((await readResources(env)).find(item => item.id === green.id)).toEqual({ ...green, url: greenUrl })
+})
+
+it('reads and rolls back old snapshots, and searches subjects from the public edition', async () => {
+  const kv = memory()
+  const env = { LECTURE: kv }
+  const legacy = seed.map(book => ({ ...book, subject: undefined, description: '这是一句旧介绍。' }))
+  legacy[0] = { ...legacy[0], id: 'archived-book', url: 'https://publisher.org/archive' }
+  await kv.put(catalogKey, JSON.stringify({ revision: 'old', backups: [], items: legacy }))
+  const books = await worker.fetch(new Request('https://example.org/api/resources'), env).then(r => r.json())
+  expect(books[0]).toMatchObject({ id: 'archived-book', subject: '' })
+  expect(books[1].subject).toBe('实分析')
+  expect(books.every(book => !('description' in book))).toBe(true)
+  const tool = await runSiteTool({ name: 'resources', arguments: '{"query":"实分析"}' }, { env })
+  expect(tool.some(book => book.subject === '实分析')).toBe(true)
+  expect(tool.every(book => !('description' in book))).toBe(true)
+  await publishResources(kv, await resourceState(kv), seed, '2026-11-30')
+  expect((await rollbackResources(kv)).items).toEqual(books)
+})
+
+it.each(['这门课介绍实分析。', '', undefined])('requires a subject for every proposed addition', subject => {
+  expect(() => applyProposal(seed, { remove: [seed[0].id], add: [{ ...newItem(0), subject }] })).toThrow('学科名')
 })

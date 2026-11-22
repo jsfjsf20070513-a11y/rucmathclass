@@ -27,6 +27,27 @@ export function linkIdentity(raw) {
   return url.href.replace(/^https:\/\/(?:www\.)?/, '').replace(/\/(?=[?#]|$)/, '')
 }
 
+// 快照中没有学科的旧条目按链接或编号补齐。未收在初版里的仍留在原架。
+const subjectsByUrl = new Map(staticResourceCatalog.map(item => [linkIdentity(item.url), item.subject]))
+const subjectsById = new Map(staticResourceCatalog.map(item => [item.id, item.subject]))
+
+export function readCatalog(items) {
+  if (!Array.isArray(items)) throw new Error('书目字段无效')
+  return validateCatalog(items.map(item => {
+    const { description, ...book } = item
+    if (book.subject === undefined && typeof description !== 'string') throw new Error('书目字段无效')
+    if (book.subject === undefined || book.subject === '') {
+      book.subject = subjectsByUrl.get(linkIdentity(book.url)) ?? subjectsById.get(book.id) ?? ''
+    }
+    return book
+  }))
+}
+
+export function validSubject(subject) {
+  return typeof subject === 'string' && subject.length <= 32 &&
+    /\p{Script=Han}/u.test(subject) && /^[\p{L}\p{N}]+(?: [\p{L}\p{N}]+)*$/u.test(subject)
+}
+
 export function validateCatalog(items) {
   if (!Array.isArray(items) || items.length > 36) throw new Error('全站最多收录 36 条')
   const ids = new Set(), urls = new Set(), titles = new Set()
@@ -35,7 +56,7 @@ export function validateCatalog(items) {
     if (!item || !counts.has(item.category) || typeof item.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(item.id) ||
         !['免费', '付费'].includes(item.access) || typeof item.url !== 'string' || item.url.length > 2048 ||
         typeof item.title !== 'string' || !item.title.trim() || item.title.length > 160 ||
-        typeof item.description !== 'string' || item.description.length > 160 || !/\p{Script=Han}/u.test(item.description)) {
+        (item.subject !== '' && !validSubject(item.subject))) {
       throw new Error('书目字段无效')
     }
     const url = linkIdentity(item.url)
