@@ -10,7 +10,7 @@
   overflow: hidden;
   background: #f4efe6;
   color: var(--mag-ink-2);
-  font-family: var(--font-cormorant, Garamond), var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-eb), var(--font-cjk), serif;
   font-variant-numeric: lining-nums tabular-nums;
 }
 
@@ -97,8 +97,8 @@
   display: flex;
   justify-content: flex-end;
   padding: 20px 28px;
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: 15px;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -131,7 +131,7 @@
   transform: translateX(-50%);
   width: fit-content;
   margin: 0;
-  font-family: var(--font-pinyon, "Snell Roundhand"), cursive;
+  font-family: var(--font-pinyon), var(--font-cjk), serif;
   font-size: 52px;
   font-weight: 400;
   letter-spacing: 0;
@@ -148,11 +148,11 @@
 }
 .mag-edition p {
   margin: 0;
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: 15px;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.14em;
-  text-indent: 0.14em;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
   text-transform: uppercase;
   white-space: nowrap;
   transition: color 1.2s ease;
@@ -179,7 +179,7 @@
 }
 .mag-giant {
   margin: 0;
-  font-family: var(--font-bodoni, Georgia), serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
   font-size: min(12.5vw, 19vh);
   font-size: min(12.5vw, 19svh);
   font-weight: 400;
@@ -228,14 +228,14 @@
 .mag-kicker {
   margin: 0 0 8px;
   color: var(--mag-wine-hover);
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: 15px;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 .mag-theorem-title {
   margin: 0 0 12px;
-  font-family: var(--font-cormorant, Garamond), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-cjk), serif;
   font-size: 26px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -258,7 +258,7 @@
 .mag-biblio-zh {
   margin: 0 0 40px;
   color: var(--mag-muted);
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.3em;
 }
 .mag-biblio-grid {
@@ -286,14 +286,15 @@
   border-bottom: 1px solid rgba(34, 29, 24, 0.14);
 }
 .mag-biblio-roman {
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: 15px;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
   color: var(--mag-wine-hover);
+  letter-spacing: 0.10em;
   width: 26px;
   flex-shrink: 0;
 }
 .mag-biblio-label {
-  font-family: var(--font-cormorant, Garamond), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-cjk), serif;
   font-size: 17px;
   color: var(--mag-ink-2);
   transition: color 0.15s ease;
@@ -327,10 +328,10 @@
 .mag-parole-kicker {
   margin: 0 0 14px;
   color: #4a3a28;
-  font-size: 15px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  font-family: var(--font-bodoni, Georgia), serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
 }
 .mag-parole-text {
   margin: 0;
@@ -341,7 +342,7 @@
 .mag-parole-note {
   margin: 12px 0 0;
   color: #4a3a28;
-  font-size: 15px;
+  font-size: 14px;
 }
 .mag-parole-rule {
   width: 24px;
@@ -352,7 +353,7 @@
 .mag-parole-author {
   margin: 0;
   color: #4a3a28;
-  font-size: 15px;
+  font-size: 14px;
   letter-spacing: 0.04em;
 }
 .mag-parole-foot {
@@ -365,7 +366,7 @@
 .mag-parole-foot p {
   margin: 0;
   color: #4a3a28;
-  font-size: 15px;
+  font-size: 14px;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -400,7 +401,7 @@
 .mag-connexion-title {
   margin: 0 0 6vh;
   margin: 0 0 6svh;
-  font-family: var(--font-bodoni, Georgia), serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
   font-size: 44px;
   font-weight: 400;
   font-style: italic;
@@ -415,7 +416,7 @@
   border: none;
   border-bottom: 1px solid rgba(34, 29, 24, 0.28);
   border-radius: 0;
-  font-family: var(--font-cormorant, Garamond), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-cjk), serif;
   font-size: 16px;
   color: var(--mag-ink-2);
   outline: none;
@@ -430,13 +431,13 @@
 .mag-connexion-error {
   margin: 18px 0 0;
   color: var(--mag-wine);
-  font-size: 15px;
+  font-size: 14px;
 }
 .mag-connexion-done {
   margin: 0 0 4vh;
   margin: 0 0 4svh;
   color: var(--mag-muted);
-  font-size: 15px;
+  font-size: 14px;
 }
 .mag-connexion-more {
   margin-top: 26px;
@@ -445,7 +446,7 @@
   padding: 0;
   cursor: pointer;
   color: var(--mag-muted);
-  font-size: 15px;
+  font-size: 14px;
   font-family: inherit;
   transition: color 0.2s ease;
 }
@@ -458,8 +459,8 @@
   padding: 0;
   cursor: pointer;
   color: var(--mag-muted);
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: 15px;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   transition: color 0.2s ease;
@@ -472,11 +473,13 @@
   .mag-cover-nav {
     top: 56px;
     padding: 0 18px;
-    letter-spacing: 0.12em;
+    font-size: 12px;
+    letter-spacing: 0.22em;
   }
   .mag-fade-top { height: 14%; }
   .mag-fade-bottom { height: 19%; }
   .mag-edition { gap: 12px; }
+  .mag-edition p { font-size: 12px; }
   .mag-edition-rule { width: 36px; }
   .mag-vocab-foot {
     flex-direction: column;
@@ -490,7 +493,6 @@
     grid-template-rows: none;
     grid-auto-flow: row;
   }
-  .mag-biblio-row { padding-block: 10px; }
   .mag-biblio-row:nth-child(4) { border-bottom: none; }
   .mag-biblio-row:last-child { border-bottom: 1px solid rgba(34, 29, 24, 0.14); }
   .mag-biblio-zh { margin-bottom: 24px; }

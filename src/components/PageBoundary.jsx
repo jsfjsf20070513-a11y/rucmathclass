@@ -1,17 +1,7 @@
-import { Component, Suspense, useEffect, useState } from 'react'
+import { Component, Suspense } from 'react'
 import { useLocation } from 'react-router-dom'
 import { normalizeRoutePath } from '../lib/routePath'
 import '../styles/page-status.css'
-
-function LoadingPage() {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const timer = window.setTimeout(() => setVisible(true), 600)
-    return () => window.clearTimeout(timer)
-  }, [])
-  if (!visible) return null
-  return <main className="page-status" role="status" aria-live="polite"><p lang="fr">Chargement…</p><p>正在打开页面…</p></main>
-}
 
 class Boundary extends Component {
   state = { failed: false }
@@ -36,5 +26,5 @@ export default function PageBoundary({ children }) {
   // 阅读和答疑各自的两层页面共用账号状态和已读内容。
   const path = normalizeRoutePath(pathname)
   const key = path.startsWith('/assistant/') ? '/assistant' : path.startsWith('/lecture/') ? '/lecture' : path
-  return <Boundary key={key}><Suspense fallback={<LoadingPage />}>{children}</Suspense></Boundary>
+  return <Boundary key={key}><Suspense fallback={null}>{children}</Suspense></Boundary>
 }

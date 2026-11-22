@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { pinPaperFonts } from '../lib/paperFonts'
 import { createPageFlipRenderer } from '../lib/pageFlipRenderer'
 
 // 首页与内页共用翻页参数。
@@ -37,10 +36,6 @@ export function usePageFlip({ count, sides = [], durationMs = 900, enabled = tru
     setPage(next)
     onPageChange?.(next)
   }, [count, onPageChange])
-
-  useLayoutEffect(() => {
-    pinPaperFonts(pagesRef.current[page])
-  }, [page])
 
   useLayoutEffect(() => {
     rendererRef.current.apply({ pages: pagesRef.current, cur: page, sides, durationMs, instant: instantRef.current, enabled })

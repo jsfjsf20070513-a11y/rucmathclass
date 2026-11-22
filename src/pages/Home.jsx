@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { labelScript } from '../lib/labelScript'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { signIn, authErrorMessage } from '../lib/authBackend'
@@ -293,7 +294,7 @@ export default function Home({ visit }) {
           <p className="mag-parole-text" lang="fr" data-animate="">{parole.text}</p>
           <p className="mag-parole-note" data-animate="">{parole.note}</p>
           <div className="mag-parole-rule" aria-hidden="true" />
-          <p className="mag-parole-author" data-animate="">
+          <p className="mag-parole-author" data-script={labelScript(parole.author, parole.src)} data-animate="">
             {parole.author}
             {parole.src ? ` · ${parole.src}` : ''}
           </p>

@@ -1,3 +1,4 @@
+import { focusOnPaper } from '../lib/paperFonts'
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { loadAssistantReply } from '../routes/pageLoaders'
 
@@ -83,8 +84,7 @@ export default function AssistantThread({ conversation, onStart, rise }) {
     if (sendingHere.current) {
       scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
     } else if (rise && !focused.current && firstQuestion.current && ready) {
-      firstQuestion.current.focus({ preventScroll: true })
-      focused.current = true
+      return focusOnPaper(firstQuestion.current, { preventScroll: true })
     }
   }, [messages, loading, ready, rise])
 
@@ -98,7 +98,7 @@ export default function AssistantThread({ conversation, onStart, rise }) {
     if (await sent && mounted.current) {
       setInput('')
       setImage(null)
-      inputRef.current?.focus()
+      focusOnPaper(inputRef.current)
     }
   }
 
@@ -138,7 +138,7 @@ export default function AssistantThread({ conversation, onStart, rise }) {
               if (m.role === 'user') {
                 const fig = m.image ? ++figureCounter : 0
                 return (
-                  <article key={idx} ref={idx === 0 ? firstQuestion : undefined} tabIndex={-1} aria-label="你的提问" className="cor-turn cor-question">
+                  <article key={idx} ref={idx === 0 ? firstQuestion : undefined} onFocus={() => { focused.current = true }} tabIndex={-1} aria-label="你的提问" className="cor-turn cor-question">
                     {m.image ? (
                       <figure className="cor-figure">
                         <figcaption>{`图片 ${fig} · 刷新后需重新上传`}</figcaption>

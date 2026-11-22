@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { createAnimationTasks } from '../lib/animationTasks'
-import { pinPaperFonts } from '../lib/paperFonts'
 import { startWeatherCanvas } from '../lib/weatherCanvas'
 
 export function useCoverAtmosphere({ weather, page, canvasRef, contentRef }) {
@@ -9,7 +8,6 @@ export function useCoverAtmosphere({ weather, page, canvasRef, contentRef }) {
     if (!element || element.style.opacity === '1') return undefined
     const tasks = createAnimationTasks()
     const show = () => {
-      pinPaperFonts(element)
       element.style.transition = 'opacity 1.1s ease'
       tasks.frame(() => tasks.frame(() => { element.style.opacity = '1' }))
       tasks.timeout(() => { element.style.transition = 'none' }, 1300)

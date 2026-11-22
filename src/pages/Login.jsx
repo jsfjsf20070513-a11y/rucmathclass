@@ -346,7 +346,7 @@ function LoginForm({ aux, returnTo, onBack }) {
           ) : null}
 
           <div className="editorial-actions login-submit">
-            <button type="submit" className="text-action lgn-submit" disabled={loading || sessionLoading || !isAuthEnabled}>
+            <button type="submit" className="text-action lgn-submit" lang={mode === 'login' && !loading ? 'fr' : 'zh-CN'} disabled={loading || sessionLoading || !isAuthEnabled}>
               {submitLabel}
             </button>
           </div>

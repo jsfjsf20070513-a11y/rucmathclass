@@ -195,14 +195,8 @@ function Reader({ days, articles, date, failed, onRetry, answers, onChoose }) {
   const location = useLocation()
   // 只在打开时定位；之后左右翻只改地址，不重建页面栈。
   const [initial] = useState(() => days.findIndex((day) => day.date === date))
-  const [waitingFor, setWaitingFor] = useState(null)
   const article = articles[date]
-  useEffect(() => {
-    if (article) return
-    const timer = window.setTimeout(() => setWaitingFor(date), 1500)
-    return () => window.clearTimeout(timer)
-  }, [date, article])
-  const ready = Boolean(article || failed[date] || waitingFor === date)
+  const ready = Boolean(article || failed[date])
   const sides = useMemo(() => days.map((_, index) => (index === 0 ? 'none' : 'right')), [days])
   // 阅读时只认横向手势和方向键换天，读到页底继续滚不翻页。
   const fromArchive = Boolean(location.state?.fromArchive)
@@ -240,8 +234,7 @@ function Reader({ days, articles, date, failed, onRetry, answers, onChoose }) {
             >
               {day ? <ReadingPaper day={day} chosen={chosen} onChoose={(i, key) => onChoose(day.date, i, key)} /> :
                 entry.date === date && ready && <div className="lec-load" role="status">
-                  {failed[date] ? <button type="button" className="text-action" onClick={onRetry}>重试</button>
-                    : <span lang="fr">Chargement…</span>}
+                  <button type="button" className="text-action" onClick={onRetry}>重试</button>
                 </div>}
             </section>
           )

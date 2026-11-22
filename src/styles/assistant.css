@@ -11,7 +11,7 @@
   overflow: hidden;
   background: var(--paper);
   color: var(--mag-ink-2);
-  font-family: var(--font-cormorant, Garamond), var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-eb), var(--font-cjk), serif;
   font-variant-numeric: lining-nums proportional-nums;
 }
 
@@ -129,7 +129,7 @@
 .cor-r-text blockquote { padding-inline-start: 16px; color: var(--mag-muted); }
 .cor-r-text hr { width: 48px; border: 0; border-top: 1px solid var(--mag-hairline); }
 
-.cor-r-text code { font: 400 15px/1.65 "JetBrains Mono", var(--font-cjk), monospace; }
+.cor-r-text code { font: 400 15px/1.65 var(--font-mono), var(--font-cjk), serif; }
 .cor-r-text :not(pre) > code {
   padding: 2px 4px;
   border-radius: 4px;
@@ -141,12 +141,15 @@
   padding: 12px 16px;
   border: 1px solid var(--mag-hairline);
   border-radius: 6px;
-  font: 400 15px/1.65 "JetBrains Mono", var(--font-cjk), monospace;
+  font: 400 15px/1.65 var(--font-mono), var(--font-cjk), serif;
   white-space: pre;
 }
 .cor-display-math { display: block; max-width: 100%; overflow-x: auto; }
 /* 成比例放大含小号上下标的整条算式，保留 KaTeX 计算的分数线和上下标位置。 */
-.cor-r-text .katex { font-size: max(1.1em, var(--math-floor, 15px)); }
+.cor-r-text .katex { font-size: max(1.1em, var(--cor-math-floor, 15px)); }
+.cor-r-text .katex:has(.sizing.size3) { --cor-math-floor: 21.5px; }
+.cor-r-text .katex:has(.sizing.size2) { --cor-math-floor: 25.1px; }
+.cor-r-text .katex:has(.sizing.size1) { --cor-math-floor: 30.1px; }
 .cor-r-text .katex-display { margin: 0; padding-block: 4px; }
 .cor-r-text .katex-display > .katex { width: max-content; min-width: 100%; }
 .cor-inline-math {

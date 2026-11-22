@@ -12,7 +12,7 @@
   flex-direction: column;
   background: #f4efe6;
   color: var(--mag-ink-2);
-  font-family: var(--font-cormorant, Garamond), var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-eb), var(--font-cjk), serif;
   font-variant-numeric: lining-nums proportional-nums;
   overflow: hidden;
   position: relative;
@@ -138,7 +138,7 @@
   border: none;
   background: transparent;
   color: var(--mag-wine);
-  font-family: var(--font-cormorant, Garamond), serif;
+  font-family: var(--font-cormorant), var(--font-cjk), serif;
   font-size: 19px;
   font-style: italic;
   cursor: pointer;
@@ -167,7 +167,7 @@
 
 .lec-fr {
   margin: 0 0 6px;
-  font-family: var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-eb), var(--font-cjk), serif;
   font-size: 18px;
   line-height: 1.6;
   font-weight: 600;
@@ -200,11 +200,11 @@
   color: var(--mag-ink);
 }
 .lec-latin {
-  font-family: var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-eb), var(--font-cjk), serif;
   font-size: 1.05em;
 }
 .lec-term .lec-latin {
-  font-family: var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-eb), var(--font-cjk), serif;
   font-size: 1.05em;
   font-weight: 600;
 }
@@ -212,8 +212,8 @@
 .lec-star {
   margin-right: 4px;
   color: var(--mag-wine);
-  font-family: var(--font-bodoni, Georgia), serif;
-  font-size: max(15px, 0.8em);
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
+  font-size: 12px;
 }
 
 .lec-block {
@@ -254,7 +254,7 @@
 
 .lec-quote {
   margin: 0;
-  font-family: var(--font-eb, Georgia), var(--font-cjk), serif;
+  font-family: var(--font-eb), var(--font-cjk), serif;
   font-size: 17px;
   line-height: 1.65;
   color: #3f3831;
