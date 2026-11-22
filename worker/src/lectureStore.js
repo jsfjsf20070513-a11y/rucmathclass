@@ -1,14 +1,8 @@
+export { beijingDate, dayMs, isCalendarDate as isLectureDate } from '../../src/lib/calendarDate.js'
+
 // day 键的 metadata 就是档案索引项，正文和索引随同一次 KV put 发布。
 export const firstLectureDate = '2026-11-18'
-export const dayMs = 86_400_000
-export const beijingDate = (time) => new Date(time + 8 * 3_600_000).toISOString().slice(0, 10)
 export const lectureSummary = ({ date, level, title }) => ({ date, level, title })
-
-export function isLectureDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const ms = Date.parse(value)
-  return Number.isFinite(ms) && new Date(ms).toISOString().slice(0, 10) === value
-}
 
 export async function listLectureKeys(kv, prefix) {
   const keys = []

@@ -1,11 +1,10 @@
-import { randomUUID } from 'node:crypto'
-import { existsSync, linkSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
-import { dirname, join, resolve } from 'node:path'
+import { existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { lectureFormat, lectureRequest } from '../../worker/src/lecturePrompt.js'
 import { dayMs } from '../../worker/src/lectureStore.js'
-import { generate } from './codex.mjs'
+import { modelFile, saveNew } from '../batch/files.mjs'
 import { checkArticle, readBatch, readJson, readSeeds } from './files.mjs'
 import { checkPlan, planPrompt, planSchema, schedule } from './plan.mjs'
 
@@ -30,24 +29,6 @@ function positive(value, name) {
   const n = Number(value)
   if (!/^\d+$/.test(value) || !Number.isSafeInteger(n) || n < 1) throw new Error(`${name}须为正整数。`)
   return n
-}
-
-// 临时文件写完才挂到正式文件名。两个进程同时续跑时都读取先保存的那一份。
-function saveNew(path, value) {
-  mkdirSync(dirname(path), { recursive: true })
-  const temp = join(dirname(path), `.${randomUUID()}.tmp`)
-  try {
-    writeFileSync(temp, JSON.stringify(value, null, 2) + '\n')
-    try { linkSync(temp, path) }
-    catch (error) { if (error.code !== 'EEXIST') throw error }
-  } finally { if (existsSync(temp)) unlinkSync(temp) }
-  return readJson(path)
-}
-
-async function modelFile(path, model, schema, prompt, check, label) {
-  const value = existsSync(path) ? readJson(path) : saveNew(path, await generate(model, schema, prompt, check, label))
-  check(value)
-  return value
 }
 
 function checkReview(report, date) {

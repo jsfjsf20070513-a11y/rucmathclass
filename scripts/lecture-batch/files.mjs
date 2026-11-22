@@ -1,15 +1,13 @@
-import { readFileSync, readdirSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { lectureSamples } from '../../src/data/lectureSamples.js'
 import { lectureProblems } from '../../src/lib/lectureContent.js'
 import { isLectureDate } from '../../worker/src/lectureStore.js'
+import { readJson } from '../batch/files.mjs'
 import { checkPlan } from './plan.mjs'
 
-export function readJson(path) {
-  try { return JSON.parse(readFileSync(path, 'utf8')) }
-  catch (error) { throw new Error(`${path}：${error.message}`) }
-}
+export { readJson }
 
 export function checkArticle(article, slot) {
   const problems = lectureProblems(article)

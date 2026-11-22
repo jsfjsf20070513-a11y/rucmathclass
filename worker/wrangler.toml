@@ -24,6 +24,10 @@ zone_name = "rucmathclass.com"
 pattern = "rucmathclass.com/api/lecture*"
 zone_name = "rucmathclass.com"
 
+[[routes]]
+pattern = "rucmathclass.com/api/daily/*"
+zone_name = "rucmathclass.com"
+
 [triggers]
 crons = ["*/15 * * * *"]
 
