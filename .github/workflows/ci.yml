@@ -1,6 +1,6 @@
 name: CI
 
-# 对 mathclass/main 的推送和 PR 执行 lint、单测、构建。
+# 对 mathclass/main 的推送和 PR 执行代码、构建、Worker 和浏览器检查。
 # 这些检查不连接生产数据库，也不执行部署。
 
 on:
@@ -8,6 +8,10 @@ on:
     branches: [mathclass/main]
   pull_request:
     branches: [mathclass/main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint-and-build:
@@ -37,15 +41,47 @@ jobs:
         env:
           WRANGLER_SEND_METRICS: 'false'
 
-      - name: Install browser for UI checks
-        run: npx playwright install --with-deps chromium
+  browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium headless shell
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-shell-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install browser system dependencies
+        run: npx playwright install-deps chromium
+
+      - name: Install Chromium headless shell
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --only-shell chromium
 
       - name: Check mobile and desktop flows
-        run: npm run browser:check
+        run: npm run browser:check -- ${{ matrix.shard }}/${{ strategy.job-total }}
 
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: browser-failure
+          name: browser-failure-${{ matrix.shard }}
           path: output/playwright/
           retention-days: 7
