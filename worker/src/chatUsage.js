@@ -1,5 +1,5 @@
-// 所有金额以百万分之一美元计。余额校验与扣款必须在同一笔预留内完成。
-export const monthlyBudget = 60_000_000
+// 所有金额以百万分之一美元计。
+export const monthlyBudget = 55_000_000
 export const dailySearchLimit = 10
 export const maxOutputTokens = 4096
 const searchFee = 10_000
@@ -32,30 +32,51 @@ export function usageCharge(usage, searches) {
   return { amount: estimateCost(usage.input_tokens, usage.output_tokens, searches), searches }
 }
 
-export async function reserveUsage(env, { userId, today, input, tools, wantSearch }) {
-  const store = env.CHAT_USAGE
-  if (!store || !env.LECTURE) return null
-  const month = today.slice(0, 7)
-  const ledger = store.get(store.idFromName(month))
-  const ticket = await ledger.reserve({ userId, today, inputTokens: reserveTokens(input, tools), wantSearch })
-  if (!ticket) return null
-  // 每次预留、结算各用一个新键，避开 KV 单键每秒一次的写入限制。
-  const key = 'usage:' + month + ':' + ticket.id
-  try {
-    await env.LECTURE.put(key + ':reserve', JSON.stringify({ day: today, search: ticket.search,
-      reservedMicros: ticket.amount, monthCommittedMicros: ticket.monthMicros }))
-  } catch (error) {
-    // 尚未向模型发送请求，可以安全释放这笔预留。
-    await ledger.settle(ticket.id, { amount: 0, searches: 0 })
-    throw error
+// 两条记录可能分属不同的列表页，也可能先看到结算。每个请求只计一次。
+async function monthUsage(kv, prefix, today, userId) {
+  const requests = new Map()
+  let cursor
+  do {
+    const page = await kv.list({ prefix, cursor })
+    for (const { name, metadata } of page.keys) {
+      const id = name.slice(prefix.length, name.lastIndexOf(':'))
+      const settled = name.endsWith(':settle')
+      if (requests.has(id) && !settled) continue
+      const entry = metadata ?? await kv.get(name, 'json')
+      const amount = settled ? entry?.costMicros : entry?.reservedMicros
+      if (!Number.isSafeInteger(amount) || amount < 0) throw new Error('无法读取本月用量')
+      const searches = entry.day === today && entry.userId === userId
+        ? (settled ? entry.searches : Number(entry.search)) : 0
+      requests.set(id, { amount, searches })
+    }
+    cursor = page.list_complete ? undefined : page.cursor
+  } while (cursor)
+  let spent = 0
+  let searches = 0
+  for (const entry of requests.values()) {
+    spent += entry.amount
+    searches += entry.searches
   }
-  return { ...ticket, month, key }
+  return { spent, searches }
+}
+
+function recordUsage(kv, key, entry) {
+  return kv.put(key, JSON.stringify(entry), { metadata: entry })
+}
+
+export async function reserveUsage(env, { userId, today, input, tools, wantSearch }) {
+  const prefix = 'usage:' + today.slice(0, 7) + ':'
+  const totals = await monthUsage(env.LECTURE, prefix, today, userId)
+  const plan = planUsage({ ...totals, inputTokens: reserveTokens(input, tools), wantSearch })
+  if (!plan) return null
+  const key = prefix + crypto.randomUUID()
+  await recordUsage(env.LECTURE, key + ':reserve', { day: today, userId, search: plan.search, reservedMicros: plan.amount })
+  return { key, day: today, userId, search: plan.search }
 }
 
 export async function settleUsage(env, ticket, usage, searches) {
   const charge = usageCharge(usage, searches)
   if (!charge) return
-  await env.LECTURE.put(ticket.key + ':settle', JSON.stringify({ inputTokens: usage.input_tokens,
-    outputTokens: usage.output_tokens, searches, costMicros: charge.amount }))
-  await env.CHAT_USAGE.get(env.CHAT_USAGE.idFromName(ticket.month)).settle(ticket.id, charge)
+  await recordUsage(env.LECTURE, ticket.key + ':settle', { day: ticket.day, userId: ticket.userId,
+    inputTokens: usage.input_tokens, outputTokens: usage.output_tokens, searches, costMicros: charge.amount })
 }

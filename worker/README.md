@@ -90,4 +90,6 @@ curl -fsS 'http://127.0.0.1:8787/__scheduled'
 
 支持流式的客户端发送 `Accept: application/x-ndjson`。每行是一条文字增量、清除临时文字、完整回答或错误。客户端收到完整回答后才保存。旧客户端仍收到 JSON。Sol 未能完成回答时，Worker 清掉半截回复，再尝试 Gemini。
 
-所有账号的 Sol 答疑共用每月 60 美元额度。每人每天最多联网 10 次，按北京时间计算。每次调用 Sol 前，先预留输入、输出和可能发生的一次搜索费用。拿到 token 用量后按保守费率估算支出。连接中断且用量未知时保留预留金额。该轮允许联网时，还会保留一次搜索名额。额度服务不可用或当月余额不足时使用 Gemini。当日搜索额度用完时，Sol 仍可查站内资料。`LECTURE` 中的 `usage:月份:请求编号:reserve` 和 `usage:月份:请求编号:settle` 分别记录预留和结算，不写入题目、回答或令牌。费率见 [Sol 定价](https://developers.openai.com/api/docs/models/gpt-6.2-sol)与[联网计费](https://developers.openai.com/api/docs/pricing)。
+班级助手默认使用 `gpt-6.2-sol`。所有账号共用每月 55 美元的 Sol 预算。按北京时间计算，每人每天最多联网 10 次。当天次数用完后，Sol 仍可查站内资料。月余额不足、KV 记账失败或 OpenAI 出错时，助手改用 Gemini 回答，关闭联网搜索。
+
+每次请求 Sol 前，Worker 在现有 `LECTURE` KV 中写入 `usage:月份:请求编号:reserve`，预留输入、输出和可能发生的一次搜索费用。取得用量后写入同一请求的 `:settle`，按输入和输出的 token 数及实际搜索次数估算费用。如果无法取得用量，这次请求仍按预留金额和预留的搜索次数计入额度。KV 的跨地区同步有延迟，并发请求可能让用量略超限。费率见 [Sol 定价](https://developers.openai.com/api/docs/models/gpt-6.2-sol)与[联网计费](https://developers.openai.com/api/docs/pricing)。

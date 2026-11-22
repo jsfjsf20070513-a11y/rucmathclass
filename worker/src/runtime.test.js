@@ -51,6 +51,27 @@ it('allows a verified session through to input validation without a model reques
   upstream.assertNoPendingInterceptors()
 })
 
+it('uses Sol after authentication and records its charge in the local LECTURE KV', async () => {
+  authRequest().reply(200, user)
+  const completed = { type: 'response.completed', response: { status: 'completed',
+    output: [{ type: 'message', content: [{ type: 'output_text', text: '回答' }] }],
+    usage: { input_tokens: 100, output_tokens: 30 } } }
+  upstream.get('https://api.openai.com').intercept({ method: 'POST', path: '/v1/responses' })
+    .reply(200, 'data: ' + JSON.stringify(completed) + '\n\n')
+  const response = await runtime.dispatchFetch('https://rucmathclass.com/api/chat', {
+    method: 'POST', headers: { Authorization: 'Bearer fixture-token', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: '你好' }] }),
+  })
+  expect(await response.json()).toEqual({ model: 'gpt-6.2-sol', text: '回答' })
+  const kv = await runtime.getKVNamespace('LECTURE')
+  const { keys } = await kv.list({ prefix: 'usage:' })
+  expect(keys).toHaveLength(2)
+  expect(keys.find(key => key.name.endsWith(':settle')).metadata).toMatchObject({
+    userId: user.id, searches: 0, costMicros: 550,
+  })
+  upstream.assertNoPendingInterceptors()
+})
+
 it('rejects an auth redirect without forwarding the session to another host', async () => {
   let followed = false
   authRequest().reply(302, '', { headers: { location: 'https://redirect.example.invalid/user' } })

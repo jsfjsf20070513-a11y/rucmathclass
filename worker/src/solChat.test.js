@@ -1,21 +1,25 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { handleChat } from './chat.js'
-import { createUsageLedger } from './usageLedger.js'
-import { monthlyBudget } from './chatUsage.js'
+import { monthlyBudget, reserveUsage, settleUsage } from './chatUsage.js'
 import { answerWithSol } from './solChat.js'
+import { beijingDate } from './lectureStore.js'
 
 const userId = '11111111-1111-4111-8111-111111111111'
 function environment({ spent = 0, searches = 0 } = {}) {
-  const data = new Map([['spent', spent]])
-  const transaction = callback => callback({
-    get: key => data.get(key) ?? (key.includes(':') ? searches : undefined),
-    put: (key, value) => data.set(key, value), delete: key => data.delete(key),
-  })
-  const ledger = createUsageLedger({ transaction })
-  vi.spyOn(ledger, 'reserve')
-  vi.spyOn(ledger, 'settle')
-  return { env: { LECTURE: { put: vi.fn(async () => {}) }, OPENAI_API_KEY: 'fixture', GEMINI_API_KEY: 'fixture',
-    CHAT_USAGE: { idFromName: month => month, get: () => ledger } }, ledger }
+  const entries = new Map()
+  const day = beijingDate(Date.now())
+  const prefix = 'usage:' + day.slice(0, 7) + ':'
+  entries.set(prefix + 'seed:settle', { day, userId, costMicros: spent, searches })
+  const kv = {
+    put: vi.fn(async (name, value, { metadata }) => entries.set(name, metadata)),
+    list: async ({ prefix, cursor = '0' }) => {
+      const keys = [...entries].filter(([name]) => name.startsWith(prefix))
+        .map(([name, metadata]) => ({ name, metadata }))
+      const start = Number(cursor)
+      return { keys: keys.slice(start, start + 2), list_complete: start + 2 >= keys.length, cursor: String(start + 2) }
+    },
+  }
+  return { env: { LECTURE: kv, OPENAI_API_KEY: 'fixture', GEMINI_API_KEY: 'fixture' } }
 }
 afterEach(() => vi.unstubAllGlobals())
 const body = { messages: [{ role: 'user', content: '今日定理是什么？' }] }
@@ -29,7 +33,7 @@ const final = (output, usage = { input_tokens: 100, output_tokens: 30 }) => ({
 const textItem = { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: '回答' }] }
 const call = { type: 'function_call', name: 'theorem', arguments: '{"date":"2025-09-01"}', call_id: 'one' }
 it('passes tool outputs and encrypted reasoning back to Responses, returning final text with clickable citations', async () => {
-  const { env, ledger } = environment()
+  const { env } = environment()
   const reasoning = { type: 'reasoning', encrypted_content: 'fixture', summary: [] }
   vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(stream(final([reasoning, call])))
     .mockResolvedValueOnce(stream({ type: 'response.output_text.delta', delta: '回答' }, final([
@@ -46,10 +50,9 @@ it('passes tool outputs and encrypted reasoning back to Responses, returning fin
   expect(payloads[1].input).toContainEqual(reasoning)
   expect(payloads[1].input.at(-1)).toMatchObject({ call_id: 'one', type: 'function_call_output', output: expect.stringContaining('Bolzano-Weierstrass') })
   expect(emit).toHaveBeenCalledWith({ delta: '回答' })
-  expect(ledger.reserve).toHaveBeenCalledTimes(2)
   expect(env.LECTURE.put.mock.calls).toHaveLength(4)
   expect(env.LECTURE.put.mock.calls.every(([key]) => key.startsWith('usage:'))).toBe(true)
-  expect(ledger.settle.mock.calls.map(([, charge]) => charge.searches)).toEqual([0, 1])
+  expect(env.LECTURE.put.mock.calls.filter(([key]) => key.endsWith(':settle')).map(([, value]) => JSON.parse(value).searches)).toEqual([0, 1])
 })
 
 it('allows search number ten and removes web_search on the next request while still offering local tools', async () => {
@@ -86,10 +89,9 @@ it.each(['budget', 'failure', 'truncated'])('falls back to the Gemini stream on 
 })
 
 it('keeps an uncertain charge when the upstream stream disappears', async () => {
-  const { env, ledger } = environment()
+  const { env } = environment()
   vi.stubGlobal('fetch', vi.fn(async () => stream({ type: 'response.output_text.delta', delta: '半句' })))
   await expect(answerWithSol(contents, context(env), () => {})).rejects.toThrow('中断')
-  expect(ledger.settle).not.toHaveBeenCalled()
   expect(env.LECTURE.put).toHaveBeenCalledOnce()
 })
 
@@ -102,21 +104,27 @@ it('stops if a tool never finishes the answer, with a final round without tools'
 })
 
 it('releases unused search reservations once, independently for each user and Beijing day', async () => {
-  const data = new Map()
-  let tail = Promise.resolve()
-  const ledger = createUsageLedger({ transaction: fn => {
-    tail = tail.then(() => fn({ get: k => data.get(k), put: (k, v) => data.set(k, v), delete: k => data.delete(k) }))
-    return tail
-  } })
-  const args = { today: '2026-11-22', userId, inputTokens: 100, wantSearch: true }
-  const tickets = await Promise.all(Array.from({ length: 12 }, () => ledger.reserve(args)))
-  expect(tickets.filter(t => t.search)).toHaveLength(10)
-  await ledger.settle(tickets[0].id, { amount: 1000, searches: 0 })
-  await ledger.settle(tickets[0].id, { amount: 1000, searches: 0 })
-  expect((await ledger.reserve(args)).search).toBe(true)
-  expect((await ledger.reserve(args)).search).toBe(false)
-  expect((await ledger.reserve({ ...args, userId: 'another' })).search).toBe(true)
-  expect((await ledger.reserve({ ...args, today: '2026-11-23' })).search).toBe(true)
-  data.set('spent', monthlyBudget - 1)
-  expect(await ledger.reserve(args)).toBeNull()
+  const { env } = environment()
+  const args = { today: '2026-11-22', userId, input: contents, tools: [], wantSearch: true }
+  const reserve = (overrides = {}) => reserveUsage(env, { ...args, ...overrides })
+  const first = await reserve()
+  for (let i = 1; i < 10; i++) expect((await reserve()).search).toBe(true)
+  expect((await reserve()).search).toBe(false)
+  await settleUsage(env, first, { input_tokens: 1, output_tokens: 1 }, 0)
+  expect((await reserve()).search).toBe(true)
+  expect((await reserve()).search).toBe(false)
+  expect((await reserve({ userId: 'another' })).search).toBe(true)
+  expect((await reserve({ today: '2026-11-23' })).search).toBe(true)
+})
+
+it('defaults to Sol using the existing KV and settles the cost before the next budget check', async () => {
+  expect(monthlyBudget).toBe(55_000_000)
+  const { env } = environment({ spent: 54_450_000 })
+  vi.stubGlobal('fetch', vi.fn(async () => stream(final([textItem]))))
+  for (let i = 0; i < 2; i++) {
+    const request = new Request('https://example.invalid/api/chat', { method: 'POST', body: JSON.stringify(body) })
+    const response = await handleChat(request, env, '', userId)
+    expect(await response.json()).toEqual({ model: 'gpt-6.2-sol', text: '回答' })
+  }
+  expect(fetch).toHaveBeenCalledTimes(2)
 })
