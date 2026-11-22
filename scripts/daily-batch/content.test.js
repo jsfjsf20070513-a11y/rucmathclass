@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, it } from 'vitest'
-import { dates, readBatch, renderDay, staticHistory } from './content.mjs'
+import { retainedParoles, checkRetainedParole, dates, readBatch, renderDay, staticHistory } from './content.mjs'
 
 const slot = { date: '2026-12-01', title: '二项式定理' }
 const day = {
@@ -39,4 +39,16 @@ it('整批检查核对日期和渲染结果，手改公式后可重新排版', (
     save('days/副本.json', rendered)
     expect(() => readBatch(dir)).toThrow('日期')
   } finally { rmSync(dir, { recursive: true, force: true }) }
+})
+
+it('按日期取回原引语，并核对译文、署名和出处的每个字符', () => {
+  const next = { ...day, date: '2026-12-02', parole: { ...day.parole, src: '另一卷' } }
+  const calendar = dates(day.date, 2)
+  const originals = retainedParoles([next, day], calendar)
+  for (const entry of [day, next]) checkRetainedParole(entry, originals.get(entry.date))
+  expect(() => retainedParoles([next], calendar)).toThrow('缺少')
+  for (const field of Object.keys(day.parole)) {
+    const changed = { ...day.parole, [field]: day.parole[field] + ' ' }
+    expect(() => checkRetainedParole({ ...day, parole: changed }, originals.get(day.date))).toThrow('不同')
+  }
 })
