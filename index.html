@@ -41,6 +41,10 @@
     <meta name="twitter:image:alt" content="Carnet de classe — 象牙纸与酒红的书页版式" />
 
     <title>Math · Carnet de classe</title>
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-opsz-italic.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-italic.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-opsz-normal.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/node_modules/@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-normal.woff2" />
     <link rel="stylesheet" href="/src/vendor.css" />
     <link
       rel="icon"
@@ -48,8 +52,6 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23f4efe6'/%3E%3Ctext x='32' y='46' text-anchor='middle' font-size='44' font-style='italic' fill='%237d2f28' font-family='Georgia,serif'%3EM%3C/text%3E%3C/svg%3E"
     />
     <style>
-      /* 启动纸面(2026-08 杂志刊):刷新时不再放旧站扫描条加载页,
-         直接铺封面纸色 + 花体刊名极淡浮现——React 一挂载即被杂志盖上。 */
       :root {
         --boot-paper: #f4efe6;
         --boot-wine: #7d2f28;
@@ -84,30 +86,20 @@
       #boot-recovery { padding: 24px; text-align: center; color: #6f675e; }
       #boot-reload { font: inherit; padding: 6px 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: var(--boot-wine); cursor: pointer; }
 
-      .boot-mark {
-        margin: 0;
-        font-family: "Pinyon Script", cursive;
-        font-size: 52px;
-        line-height: 1.2;
-        color: var(--boot-wine);
-        opacity: 0;
-        /* 0.5s 后才浮现:秒开时观众根本看不到加载态,慢网才见刊名 */
-        animation: boot-in 0.9s 0.5s ease forwards;
+      .boot-overlay::before, .paper-stage::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 3.25rem;
+        border-bottom: 1px solid rgba(34, 29, 24, 0.16);
+        pointer-events: none;
       }
-
-      @keyframes boot-in {
-        to { opacity: 0.85; }
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .boot-mark { animation: none; opacity: 0.85; }
-      }
+      #boot-recovery { font-family: Georgia, "Songti SC", "STSong", "Noto Serif CJK SC", SimSun, serif; }
     </style>
   </head>
   <body>
     <div id="root">
       <div class="boot-overlay">
-        <p class="boot-mark" role="status" aria-label="Chargement">Math</p>
         <div id="boot-recovery" hidden role="status">
           <p>页面还没能打开，请检查网络后重试。</p>
           <button id="boot-reload" type="button">重新加载</button>

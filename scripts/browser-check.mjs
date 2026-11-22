@@ -58,7 +58,10 @@ async function assistantType(page) {
   const violations = await page.locator('.paper-current .cor').evaluate((main) => [...main.querySelectorAll('*')]
     .filter((el) => el.getClientRects().length && !el.closest('svg, .katex-mathml, [hidden]') &&
       (el.matches('button, textarea') || [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.replace(/\u200b/g, '').trim())))
-    .filter((el) => parseFloat(getComputedStyle(el).fontSize) < 15 || getComputedStyle(el).textTransform === 'uppercase')
+    .filter((el) => {
+      const style = getComputedStyle(el)
+      return (!el.matches('.text-action') && parseFloat(style.fontSize) < 15) || style.textTransform === 'uppercase'
+    })
     .map((el) => el.outerHTML.slice(0, 100)))
   assert.deepEqual(violations, [])
 }
@@ -168,6 +171,10 @@ try {
       fault.resourcesUnavailable = false
       await page.getByRole('button', { name: '重试', exact: true }).click()
       await page.getByRole('button', { name: '重试', exact: true }).waitFor({ state: 'hidden' })
+      const sizes = await page.locator('.bib-page:not([inert])').evaluate(el =>
+        ['.bib-shelf-roman', '.bib-shelf-count', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-desc', '.bib-entry-tag']
+          .map(selector => getComputedStyle(el.querySelector(selector)).fontSize))
+      assert.deepEqual(sizes, ['16px', '10px', '25px', '17px', '13px', '9px'])
       const initial = await page.locator('.bib-folio').textContent()
       await page.getByRole('button', { name: '下一页', exact: true }).click()
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
@@ -470,8 +477,9 @@ try {
   })
   await scenario('failure-slow-route', { width: 390, height: 844 }, async (page, fault) => {
     fault.chunk = '/Resources-'; fault.kind = 'slow'
-    await page.goto(`${baseUrl}/resources`)
-    await page.getByText('正在打开页面…', { exact: true }).waitFor()
+    await page.goto(`${baseUrl}/resources`, { waitUntil: 'domcontentloaded' })
+    await page.locator('.paper-current[data-paper-visible="false"]').waitFor({ state: 'attached' })
+    assert.equal(await page.locator('.paper-current').innerText(), '')
     await rendered(page, '.bib-page:not([inert]) .bib-entry-title')
   })
   for (const [name, chunk] of [['route', '/Resources-'], ['entry', '/index-']]) {

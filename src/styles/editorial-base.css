@@ -5,6 +5,7 @@
 }
 
 .site-shell {
+  background: var(--paper);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -146,7 +147,7 @@
   }
 }
 .notfound-page { text-align: center; }
-.notfound-code { margin: 0; font-family: "JetBrains Mono", monospace; font-size: 13px; letter-spacing: 0.3em; color: var(--accent); }
+.notfound-code { margin: 0; font-family: var(--font-mono), var(--font-cjk), serif; font-size: 13px; letter-spacing: 0.3em; color: var(--accent); }
 .notfound-title { margin: 18px 0 0; font-family: var(--font-cjk), serif; font-size: 36px; font-weight: 500; }
 .notfound-quote { margin: 30px auto 0; max-width: 34rem; color: var(--ink); font-size: 19px; line-height: 1.55; }
 .notfound-quote-zh { margin: 10px auto 0; max-width: 30rem; color: var(--muted); font-size: 15px; }

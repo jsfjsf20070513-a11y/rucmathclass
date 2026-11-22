@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import DailyMeditation from '../components/DailyMeditation'
 import PageNav from '../components/PageNav'
@@ -51,8 +51,11 @@ export default function Resources() {
   // 页面栈 = 书架 Ⅰ..Ⅷ,轻翻(0.5s);首架平摊,其余停靠右侧。
   const pageCount = shelves.length
   const sides = useMemo(() => shelves.map((_, k) => (k === 0 ? 'none' : 'right')), [shelves])
-  const { page, next, prev, goTo, jumpTo, setPageEl } = usePageFlip({
+  const requestedShelf = Number(window.location.hash.match(/^#shelf-(\d+)$/)?.[1]) - 1
+  const initialPage = requestedShelf >= 0 && requestedShelf < pageCount ? requestedShelf : 0
+  const { page, next, prev, jumpTo, setPageEl } = usePageFlip({
     count: pageCount,
+    initialPage,
     sides,
     durationMs: 500,
   })
@@ -62,17 +65,12 @@ export default function Resources() {
     if (page >= pageCount) jumpTo(pageCount - 1)
   }, [page, pageCount, jumpTo])
 
-  // /resources#shelf-N 直达(Home 第 4 页索引行点击进来;N 从 1 计)。
-  useEffect(() => {
-    const m = window.location.hash.match(/^#shelf-(\d+)$/)
-    if (!m) return
-    const idx = Number(m[1]) - 1
-    if (idx >= 1 && idx < shelves.length) {
-      const t = window.setTimeout(() => goTo(idx), 60)
-      return () => window.clearTimeout(t)
-    }
-    return undefined
-  }, [shelves.length, goTo])
+  // 增补书架可能比内置书目晚到。目标存在时在绘制前定位。
+  const previousTarget = useRef(initialPage)
+  useLayoutEffect(() => {
+    if (initialPage !== previousTarget.current && initialPage > 0) jumpTo(initialPage)
+    previousTarget.current = initialPage
+  }, [initialPage, jumpTo])
 
   const goHome = useCallback(() => {
     flipNavigation.mark('/resources', '/')

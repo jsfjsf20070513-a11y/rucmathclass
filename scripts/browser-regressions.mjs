@@ -6,6 +6,34 @@ export async function checkRegressions({ scenario, baseUrl, rendered, assistantT
   const viewport = { width: 390, height: 844 }
   const session = fixtureSession()
   const signIn = (page) => page.addInitScript((session) => localStorage.setItem('sb-fixture-auth-token', JSON.stringify(session)), session)
+  for (const fail of [false, true]) {
+    await scenario('paper-fonts-' + (fail ? 'failure' : 'delay'), viewport, async page => {
+      let release
+      const held = new Promise(resolve => { release = resolve })
+      const requested = page.waitForRequest(/noto-serif-sc-home-.*\.woff2/)
+      await page.route(/noto-serif-sc-home-.*\.woff2/, async route => {
+        await held
+        if (fail) await route.abort()
+        else await route.fallback()
+      })
+      await page.goto(baseUrl + '/login', { waitUntil: 'domcontentloaded' })
+      const paper = page.locator('.paper-current')
+      try {
+        await requested
+        await page.locator('.lgn[data-page-ready="true"]').waitFor({ state: 'attached' })
+        assert.equal(await paper.evaluate(el => getComputedStyle(el).opacity), '0')
+        assert.equal(await paper.evaluate(el => el.inert), true)
+      } finally { release() }
+      await rendered(page, '.lgn-title')
+      assert.equal(await paper.getAttribute('data-paper-fonts'), fail ? 'fallback' : 'web')
+      const tab = page.locator('.login-tabs button').first()
+      const css = await tab.evaluate(el => [getComputedStyle(el).fontFamily, getComputedStyle(el).fontSize])
+      assert.equal(css[1], '10px')
+      assert.match(css[0], fail ? /^Georgia, .*Songti SC/ : /Bodoni Moda.*Noto Serif SC/)
+      assert.equal(await page.locator('.lgn-submit').evaluate(el => getComputedStyle(el).fontSize), '12px')
+    })
+  }
+
   await scenario('readable-account-messages', viewport, async (page) => {
     await page.goto(`${baseUrl}/login`)
     await page.getByRole('textbox', { name: '邮箱', exact: true }).fill(FIXTURE_USERS[0].email)

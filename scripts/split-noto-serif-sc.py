@@ -47,6 +47,8 @@ def groups(points):
     home.update((0xA0, 0x202F))
     home &= points
     yield "home", sorted(home)
+    # 后声明的同族切片优先。封面的气温和内页箭头沿用原字形，只取这三个符号。
+    yield "marks", sorted(home & set(map(ord, "℃←→")))
 
     shelves = set()
     for path in ("src/data/resourceCatalog.js", "src/pages/Resources.jsx", "src/components/DailyMeditation.jsx"):

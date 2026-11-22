@@ -19,6 +19,7 @@ const Lecture = lazy(pageLoaders['/lecture'])
 const Assistant = lazy(pageLoaders['/assistant'])
 
 function AppRoutes() {
+  usePagePrefetch()
   const account = useLectureAccount()
   const { user, loading } = useAuth()
   const visit = flipNavigation.read(useLocation(), useNavigationType())
@@ -63,7 +64,6 @@ function AppRoutes() {
 }
 
 function App() {
-  usePagePrefetch()
   return (
     <BrowserRouter>
       <AppRoutes />

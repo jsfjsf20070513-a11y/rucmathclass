@@ -83,6 +83,10 @@ export default function Home({ visit }) {
     return { connexion, from, page: from ? returnPageFor(from, Boolean(user)) : 0 }
   })
 
+  const [fromPublicHeader] = useState(() => visit.previous && normalizeRoutePath(visit.previous.pathname) === '/404')
+  const [coverReady, setCoverReady] = useState(!fromPublicHeader)
+  const revealCover = useCallback(() => setCoverReady(true), [])
+
   // Connexion 屏(原地渲染,对接 Supabase auth)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -173,11 +177,11 @@ export default function Home({ visit }) {
   const folio = `0${page + 1} — 0${pageCount}`
 
   return (
-    <div className="mag" data-page-ready="true">
+    <div className="mag" data-page-ready={coverReady || page !== 0}>
       {/* ── 01 封面:肖像长墙 ── */}
       <section ref={setPageEl(0)} className="mag-page mag-cover" style={{ zIndex: 10 }} aria-label="封面">
         <canvas ref={canvasRef} className="mag-weather" />
-        <PortraitWall active={page === 0} />
+        <PortraitWall active={page === 0} onReady={fromPublicHeader ? revealCover : undefined} />
         <div className="mag-fade mag-fade-top" aria-hidden="true" />
         <div className="mag-fade mag-fade-bottom" aria-hidden="true" />
         {weather && (
@@ -187,7 +191,7 @@ export default function Home({ visit }) {
             </span>
           </div>
         )}
-        <div ref={coverContentRef} className="mag-cover-content">
+        <div ref={coverContentRef} className="mag-cover-content" style={fromPublicHeader ? { opacity: 1 } : undefined}>
           <h1 className="mag-masthead">Math</h1>
           <div className="mag-edition">
             <span className="mag-edition-rule" aria-hidden="true" />

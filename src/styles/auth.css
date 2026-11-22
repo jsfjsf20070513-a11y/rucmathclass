@@ -191,7 +191,7 @@
 .lgn-masthead { margin-bottom: 30px; }
 .lgn-title {
   margin: 0 0 10px;
-  font-family: "Bodoni Moda", serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
   font-size: 44px;
   font-weight: 400;
   font-style: italic;
@@ -214,7 +214,7 @@
   padding: 0 0 3px;
   cursor: pointer;
   color: var(--mag-muted);
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -228,7 +228,7 @@
 .lgn .login-form label { display: flex; flex-direction: column; gap: 6px; }
 .lgn .login-form label > span,
 .lgn .password-field > span {
-  font-family: "Bodoni Moda", var(--font-cjk), serif;
+  font-family: var(--font-bodoni), var(--font-cjk), serif;
   font-size: 9px;
   letter-spacing: 0.24em;
   text-transform: uppercase;
@@ -241,7 +241,7 @@
   border: none;
   border-bottom: 1px solid rgba(34, 29, 24, 0.28);
   border-radius: 0;
-  font-family: "Cormorant Garamond", var(--font-cjk), serif;
+  font-family: var(--font-cormorant), var(--font-cjk), serif;
   font-size: 16px;
   color: var(--mag-ink-2);
   outline: none;

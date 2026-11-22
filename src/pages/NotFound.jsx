@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function NotFound() {
   return (
-    <article className="page-column notfound-page">
+    <article className="page-column notfound-page" data-page-ready="true">
       <p className="notfound-code">404</p>
       <h1 className="notfound-title">页面未找到</h1>
 

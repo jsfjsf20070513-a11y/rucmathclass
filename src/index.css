@@ -10,8 +10,14 @@
   --header-width: 920px;
   --section-gap: 80px;
   --paragraph-gap: 24px;
-  --font-cjk: "Songti SC", "SimSun", "STSong", "Noto Serif SC";
-  font-family: "EB Garamond", var(--font-cjk), serif;
+  --font-bodoni: "Bodoni Moda";
+  --font-cormorant: "Cormorant Garamond";
+  --font-eb: "EB Garamond";
+  --font-pinyon: "Pinyon Script";
+  --font-mono: "JetBrains Mono";
+  --local-song: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun";
+  --font-cjk: "Noto Serif SC", var(--local-song);
+  font-family: var(--font-eb), var(--font-cjk), serif;
   color: var(--ink);
   background: var(--paper);
   font-size: 18px;
@@ -117,4 +123,14 @@ ul {
 table {
   width: 100%;
   border-collapse: collapse;
+}
+
+[data-paper-fonts="fallback"] {
+  --font-bodoni: Georgia;
+  --font-cormorant: Georgia;
+  --font-eb: Georgia;
+  --font-pinyon: Georgia;
+  --font-mono: Georgia;
+  --font-cjk: var(--local-song);
+  font-family: Georgia, var(--font-cjk), serif;
 }
