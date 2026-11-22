@@ -21,7 +21,7 @@ export default defineConfig({
     configureServer(server) {
       const fixture = createLocalFixture()
       server.middlewares.use((req, res, next) => {
-        if (!/^\/api\/lecture(?:[/?]|$)/.test(req.url)) return next()
+        if (!/^\/api\/(?:lecture|resources)(?:[/?]|$)/.test(req.url)) return next()
         const result = fixture.handle({ url: req.url, method: req.method })
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' })
         res.end(JSON.stringify(result.json))

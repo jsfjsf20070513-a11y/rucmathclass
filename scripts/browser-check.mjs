@@ -173,9 +173,11 @@ try {
       await page.getByRole('button', { name: '重试', exact: true }).click()
       await page.getByRole('button', { name: '重试', exact: true }).waitFor({ state: 'hidden' })
       const sizes = await page.locator('.bib-page:not([inert])').evaluate(el =>
-        ['.bib-shelf-roman', '.bib-shelf-count', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-desc', '.bib-entry-tag']
+        ['.bib-shelf-roman', '.bib-shelf-count', '.bib-shelf-title', '.bib-entry-title', '.bib-entry-desc']
           .map(selector => getComputedStyle(el.querySelector(selector)).fontSize))
-      assert.deepEqual(sizes, ['16px', '10px', '25px', '17px', '13px', '9px'])
+      assert.deepEqual(sizes, ['16px', '10px', '25px', '17px', '13px'])
+      assert.equal(await page.locator('.bib-entry-tag').count(), 0)
+      assert.equal(await page.locator('.bib-shelf').count(), 6)
       const initial = await page.locator('.bib-folio').textContent()
       await page.getByRole('button', { name: '下一页', exact: true }).click()
       await rendered(page, '.bib-page:not([inert]) .bib-entry-title')

@@ -39,7 +39,7 @@ AI 默认请求班级站的 `/api/chat`。本地调试可用 `VITE_AI_ENDPOINT` 
 | 地址 | 实际功能 |
 | --- | --- |
 | `/` | 肖像封面、阅读入口、每日定理、书架入口、引语；登录后增加 AI 入口 |
-| `/resources` | 静态书目与 Supabase 增补资源合并展示；云端失败时保留静态书目 |
+| `/resources` | 六架书目，从 Worker 读取；缺数据时使用随站发布的初版 |
 | `/lecture`、`/lecture/日期` | 按日期选读法语文章。正面作答，背面看逐句讲解和原文依据。 |
 | `/assistant`、`/assistant/:id` | 登录后从列表新建或继续一段对话。可附图提问，回复支持 Markdown 和公式。 |
 | `/login`、`/reset-password` | 登录、注册、邮箱验证码和密码重置 |

@@ -1,5 +1,5 @@
 import { getDailyContent } from './dailyStore.js'
-import { staticResourceCatalog } from '../../src/data/resourceCatalog.js'
+import { readResources } from './resourceStore.js'
 import { firstLectureDate, isLectureDate, lectureIndex } from './lectureStore.js'
 
 const dateArg = '北京时间的 YYYY-MM-DD，留空表示今天。'
@@ -15,7 +15,7 @@ export const siteTools = [
   tool('theorem', '查当天的定理、公式和讲解。', { date: dateArg }),
   tool('parole', '查指定日期首页展示的 Parole。', { date: dateArg }),
   tool('lecture', '查已发布的每日阅读。日期留空时列出最近的文章。', { date: '要读全文的日期，或 null。' }),
-  tool('resources', '按关键词查班级书架，留空列出全部书目。', { query: '书名、学科或标签。' }),
+  tool('resources', '按关键词查班级书架，留空列出全部书目。', { query: '书名、学科或用途。' }),
   tool('my_answers', '查提问者的阅读作答，含原题、所选选项和正确答案。每次最多返回所选时段内最近 31 个作答日。', {
     from: '起始日期，含当天。', to: '结束日期，含当天。',
   }),
@@ -51,9 +51,9 @@ export async function runSiteTool(call, { env, today, userId, authorization, sig
     }
     case 'resources': {
       const query = (args.query || '').trim().toLowerCase()
-      return staticResourceCatalog.filter(item =>
-        [item.title, item.category, item.tag, item.description].join(' ').toLowerCase().includes(query))
-        .map(({ title, category, url, description }) => ({ title, category, url, description }))
+      return (await readResources(env)).filter(item =>
+        [item.title, item.category, item.description].join(' ').toLowerCase().includes(query))
+        .map(({ title, category, url, description, access }) => ({ title, category, url, description, access }))
     }
     case 'lecture':
       return args.date ? readDay(checkedDate(args.date)) : (await lectureIndex(env.LECTURE, today)).slice(-31)

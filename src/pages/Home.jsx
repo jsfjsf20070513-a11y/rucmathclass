@@ -208,7 +208,7 @@ export default function Home({ visit }) {
         </div>
       </section>
 
-      {/* ── 04 Bibliothèque(真实八书架索引) ── */}
+      {/* ── 04 Bibliothèque(六架书目) ── */}
       <section ref={setPageEl(3)} className="mag-page mag-biblio" style={{ zIndex: 13, transform: entry.page >= 3 ? 'none' : 'translateY(-105%) rotate(1.2deg)' }} aria-label="Bibliothèque">
         <div className="mag-biblio-inner">
           <p className="mag-kicker" lang="fr" data-animate="">Bibliothèque</p>

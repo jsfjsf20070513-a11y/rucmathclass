@@ -7,13 +7,24 @@ import { generateLectures } from './lectureGeneration.js'
 import { readDaily } from './dailyRoute.js'
 import { readLecture } from './lectureRoute.js'
 
+import { resourcesCron, updateResources } from './resourceUpdate.js'
+import { readResources } from './resourceStore.js'
+
 export default {
   scheduled(controller, env) {
+    if (controller.cron === resourcesCron) {
+      return updateResources(env, controller.scheduledTime).then(status => console.log('书目周更', status))
+    }
     return generateLectures(env, controller.scheduledTime)
   },
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || ''
     const url = new URL(request.url)
+    if (url.pathname === '/api/resources') {
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(origin) })
+      if (request.method !== 'GET') return json(null, 405, origin)
+      return json(await readResources(env), 200, origin)
+    }
     if (url.pathname.startsWith('/api/daily/')) return readDaily(request, env)
     if (url.pathname === '/api/lecture' || url.pathname.startsWith('/api/lecture/')) {
       return readLecture(request, env, ctx)

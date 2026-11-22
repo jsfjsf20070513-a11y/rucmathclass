@@ -46,7 +46,7 @@ export async function startDemo({ root = projectRoot, scene: sceneName = 'home',
       configureServer(vite) {
         vite.middlewares.use(async (req, res, next) => {
           res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; form-action 'self'; frame-ancestors 'none'")
-          if (!req.url?.startsWith('/__demo/') && !/^\/api\/lecture(?:[/?]|$)/.test(req.url)) return next()
+          if (!req.url?.startsWith('/__demo/') && !/^\/api\/(?:lecture|resources)(?:[/?]|$)/.test(req.url)) return next()
           if (req.headers.origin && req.headers.origin !== origin) { res.statusCode = 403; res.end('只接受本地演示页面的请求。'); return }
           try {
             let body = ''
