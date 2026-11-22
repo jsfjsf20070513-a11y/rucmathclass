@@ -1,16 +1,14 @@
 import { createAssistantConversation } from './assistantConversation'
 import { questionTitle } from './aiAssistantBackend'
 
-export const UNDO_MS = 5000
 const readError = '对话列表加载失败。请刷新后重试。'
 const deleteError = '删除结果未确认。请刷新后核对这段对话。'
 
-// 目录、未确认的写入和撤销计时器都只属于这个登录账号。
+// 目录和未确认的写入都只属于这个登录账号。
 export function createAssistantArchive({ userId, history, request }) {
-  let state = { mode: null, entries: [], pending: [], error: '' }
+  let state = { mode: null, entries: [], deletions: {}, error: '' }
   let generation = 0
   const threads = new Map()
-  const timers = new Map()
   const listeners = new Set()
   function emit(patch) {
     state = { ...state, ...patch }
@@ -55,24 +53,36 @@ export function createAssistantArchive({ userId, history, request }) {
     return conversation
   }
 
-  async function finishDelete(id, token) {
-    timers.delete(id)
-    emit({ pending: state.pending })
+  function clearDeletion(id) {
+    const deletions = { ...state.deletions }
+    delete deletions[id]
+    return deletions
+  }
+
+  async function remove(id, collapseRow) {
+    const entry = entryFor(id)
     const conversation = threads.get(id)
+    if (!entry || state.deletions[id] || conversation?.getSnapshot().busy) return
+    const token = generation
+    emit({ deletions: { ...state.deletions, [id]: 'deleting' }, error: '' })
     try {
       if (conversation) {
         if (!await conversation.clear()) throw new Error(deleteError)
       } else {
-        await history.deleteConversation(userId, entryFor(id))
+        await history.deleteConversation(userId, entry)
       }
-      if (token !== generation) return
-      conversation?.dispose()
-      threads.delete(id)
-      emit({ entries: state.entries.filter((entry) => entry.id !== id) })
     } catch {
-      if (token === generation) emit({ error: conversation?.getSnapshot().error || deleteError })
+      if (token === generation) emit({ deletions: clearDeletion(id), error: conversation?.getSnapshot().error || deleteError })
+      return
+    }
+    if (token !== generation) return
+    conversation?.dispose()
+    threads.delete(id)
+    emit({ deletions: { ...state.deletions, [id]: 'deleted' } })
+    try {
+      await collapseRow?.()
     } finally {
-      if (token === generation) emit({ pending: state.pending.filter((key) => key !== id) })
+      if (token === generation) emit({ entries: state.entries.filter((other) => other.id !== id), deletions: clearDeletion(id) })
     }
   }
 
@@ -90,24 +100,9 @@ export function createAssistantArchive({ userId, history, request }) {
     },
     thread,
     cachedThread: (id) => threads.get(id),
-    canUndo: (id) => timers.has(id),
-    remove(id) {
-      if (!entryFor(id) || state.pending.includes(id)) return
-      if (threads.get(id)?.getSnapshot().busy) return
-      const token = generation
-      timers.set(id, setTimeout(() => finishDelete(id, token), UNDO_MS))
-      emit({ pending: [...state.pending, id], error: '' })
-    },
-    undo(id) {
-      if (!timers.has(id)) return
-      clearTimeout(timers.get(id))
-      timers.delete(id)
-      emit({ pending: state.pending.filter((key) => key !== id) })
-    },
+    remove,
     dispose() {
       generation += 1
-      for (const timer of timers.values()) clearTimeout(timer)
-      timers.clear()
       for (const conversation of threads.values()) conversation.dispose()
       threads.clear()
     },

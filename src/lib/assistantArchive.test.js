@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createAssistantArchive, UNDO_MS } from './assistantArchive'
+import { describe, expect, it, vi } from 'vitest'
+import { createAssistantArchive } from './assistantArchive'
 
 const original = { id: 'math', title: '第一题', updated_at: '2026-11-20T08:00:00Z' }
 const reply = { role: 'model', content: '回答' }
 
-async function setup(entries = [original]) {
+async function setup(entries = [original], userId = 'alice') {
   const history = {
     fetchConversations: vi.fn(async () => ({ mode: 'official', entries })),
     fetchMessages: vi.fn(async () => ({ mode: 'official', messages: [{ role: 'user', content: '第一题' }, reply] })),
@@ -12,12 +12,16 @@ async function setup(entries = [original]) {
     deleteConversation: vi.fn(async () => ({ mode: 'official' })),
   }
   const request = vi.fn(async () => reply)
-  const archive = createAssistantArchive({ userId: 'alice', history, request })
+  const archive = createAssistantArchive({ userId, history, request })
   await archive.initialize()
   return { archive, history, request }
 }
 
-afterEach(() => vi.useRealTimers())
+function deferred() {
+  let resolve, reject
+  const promise = new Promise((ok, fail) => { resolve = ok; reject = fail })
+  return { promise, resolve, reject }
+}
 
 describe('按账号分段的答疑目录', () => {
   it('打开空页不建段。首轮收到回复后才保存，后续提问沿用第一句标题', async () => {
@@ -32,7 +36,7 @@ describe('按账号分段的答疑目录', () => {
     expect(archive.getSnapshot().entries[0]).toMatchObject({ id: 'draft', title: '第一问' })
     expect(history.saveTurn).not.toHaveBeenCalled()
     archive.remove('draft')
-    expect(archive.getSnapshot().pending).toEqual([])
+    expect(archive.getSnapshot().deletions).toEqual({})
     fail(new Error('offline'))
     expect(await sending).toBe(false)
     expect(archive.getSnapshot().entries).toEqual([original])
@@ -47,65 +51,64 @@ describe('按账号分段的答疑目录', () => {
     expect(history.saveTurn.mock.calls.at(-1).slice(3)).toEqual(['math', null])
   })
 
-  it('切换账号后，迟到的回答无法保存，旧计时器也无法删除', async () => {
-    vi.useFakeTimers()
+  it('点删除就提交，两行可以独立完成，重复点击只提交一次', async () => {
+    const other = { ...original, id: 'french' }
+    const { archive, history } = await setup([original, other])
+    const response = deferred()
+    const animation = deferred()
+    history.deleteConversation.mockReturnValueOnce(response.promise)
+    const removing = archive.remove('math', () => animation.promise)
+    expect(history.deleteConversation).toHaveBeenCalledWith('alice', original)
+    await archive.remove('math')
+    await archive.remove('french')
+    expect(archive.getSnapshot()).toMatchObject({ entries: [original], deletions: { math: 'deleting' } })
+    response.resolve({ mode: 'official' })
+    await response.promise
+    expect(archive.getSnapshot()).toMatchObject({ entries: [original], deletions: { math: 'deleted' } })
+    await archive.remove('math')
+    expect(history.deleteConversation.mock.calls).toEqual([['alice', original], ['alice', other]])
+    animation.resolve()
+    await removing
+    expect(archive.getSnapshot()).toMatchObject({ entries: [], deletions: {} })
+  })
+
+  it('版本检查拒绝删除后，保留原条目并显示现有提示', async () => {
+    const { archive, history } = await setup()
+    const collapse = vi.fn()
+    history.deleteConversation.mockRejectedValueOnce(new Error('Conversation changed'))
+    await archive.remove('math', collapse)
+    expect(collapse).not.toHaveBeenCalled()
+    expect(archive.getSnapshot()).toMatchObject({ entries: [original], deletions: {}, error: '删除结果未确认。请刷新后核对这段对话。' })
+  })
+
+  it.each(['成功', '失败'])('切换账号后忽略旧账号的删除回执（%s）和迟到的回答', async (outcome) => {
     const { archive, history, request } = await setup()
     const draft = archive.thread('new-id')
     await draft.initialize()
-    let release
-    request.mockImplementationOnce(() => new Promise((resolve) => { release = resolve }))
+    const answer = deferred()
+    request.mockReturnValueOnce(answer.promise)
     const sent = draft.send('尚未回答')
-    archive.remove('math')
+    const response = deferred()
+    history.deleteConversation.mockReturnValueOnce(response.promise)
+    const collapse = vi.fn()
+    const removing = archive.remove('math', collapse)
+    expect(history.deleteConversation).toHaveBeenCalledWith('alice', original)
     archive.dispose()
-    release(reply)
+    const next = await setup([original], 'bob')
+    const oldState = archive.getSnapshot()
+    const newState = next.archive.getSnapshot()
+    if (outcome === '成功') response.resolve({ mode: 'official' })
+    else response.reject(new Error('Conversation changed'))
+    answer.resolve(reply)
+    await removing
     expect(await sent).toBe(false)
-    await vi.advanceTimersByTimeAsync(UNDO_MS)
     expect(history.saveTurn).not.toHaveBeenCalled()
-    expect(history.deleteConversation).not.toHaveBeenCalled()
-  })
-
-  it('撤销不写库。到期只删除点名的一段，另一设备已续写时保留目录', async () => {
-    vi.useFakeTimers()
-    const { archive, history } = await setup()
-    archive.remove('math')
-    await vi.advanceTimersByTimeAsync(UNDO_MS - 1)
-    archive.undo('math')
-    await vi.advanceTimersByTimeAsync(1)
-    expect(history.deleteConversation).not.toHaveBeenCalled()
-    expect(archive.getSnapshot().entries).toEqual([original])
-    history.deleteConversation.mockRejectedValueOnce(new Error('version changed'))
-    archive.remove('math')
-    await vi.advanceTimersByTimeAsync(UNDO_MS)
-    expect(archive.getSnapshot()).toMatchObject({ entries: [original], pending: [], error: expect.stringContaining('删除结果未确认') })
-    archive.remove('math')
-    await vi.advanceTimersByTimeAsync(UNDO_MS)
-    expect(history.deleteConversation).toHaveBeenLastCalledWith('alice', original)
-    expect(archive.getSnapshot()).toMatchObject({ entries: [], pending: [] })
-  })
-
-  it('连续删除两段对话时，各自从点击起保留五秒撤销时间', async () => {
-    vi.useFakeTimers()
-    const other = { ...original, id: 'french', title: '第二题' }
-    const { archive, history } = await setup([original, other])
-    archive.remove(original.id)
-    await vi.advanceTimersByTimeAsync(2000)
-    archive.remove(other.id)
-    archive.remove(original.id)
-    await vi.advanceTimersByTimeAsync(2999)
-    expect(history.deleteConversation).not.toHaveBeenCalled()
-    expect(archive.getSnapshot().pending).toEqual([original.id, other.id])
-    expect(archive.canUndo(original.id)).toBe(true)
-    await vi.advanceTimersByTimeAsync(1)
-    expect(archive.canUndo(original.id)).toBe(false)
-    expect(archive.canUndo(other.id)).toBe(true)
-    archive.undo(other.id)
-    await vi.runAllTimersAsync()
-    expect(history.deleteConversation.mock.calls).toEqual([['alice', original]])
-    expect(archive.getSnapshot()).toMatchObject({ entries: [other], pending: [] })
+    expect(collapse).not.toHaveBeenCalled()
+    expect(archive.getSnapshot()).toBe(oldState)
+    expect(next.archive.getSnapshot()).toBe(newState)
   })
 
   it('保存结果不明时从目录重开仍看得到回答，并继续阻止删除', async () => {
-    vi.useFakeTimers()
     const { archive, history } = await setup()
     const thread = archive.thread('draft')
     await thread.initialize()
@@ -114,8 +117,7 @@ describe('按账号分段的答疑目录', () => {
     const reopened = archive.thread('draft')
     await reopened.initialize()
     expect(reopened.getSnapshot()).toMatchObject({ notice: expect.stringContaining('保存未确认'), messages: expect.arrayContaining([reply]) })
-    archive.remove('draft')
-    await vi.advanceTimersByTimeAsync(UNDO_MS)
+    await archive.remove('draft')
     expect(history.deleteConversation).not.toHaveBeenCalled()
     expect(archive.getSnapshot().error).toContain('核对历史')
   })

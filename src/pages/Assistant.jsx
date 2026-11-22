@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useId, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AuthStatus from '../components/AuthStatus'
 import PageNav from '../components/PageNav'
@@ -14,34 +14,69 @@ const fromList = { fromAssistantList: true }
 
 const noThreadSubscription = () => () => {}
 
+const drawMs = 180
+const holdMs = 120
+
+async function collapseRow(row, started) {
+  // 慢回执到达时，已经画完并停留过的线可以直接收起。
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const remaining = started + drawMs + holdMs - performance.now()
+    if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining))
+  }
+  if (!row.isConnected) return
+  row.classList.add('is-collapsing')
+  await Promise.allSettled(row.getAnimations({ subtree: true }).map((animation) => animation.finished))
+}
+
 function ConversationRow({ entry, managing, pending, archive }) {
+  const maskId = useId()
   const thread = archive.cachedThread(entry.id)
   const busy = useSyncExternalStore(thread?.subscribe || noThreadSubscription, () => thread?.getSnapshot().busy || false)
   return (
     <li className={`cor-entry${pending ? ' is-pending' : ''}`}>
-      <Link className="lec-entry" to={`/assistant/${entry.id}`} state={fromList}
-        aria-disabled={pending || undefined} tabIndex={pending ? -1 : undefined}
-        onClick={pending ? (event) => event.preventDefault() : undefined}
-      >
-        <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
-        <span className="lec-entry-title">{entry.title}</span>
-      </Link>
-      {(pending || managing) && (
-        <button type="button" className="cor-delete" disabled={pending ? !archive.canUndo(entry.id) : busy}
-          aria-label={`${pending ? '撤销删除' : '删除'}“${entry.title}”`}
-          onClick={() => pending ? archive.undo(entry.id) : archive.remove(entry.id)}>
-          {pending ? '撤销' : '删除'}
-        </button>
-      )}
+      <div className="cor-entry-clip">
+        <div className="cor-entry-content">
+          <Link className="lec-entry" to={`/assistant/${entry.id}`} state={fromList}
+            aria-disabled={pending || undefined} tabIndex={pending ? -1 : undefined}
+            onClick={pending ? (event) => event.preventDefault() : undefined}
+          >
+            <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
+            <span className="lec-entry-title">
+              <span className="cor-title-text">{entry.title}</span>
+              <svg className="cor-strike" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <g transform="matrix(1 -.026 0 1 0 3.3)">
+                  <defs>
+                    <mask id={maskId} maskUnits="userSpaceOnUse" x="-1" y="-2" width="102" height="4">
+                      <path d="M0 0H100" pathLength="1" stroke="white" strokeWidth="4" />
+                    </mask>
+                  </defs>
+                  <path d="M0 -.08 Q40 -1.25 100 0 Q40 1.25 0 .08Z" mask={`url(#${maskId})`} />
+                </g>
+              </svg>
+            </span>
+          </Link>
+          {(pending || managing) && (
+            <button type="button" className="cor-delete" disabled={pending || busy}
+              aria-label={`删除“${entry.title}”`}
+              onClick={(event) => {
+                const row = event.currentTarget.closest('li')
+                const started = performance.now()
+                archive.remove(entry.id, () => collapseRow(row, started))
+              }}>
+              删除
+            </button>
+          )}
+        </div>
+      </div>
     </li>
   )
 }
 
 function ConversationList({ history, scrollRef, onHome }) {
-  const { archive, entries, pending, mode, error } = history
+  const { archive, entries, deletions, mode, error } = history
   const [managing, setManaging] = useState(false)
   return (
-    <main className="lec cor cor-archive" data-page-ready={Boolean(mode || error)}>
+    <main className="lec cor cor-archive" style={{ '--cor-strike-duration': `${drawMs}ms` }} data-page-ready={Boolean(mode || error)}>
       <PageNav onBack={onHome}>
         <button type="button" className="page-nav-back cor-manage" aria-expanded={managing} aria-controls="conversation-list"
           disabled={!entries.length && !managing} onClick={() => setManaging(!managing)}>
@@ -54,7 +89,7 @@ function ConversationList({ history, scrollRef, onHome }) {
             <span className="lec-entry-title">新对话</span>
           </Link></li>}
           {entries.map((entry) => <ConversationRow key={entry.id} entry={entry} managing={managing}
-            pending={pending.includes(entry.id)} archive={archive} />)}
+            pending={Boolean(deletions[entry.id])} archive={archive} />)}
         </ol>
         {error && <p className="cor-error" role="alert">{error}</p>}
       </div>
@@ -68,7 +103,7 @@ function Conversations({ userId, onHome }) {
   const location = useLocation()
   const navigate = useNavigate()
   const history = useAssistantArchive(userId)
-  const { archive, entries, pending, mode, error } = history
+  const { archive, entries, deletions, mode, error } = history
   const draft = id === 'new'
   const draftId = useMemo(() => draft ? crypto.randomUUID() : null, [draft])
   const single = mode && mode !== 'official'
@@ -87,7 +122,7 @@ function Conversations({ userId, onHome }) {
   if ((single && !draft && id !== LEGACY_ID) || (single && draft && entries.length)) {
     return <Navigate to={`/assistant/${LEGACY_ID}`} replace state={location.state} />
   }
-  if (pending.includes(threadId) || (!draft && !entries.some((entry) => entry.id === threadId) && !archive.cachedThread(threadId))) {
+  if (deletions[threadId] || (!draft && !entries.some((entry) => entry.id === threadId) && !archive.cachedThread(threadId))) {
     return <Navigate to="/assistant" replace />
   }
   return (

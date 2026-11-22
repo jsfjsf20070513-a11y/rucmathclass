@@ -48,15 +48,23 @@ export default function AssistantThread({ conversation, onStart, rise }) {
     const page = pageRef.current?.closest('main')
     const viewport = window.visualViewport
     if (!page || !viewport) return
-    // 有些手机只在软键盘弹出时缩小可见视口，布局视口仍是整屏高度。
+    // Safari 可以在键盘升起后继续平移可见视口，resize 和 scroll 会分别到达。
     const fitViewport = () => {
-      if (viewport.scale === 1) page.style.setProperty('--cor-visible-height', `${viewport.height}px`)
+      if (viewport.scale !== 1) return
+      page.style.setProperty('--cor-visible-height', `${viewport.height}px`)
+      page.style.setProperty('--cor-visible-top', `${viewport.offsetTop}px`)
+      page.toggleAttribute('data-visual-viewport',
+        viewport.offsetTop > 0 || viewport.height < document.documentElement.clientHeight)
     }
     fitViewport()
     viewport.addEventListener('resize', fitViewport)
+    viewport.addEventListener('scroll', fitViewport)
     return () => {
       viewport.removeEventListener('resize', fitViewport)
+      viewport.removeEventListener('scroll', fitViewport)
       page.style.removeProperty('--cor-visible-height')
+      page.style.removeProperty('--cor-visible-top')
+      page.removeAttribute('data-visual-viewport')
     }
   }, [])
 
@@ -194,10 +202,10 @@ export default function AssistantThread({ conversation, onStart, rise }) {
           disabled={busy}
           aria-label="添加图片"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="m3.5 17 5-5 3.5 3.5 4.5-6 4.5 5.5" />
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M4.2 6.1c5.8-.5 11.9-.4 17.6.2.4 4.6.5 9.3.1 13.9-5.9.4-11.8.5-17.7-.1-.5-4.7-.4-9.4 0-14z" />
+            <path d="M5.5 18.6l5.2-6.1 3.6 4 2.6-2.7 3.8 4.6" />
+            <path d="M17.3 9.4c.1.9-.6 1.6-1.4 1.6-.8.1-1.5-.6-1.5-1.4 0-.9.6-1.5 1.4-1.6.8 0 1.5.6 1.5 1.4z" />
           </svg>
         </button>
         <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} hidden />
@@ -212,13 +220,16 @@ export default function AssistantThread({ conversation, onStart, rise }) {
               send(input)
             }
           }}
-          placeholder="写消息…"
           rows={1}
           disabled={busy}
           aria-label="向 AI 助手提问"
         />
-        <button type="submit" className="cor-envoyer" disabled={busy || (!input.trim() && !image)}>
-          发送
+        <button type="submit" className="cor-envoyer" aria-label="发送" disabled={busy || (!input.trim() && !image)}>
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+            <path d="M3.6 12.1c6.3-2.6 12.6-5.4 18.8-7.9-1.6 6.1-3.5 12.2-5.3 18.2-1.9-2.2-3.7-4.4-5.5-6.7-2.7-1.2-5.4-2.4-8-3.6z" />
+            <path d="M22.3 4.3c-3.6 3.9-7.1 7.7-10.7 11.4" />
+            <path d="M11.7 15.8l-.5 5.1 2.6-2.6" />
+          </svg>
         </button>
       </form>
     </div>

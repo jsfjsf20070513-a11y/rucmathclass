@@ -33,10 +33,17 @@ describe('assistant history repository', () => {
     }))))
     expect((await fetchMessages('alice', 200, 'a')).messages).toEqual([{ role: 'user', content: 'alicea' }])
   })
-  it('旧库在撤销期限内收到新消息时，保留两条记录', async () => {
+  it('旧库收到列表加载后的新消息时，保留两条记录', async () => {
     harness.client = fakeSupabase([{ user_id: 'u1', id: 1 }, { user_id: 'u1', id: 2 }])
     await expect(deleteConversation('u1', { id: 'legacy', lastMessageId: 1 })).rejects.toThrow()
     expect(harness.client.rows).toHaveLength(2)
+  })
+  it('另一设备在提交删除前续写时，按列表中的版本删除会被拒绝', async () => {
+    const entry = { id: 'math', user_id: 'alice', updated_at: '2026-11-20T08:00:00Z' }
+    harness.client = fakeSupabase([entry])
+    harness.client.beforeWrite = () => { harness.client.rows[0].updated_at = '2026-11-21T08:00:00Z' }
+    await expect(deleteConversation('alice', entry)).rejects.toThrow('Conversation changed')
+    expect(harness.client.rows).toEqual([{ ...entry, updated_at: '2026-11-21T08:00:00Z' }])
   })
   it('saves both sides in a single insert and never stores image bytes', async () => {
     harness.client = fakeSupabase()

@@ -487,7 +487,12 @@
     margin-top: 6vh;
     margin-top: 6svh;
   }
-  .mag-biblio-grid { column-gap: 18px; }
+  .mag-biblio-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-flow: row;
+  }
+  .mag-biblio-row:nth-child(3) { border-bottom: 0; }
   .mag-biblio-row { gap: 6px; }
   .mag-biblio-roman { width: 19px; }
   .mag-biblio-zh { margin-bottom: 24px; }
