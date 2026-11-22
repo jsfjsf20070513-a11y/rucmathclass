@@ -1,4 +1,4 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
+import { useId, useMemo, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AuthStatus from '../components/AuthStatus'
 import PageNav from '../components/PageNav'
@@ -14,16 +14,22 @@ const fromList = { fromAssistantList: true }
 
 const noThreadSubscription = () => () => {}
 
-async function collapseRow(row) {
-  // 等当前划线结束。离开列表或切换到减少动态效果时，浏览器会取消过渡。
-  const title = row.querySelector('.cor-strike')
-  await Promise.allSettled(title.getAnimations().map((animation) => animation.finished))
+const drawMs = 180
+const holdMs = 120
+
+async function collapseRow(row, started) {
+  // 慢回执到达时，已经画完并停留过的线可以直接收起。
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const remaining = started + drawMs + holdMs - performance.now()
+    if (remaining > 0) await new Promise(resolve => setTimeout(resolve, remaining))
+  }
   if (!row.isConnected) return
   row.classList.add('is-collapsing')
-  await Promise.allSettled(row.getAnimations().map((animation) => animation.finished))
+  await Promise.allSettled(row.getAnimations({ subtree: true }).map((animation) => animation.finished))
 }
 
 function ConversationRow({ entry, managing, pending, archive }) {
+  const maskId = useId()
   const thread = archive.cachedThread(entry.id)
   const busy = useSyncExternalStore(thread?.subscribe || noThreadSubscription, () => thread?.getSnapshot().busy || false)
   return (
@@ -36,7 +42,17 @@ function ConversationRow({ entry, managing, pending, archive }) {
           >
             <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
             <span className="lec-entry-title">
-              {entry.title}<span className="cor-strike" aria-hidden="true" data-title={entry.title} />
+              <span className="cor-title-text">{entry.title}</span>
+              <svg className="cor-strike" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                <g transform="matrix(1 -.026 0 1 0 3.3)">
+                  <defs>
+                    <mask id={maskId} maskUnits="userSpaceOnUse" x="-1" y="-2" width="102" height="4">
+                      <path d="M0 0H100" pathLength="1" stroke="white" strokeWidth="4" />
+                    </mask>
+                  </defs>
+                  <path d="M0 -.08 Q40 -1.25 100 0 Q40 1.25 0 .08Z" mask={`url(#${maskId})`} />
+                </g>
+              </svg>
             </span>
           </Link>
           {(pending || managing) && (
@@ -44,7 +60,8 @@ function ConversationRow({ entry, managing, pending, archive }) {
               aria-label={`删除“${entry.title}”`}
               onClick={(event) => {
                 const row = event.currentTarget.closest('li')
-                archive.remove(entry.id, () => collapseRow(row))
+                const started = performance.now()
+                archive.remove(entry.id, () => collapseRow(row, started))
               }}>
               删除
             </button>
@@ -59,7 +76,7 @@ function ConversationList({ history, scrollRef, onHome }) {
   const { archive, entries, deletions, mode, error } = history
   const [managing, setManaging] = useState(false)
   return (
-    <main className="lec cor cor-archive" data-page-ready={Boolean(mode || error)}>
+    <main className="lec cor cor-archive" style={{ '--cor-strike-duration': `${drawMs}ms` }} data-page-ready={Boolean(mode || error)}>
       <PageNav onBack={onHome}>
         <button type="button" className="page-nav-back cor-manage" aria-expanded={managing} aria-controls="conversation-list"
           disabled={!entries.length && !managing} onClick={() => setManaging(!managing)}>

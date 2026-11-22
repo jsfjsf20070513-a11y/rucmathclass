@@ -15,9 +15,19 @@
   font-variant-numeric: lining-nums proportional-nums;
 }
 
+.cor[data-visual-viewport] {
+  position: fixed;
+  inset-inline: 0;
+  width: auto;
+  margin-inline: 0;
+  top: var(--cor-visible-top);
+}
+
 .cor-archive {
-  --cor-strike-duration: 300ms;
-  --cor-collapse-duration: 250ms;
+  --cor-strike-ink: #2e2823;
+  --cor-deleted-text: #8f877e;
+  --cor-collapse-duration: 280ms;
+  --cor-collapse-ease: cubic-bezier(.45, 0, .2, 1);
   background: #f4efe6;
 }
 .cor-archive .lec-entry {
@@ -35,15 +45,22 @@
 .lec-archive li + .cor-entry .cor-entry-content { border-top: 1px solid var(--mag-hairline); }
 .cor-entry-clip { min-width: 0; min-height: 0; }
 .cor-entry-content { display: flex; align-items: center; gap: 12px; }
-.cor-entry.is-collapsing {
-  grid-template-rows: 0fr;
+.cor-entry.is-collapsing { grid-template-rows: 0fr; }
+.cor-entry.is-collapsing .cor-entry-clip { overflow: visible; }
+/* 以左下角为轴，像合上扇子一样转起并压扁。 */
+.cor-entry.is-collapsing .cor-entry-content {
+  transform-origin: 0 100%;
+  transform: rotate(-14deg) scaleY(.05);
   opacity: 0;
 }
-.cor-entry.is-collapsing .cor-entry-clip { overflow: visible clip; }
 .cor-entry .lec-entry { flex: 1; min-width: 0; }
 .cor-entry .lec-entry-title {
   position: relative;
+  width: fit-content;
   max-width: 100%;
+}
+.cor-title-text {
+  display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -60,34 +77,30 @@
   font-size: 16px;
   cursor: pointer;
 }
-/* 和原来的删除线共用字体度量，省略号也由同一个排版宽度决定。 */
+/* SVG 随省略后的标题宽度伸缩。固定高度保留 2.6px 的倾斜和细笔锋。 */
 .cor-strike {
   position: absolute;
-  inset: 0;
-  width: fit-content;
-  max-width: 100%;
-  user-select: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: transparent;
-  clip-path: inset(0 100% 0 0);
+  left: -6px;
+  top: calc(56% - 2px);
+  width: calc(100% + 14px);
+  height: 4px;
+  fill: var(--cor-strike-ink);
   pointer-events: none;
 }
-.cor-strike::before {
-  content: attr(data-title);
-  text-decoration: line-through var(--mag-muted);
-}
-.cor-entry.is-pending .lec-entry-title { color: var(--mag-muted); }
-.cor-entry.is-pending .cor-strike { clip-path: inset(0); }
+.cor-strike mask path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.cor-entry.is-pending .cor-strike mask path { stroke-dashoffset: 0; }
+.cor-entry.is-pending .lec-entry :is(.lec-entry-title, .lec-entry-date) { color: var(--cor-deleted-text); }
 .cor-entry.is-pending .cor-delete { visibility: hidden; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cor-delete { transition: visibility 0s var(--cor-strike-duration); }
   .cor-entry.is-pending .cor-delete { transition-delay: 0s; }
-  .cor-strike { transition: clip-path var(--cor-strike-duration) var(--flip-ease); }
-  .cor-entry {
-    transition: grid-template-rows var(--cor-collapse-duration) var(--flip-ease),
-      opacity var(--cor-collapse-duration) var(--flip-ease);
+  .cor-strike mask path { transition: stroke-dashoffset var(--cor-strike-duration) cubic-bezier(.25,.8,.3,1); }
+  .cor-entry .lec-entry-date { transition: color .15s ease; }
+  .cor-entry { transition: grid-template-rows var(--cor-collapse-duration) var(--cor-collapse-ease); }
+  .cor-entry-content {
+    transition: transform var(--cor-collapse-duration) var(--cor-collapse-ease),
+      opacity var(--cor-collapse-duration) ease-in;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -148,7 +161,7 @@
   padding: 8px 16px;
   border-radius: 8px;
   background: var(--cor-wash);
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.65;
   overflow-wrap: anywhere;
 }
@@ -156,7 +169,7 @@
 .cor-reply-pending { white-space: pre-wrap; }
 .cor-reply-pending,
 .cor-r-text {
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.75;
   overflow-wrap: anywhere;
 }
@@ -166,7 +179,7 @@
 .cor-r-text strong { font-weight: 600; }
 .cor-r-text blockquote p { margin: 0; }
 .cor-table { overflow-x: auto; }
-.cor-table table { width: 100%; border-collapse: collapse; font-size: 18px; }
+.cor-table table { width: 100%; border-collapse: collapse; font-size: 16px; }
 .cor-table :is(th, td) { text-align: start; padding: 5px 12px; border-bottom: 1px solid var(--mag-hairline); }
 .cor-table th { font-weight: 600; }
 .cor-r-text ol,
@@ -228,14 +241,12 @@
 .cor-composer {
   flex: none;
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: end;
   gap: 8px;
   margin-block: 8px max(24px, env(safe-area-inset-bottom));
-  padding: 4px;
-  border: 1px solid var(--mag-hairline-dark);
-  border-radius: 8px;
-  background: var(--paper);
+  padding-block: 4px;
+  border-bottom: 1px solid var(--mag-hairline-dark);
 }
 .cor-composer:focus-within { border-color: var(--mag-wine); }
 .cor-input {
@@ -253,26 +264,25 @@
   background: transparent;
   color: var(--mag-ink-2);
   font: inherit;
-  font-size: 18px;
-  line-height: 24px;
+  font-size: 16px;
+  line-height: 1.333333;
 }
+.cor-input:focus-visible { outline: none; }
 .cor-input::placeholder { color: var(--mag-muted); opacity: 1; }
 .cor-joindre,
 .cor-envoyer {
   display: grid;
   place-items: center;
+  width: 44px;
   height: 44px;
+  padding: 0;
   border: 0;
-  border-radius: 5px;
-  line-height: 24px;
+  background: transparent;
+  color: var(--mag-muted);
   cursor: pointer;
 }
-.cor-joindre { width: 44px; padding: 0; background: transparent; color: var(--mag-muted); }
-.cor-joindre:hover:not(:disabled) { background: var(--cor-wash); color: var(--mag-wine); }
-.cor-envoyer { padding: 0 16px; background: var(--mag-wine); color: var(--paper); font-size: 16px; }
-.cor-envoyer:hover:not(:disabled) { background: var(--mag-wine-hover); }
-.cor-envoyer:disabled { background: var(--cor-wash); color: var(--mag-muted); cursor: default; }
-.cor-joindre:disabled,
+.cor-envoyer:not(:disabled) path { stroke: var(--mag-wine); }
+.cor-joindre:disabled, .cor-envoyer:disabled { cursor: default; }
 .cor-attach-remove:disabled { opacity: 0.5; cursor: default; }
 
 @media (max-width: 640px) {
