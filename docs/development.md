@@ -113,6 +113,12 @@ CI（GitHub 上的自动检查）的触发条件见 [ci.yml](../.github/workflow
 
 ## 发布前的本地检查
 
+作者 2026-11-22 确认。
+
+合并前在本机运行 `npm run lint && npm test && npm run build`。改动 Worker 时加跑 `npm run worker:check`。改动页面时加跑 `npm run browser:check`。
+
+本地检查全部通过后，经作者明确授权即可合并。取得作者明确的上线授权后，按下文流程发布。两步都不必等待 GitHub 检查。GitHub 检查在后台运行，若失败须立即修复。
+
 `npm run deploy:check` 或 `bash deploy.sh` 只做本地检查，可在工作分支运行，不需要服务器配置。工作区必须没有未提交的改动。首次依次运行 lint、测试、构建、Worker 离线打包和浏览器检查。
 
 只有脚本确认代码、依赖和环境未变，且发布文件未被改动，才沿用上次结果。只改普通说明文档也可沿用；修改 `CLAUDE.md` 会重新检查。记录和发布文件保存在本机 `.cache/mathclass-release/`，不复用另一台机器的检查结果。检查脚本会恢复构建生成的 health 时间戳。

@@ -13,6 +13,13 @@ import { checkLoginTabs } from './check-login-tabs.mjs'
 import { checkTransitions } from './browser-transitions.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
 
+// With no arguments the local check runs every scenario.
+const shard = process.argv[2] ?? '1/1'
+assert.match(shard, /^[1-9]\d*\/[1-9]\d*$/, 'Expected a shard such as 1/4')
+const [shardIndex, shardCount] = shard.split('/').map(Number)
+assert.ok(shardIndex <= shardCount, 'Shard index exceeds shard count')
+let scenarioIndex = 0
+
 const root = fileURLToPath(new URL('..', import.meta.url))
 const output = join(root, 'output/playwright')
 const buildDir = await mkdtemp(join(tmpdir(), 'mathclass-browser-'))
@@ -68,6 +75,7 @@ async function assistantType(page) {
 }
 
 async function scenario(name, viewport, run) {
+  if (scenarioIndex++ % shardCount !== shardIndex - 1) return
   const context = await browser.newContext({ viewport, hasTouch: viewport.width <= 480 })
   const errors = []
   const unexpectedRequests = []
