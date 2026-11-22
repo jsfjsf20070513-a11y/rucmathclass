@@ -9,6 +9,7 @@ import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
 import { swipeConversation } from './lib/captureScene.mjs'
 import { MATH_THREAD } from './lib/localFixture.mjs'
+import { checkLoginTabs } from './check-login-tabs.mjs'
 import { checkTransitions } from './browser-transitions.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
 
@@ -195,12 +196,8 @@ try {
     await scenario(`${size}-forms`, viewport, async (page) => {
       await page.goto(`${baseUrl}/login`)
       await page.getByRole('textbox', { name: '邮箱', exact: true }).waitFor()
-      for (const mode of ['注册', '验证码', '找回密码', '登录']) {
-        await page.getByRole('button', { name: mode, exact: true }).click()
-        await rendered(page, '.lgn-title')
-        await rendered(page, 'input[aria-label="邮箱"]')
-        await noHorizontalOverflow(page)
-      }
+      await checkLoginTabs(page)
+      await noHorizontalOverflow(page)
       await page.goto(`${baseUrl}/reset-password`)
       await page.getByRole('link', { name: '重新申请 · 找回密码 →' }).waitFor()
       await rendered(page, '.reset-state a')

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordField from '../components/PasswordField'
+import LoginTabs from '../components/LoginTabs'
+import { useLoginFieldMotion } from '../hooks/useLoginFieldMotion'
 import PageNav from '../components/PageNav'
 import { useAuth } from '../context/useAuth'
 import AuthStatus from '../components/AuthStatus'
@@ -102,6 +104,7 @@ function LoginForm({ aux, returnTo, onBack }) {
   const [otpCode, setOtpCode] = useState('')
   const [resendCountdown, setResendCountdown] = useState(0)
 
+  const { form, measure } = useLoginFieldMotion(mode)
   const copy = COPY[mode]
 
   // Tick the resend countdown down once per second; the timer is re-scheduled
@@ -118,6 +121,7 @@ function LoginForm({ aux, returnTo, onBack }) {
   // never leaks into another mode.
   const switchMode = (next) => {
     if (requestRef.current) return
+    if (mode !== next) measure()
     setMode(next)
     setMessage(null)
     setOtpSent(false)
@@ -247,28 +251,24 @@ function LoginForm({ aux, returnTo, onBack }) {
   }
 
   return (
-    <article className="page-column login-page lgn lgn-with-nav" data-page-ready={!sessionLoading}>
+    <article className="page-column login-page lgn lgn-with-nav lgn-modes" data-page-ready={!sessionLoading}>
       <PageNav to={returnTo || '/'} label={returnTo ? '← Correspondance' : '← Accueil'} onBack={onBack} />
       <header className="lgn-masthead">
         <h1 className="lgn-title" lang="fr">{TITLES[mode]}</h1>
-        {copy.summary && <p className="lgn-summary">{copy.summary}</p>}
+        <p className="lgn-summary">
+          <span aria-hidden="true">{COPY.login.summary}</span>
+          {copy.summary && <span>{copy.summary}</span>}
+        </p>
       </header>
 
       <AuthStatus />
       {!isAuthEnabled ? <p className="status-line">登录服务尚未启用。</p> : null}
       <section className="login-section">
-        <div className="editorial-actions tabs login-tabs">
-          {!aux ? (
-            <button type="button" className={`text-button ${mode === 'login' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('login')}>登录</button>
-          ) : null}
-          <button type="button" className={`text-button ${mode === 'signup' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('signup')}>注册</button>
-          <button type="button" className={`text-button ${mode === 'otp' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('otp')}>验证码</button>
-          <button type="button" className={`text-button ${mode === 'forgot' ? 'active' : ''}`} disabled={loading || sessionLoading} onClick={() => switchMode('forgot')}>找回密码</button>
-        </div>
+        <LoginTabs mode={mode} aux={aux} disabled={loading || sessionLoading} onChange={switchMode} />
 
-        <form className="editorial-form login-form" onSubmit={handleSubmit}>
-          {mode === 'signup' ? (
-            <>
+        <form ref={form} className="editorial-form login-form login-mode-form" onSubmit={handleSubmit}>
+          <div className="login-fields">
+            {mode === 'signup' && <div className="login-field-stack">
               <input
                 disabled={loading}
                 value={realName}
@@ -285,8 +285,8 @@ function LoginForm({ aux, returnTo, onBack }) {
                 placeholder="昵称 · Pseudo"
                 aria-label="昵称"
               />
-            </>
-          ) : null}
+            </div>}
+          </div>
 
           <input
             type="email"
@@ -299,32 +299,36 @@ function LoginForm({ aux, returnTo, onBack }) {
             aria-label="邮箱"
           />
 
-          {mode === 'login' || mode === 'signup' ? (
-            <PasswordField
-              label=""
-              placeholder="Mot de passe"
-              disabled={loading}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            />
-          ) : null}
+          <div className="login-fields">
+            {(mode === 'login' || mode === 'signup') && <div className="login-field-stack">
+              <PasswordField
+                label=""
+                placeholder="Mot de passe"
+                disabled={loading}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              />
+            </div>}
+          </div>
 
-          {mode === 'signup' ? (
-            <PasswordField
-              label=""
-              placeholder="确认密码 · Confirmer"
-              disabled={loading}
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              required
-              autoComplete="new-password"
-            />
-          ) : null}
+          <div className="login-fields">
+            {mode === 'signup' && <div className="login-field-stack">
+              <PasswordField
+                label=""
+                placeholder="确认密码 · Confirmer"
+                disabled={loading}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </div>}
+          </div>
 
-          {mode === 'otp' && otpSent ? (
-            <>
+          <div className="login-fields">
+            {mode === 'otp' && otpSent && <div className="login-field-stack">
               <input
                 disabled={loading}
                 value={otpCode}
@@ -342,8 +346,8 @@ function LoginForm({ aux, returnTo, onBack }) {
                     : '重新发送 · Renvoyer'}
                 </button>
               </div>
-            </>
-          ) : null}
+            </div>}
+          </div>
 
           <div className="editorial-actions login-submit">
             <button type="submit" className="text-action lgn-submit" disabled={loading || sessionLoading || !isAuthEnabled}>

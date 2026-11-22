@@ -83,6 +83,9 @@ export function watchPaperFonts(current) {
     // Suspense can retain the previous route with display:none while its chunk loads.
     const root = [...current.children].find(child => getComputedStyle(child).display !== 'none')
     const active = root?.querySelector('.mag-connexion[style*="visible"], .mag-page:not([inert]), .bib-page:not([inert]), .lec-page:not([inert])') || root
+    // 已经显示的登录页换表单时，由浏览器按需补字，纸面保持可见。
+    if (active === sheet && root?.matches('.lgn-modes') &&
+      current.dataset.paperVisible === 'true' && root.matches(ready)) return
     const attempt = ++generation
     if (active !== sheet) {
       sheet = active
