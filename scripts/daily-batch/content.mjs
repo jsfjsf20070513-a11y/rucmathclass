@@ -1,5 +1,6 @@
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { isDeepStrictEqual } from 'node:util'
 import katex from 'katex'
 import { dailyTheoremNotes, paroles } from '../../src/data/siteContent.js'
 import { dayMs, isCalendarDate } from '../../src/lib/calendarDate.js'
@@ -12,6 +13,8 @@ const fields = (names) => object(Object.fromEntries(names.split(' ').map((name) 
 const theorem = fields('title prelude displayExpression fallback note')
 const parole = fields('text note author src')
 export const daySchema = object({ date: text, theorem, parole })
+export const theoremDaySchema = object({ date: text, theorem })
+export const theoremEditSchema = object({ day: theoremDaySchema, changes: list(text) })
 export const planSchema = object({ days: list(fields('date title angle')) })
 export const reviewSchema = object({ findings: list(fields('where problem fix')) })
 export const editSchema = object({ day: daySchema, changes: list(text) })
@@ -65,6 +68,16 @@ export function renderDay(day, slot, history) {
     trust: ({ command }) => { throw new Error('公式含非数学排版指令：' + command) },
   })
   return { ...day, theorem: { ...day.theorem, displayHtml } }
+}
+
+export function retainedParoles(original, calendar) {
+  const byDate = new Map(original.map(day => [day.date, day.parole]))
+  if (calendar.some(date => !byDate.has(date))) throw new Error('来源批次缺少对应日期。')
+  return byDate
+}
+
+export function checkRetainedParole(day, original) {
+  if (!isDeepStrictEqual(original, day.parole)) throw new Error(day.date + ' 的 Parole 与来源不同。')
 }
 
 export function readBatch(dir, { refreshHtml = false } = {}) {
