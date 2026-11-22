@@ -90,7 +90,7 @@ curl -fsS 'http://127.0.0.1:8787/__scheduled'
 
 ## 助手如何取资料
 
-聊天入口先向 Supabase 验证用户身份。Sol 通过 Responses API 按需查询站内资料。每日定理和 Parole 共用 `dailySiteItem` 这个读取入口。现有首页随机展示 Parole，工具按日期从同一份句库取一句。任务 B 接入月稿时替换此入口。
+聊天入口先向 Supabase 验证用户身份。Sol 通过 Responses API 按需查询站内资料。首页和答疑工具都通过 `getDailyContent` 读取指定日期的定理和 Parole。KV 缺稿时，两处都使用该日期的静态稿。
 
 阅读工具从 `LECTURE` 读取已发布的索引和全文。书目工具使用网站静态目录。个人作答和历史对话通过 PostgREST 查询，每次只传来访者的 JWT 和项目 anon key。查询固定带上已验证的用户 ID，数据库按三张表各自的 RLS 策略检查归属。
 

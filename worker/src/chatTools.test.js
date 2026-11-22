@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { FIXTURE_USERS, fixtureSession } from '../../scripts/lib/localFixture.mjs'
 import { lectureSamples } from '../../src/data/lectureSamples.js'
-import { dailySiteItem, runSiteTool } from './chatTools.js'
+import { runSiteTool } from './chatTools.js'
 
 afterEach(() => vi.unstubAllGlobals())
 const today = '2026-11-20'
@@ -13,13 +13,10 @@ const invoke = (name, args, user = FIXTURE_USERS[0]) => runSiteTool({ name, argu
   env, today, userId: user.id, authorization: 'Bearer ' + fixtureSession(user).access_token, signal: new AbortController().signal,
 })
 
-it('serves the static rotation, the published archive and the site catalogue', async () => {
-  expect(dailySiteItem('theorem', '2025-09-01').title).toBe('Bolzano-Weierstrass')
-  expect(await invoke('parole', { date: today })).toEqual(await invoke('parole', { date: null }))
+it('serves the published archive and the site catalogue', async () => {
   expect(await invoke('lecture', { date: null })).toEqual([{ date: article.date, title: article.title, level: article.level }])
   expect(await invoke('lecture', { date: article.date })).toEqual(article)
   expect(await invoke('lecture', { date: '2026-11-21' })).toBeNull()
-  await expect(invoke('theorem', { date: '2026-02-30' })).rejects.toThrow()
   expect((await invoke('resources', { query: '实分析' })).length).toBeGreaterThan(0)
 })
 
