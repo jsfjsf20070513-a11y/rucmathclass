@@ -176,6 +176,9 @@
 .cor-r-text > * { margin: 0; }
 .cor-r-text > * + * { margin-top: 12px; }
 .cor-r-text :is(h1, h2, h3, h4, h5, h6) { font-size: 1.1em; line-height: 1.4; }
+/* 中文正文两端对齐，段末一行仍靠左；代码和标题照常靠左。 */
+.cor-r-text :is(p, li) { text-align: justify; }
+.cor-r-text :is(pre, h1, h2, h3, h4, h5, h6) { text-align: start; }
 .cor-r-text strong { font-weight: 600; }
 .cor-r-text blockquote p { margin: 0; }
 .cor-table { overflow-x: auto; }
@@ -212,14 +215,17 @@
 .cor-r-text .katex:has(.sizing.size1) { --cor-math-floor: 30.1px; }
 .cor-r-text .katex-display { margin: 0; padding-block: 4px; }
 .cor-r-text .katex-display > .katex { width: max-content; min-width: 100%; }
+/* inline-flex 让公式按内容基线与汉字对齐，同时保留超宽公式的横向滚动。 */
 .cor-inline-math {
-  display: inline-block;
+  display: inline-flex;
   max-width: 100%;
-  vertical-align: middle;
+  vertical-align: baseline;
+  text-align: start;
   white-space: nowrap;
   overflow-x: auto;
   line-height: 1.4;
 }
+.cor-inline-math > .katex { flex: none; }
 .cor-waiting { color: var(--mag-muted); }
 
 .cor-figure { width: fit-content; max-width: 100%; margin: 0 0 8px; }
