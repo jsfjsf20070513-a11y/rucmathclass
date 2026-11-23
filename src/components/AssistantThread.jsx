@@ -103,12 +103,19 @@ export default function AssistantThread({ conversation, onStart, rise }) {
     followReply.current = true
     imageGeneration.current += 1
     setError('')
-    const sent = conversation.send(text, image)
+    const sentImage = image
+    const sent = conversation.send(text, sentImage)
     onStart?.()
-    if (await sent && mounted.current) {
-      setInput('')
-      setImage(null)
+    // 问题已显示在对话里，输入框立即清空；发送失败时把原文和图片放回去。
+    setInput('')
+    setImage(null)
+    const ok = await sent
+    if (!mounted.current) return
+    if (ok) {
       focusOnPaper(inputRef.current)
+    } else {
+      setInput((current) => current || text)
+      setImage((current) => current || sentImage)
     }
   }
 
