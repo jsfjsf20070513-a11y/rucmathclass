@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { chromium } from 'playwright'
+import { chromium, devices, webkit } from 'playwright'
 import { preview } from 'vite'
 import { createAccountFixture } from './browser-account-fixture.mjs'
 import { swipeConversation } from './lib/captureScene.mjs'
@@ -12,6 +12,7 @@ import { MATH_THREAD } from './lib/localFixture.mjs'
 import { checkLoginTabs } from './check-login-tabs.mjs'
 import { checkTransitions } from './browser-transitions.mjs'
 import { checkRegressions } from './browser-regressions.mjs'
+import { checkSafariStrike } from './browser-safari-strike.mjs'
 
 // With no arguments the local check runs every scenario.
 const shard = process.argv[2] ?? '1/1'
@@ -25,7 +26,7 @@ const output = join(root, 'output/playwright')
 const buildDir = await mkdtemp(join(tmpdir(), 'mathclass-browser-'))
 const healthPath = join(root, 'public/health.json')
 const originalHealth = await readFile(healthPath)
-let server, browser, baseUrl
+let server, browser, webkitBrowser, baseUrl
 
 async function rendered(page, selector) {
   await page.waitForFunction((query) => {
@@ -74,9 +75,12 @@ async function assistantType(page) {
   assert.deepEqual(violations, [])
 }
 
-async function scenario(name, viewport, run) {
+async function scenario(name, viewportOrDevice, run) {
   if (scenarioIndex++ % shardCount !== shardIndex - 1) return
-  const context = await browser.newContext({ viewport, hasTouch: viewport.width <= 480 })
+  const useWebKit = viewportOrDevice.defaultBrowserType === 'webkit'
+  if (useWebKit) webkitBrowser ??= await webkit.launch()
+  const context = useWebKit ? await webkitBrowser.newContext(viewportOrDevice)
+    : await browser.newContext({ viewport: viewportOrDevice, hasTouch: viewportOrDevice.width <= 480 })
   const errors = []
   const unexpectedRequests = []
   const fault = { chunk: '', kind: '', resourcesUnavailable: false, chatStatus: 200 }
@@ -308,6 +312,7 @@ try {
       assert.deepEqual(await list.locator('time').allTextContents(), ['vendredi 20 novembre', 'mercredi 18 novembre', 'lundi 16 novembre'])
       assert.equal(await manage.getAttribute('aria-expanded'), 'false')
       assert.equal(await list.getByRole('button').count(), 0)
+      assert.equal(await list.locator('.cor-strike').count(), 0)
       await noHorizontalOverflow(page)
       await page.screenshot({ path: join(output, `${size}-assistant-list.png`), fullPage: true })
 
@@ -358,6 +363,8 @@ try {
       await page.screenshot({ path: join(output, `${size}-assistant-delete.png`), fullPage: true })
       // 模拟另一设备续写后的空删除结果，在回执到达前退出管理。
       const conflict = list.locator('.cor-entry').last()
+      const colors = (element) => ['.lec-entry-title', '.lec-entry-date'].map(selector => getComputedStyle(element.querySelector(selector)).color)
+      const originalColors = await conflict.evaluate(colors)
       const deletion = '**/rest/v1/ai_conversations?**'
       const intercepted = new Promise((resolve) => page.route(deletion, resolve, { times: 1 }))
       await activate(conflict.getByRole('button', { name: /^删除/ }))
@@ -366,17 +373,21 @@ try {
       assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), 'true')
       assert.equal(await conflict.getByRole('button').count(), 0)
       await page.waitForFunction(() => {
-        const strike = document.querySelector('.is-pending .cor-strike mask path')
-        return strike && parseFloat(getComputedStyle(strike).strokeDashoffset) === 0
+        const strike = document.querySelector('.is-pending .cor-strike')
+        return strike?.getAnimations()[0]?.effect.getComputedTiming().progress === 1
       })
+      assert.equal(await list.locator('.cor-entry:not(.is-pending) .cor-strike').count(), 0)
+      const [title, date] = await conflict.evaluate(colors)
+      assert.equal(title, date)
+      assert.notEqual(title, originalColors[0])
       await activate(done)
-      await route.fulfill({ json: [] })
+      await Promise.all([
+        page.waitForFunction(() => document.querySelector('.cor-strike')?.getAnimations()[0]?.playbackRate < 0),
+        route.fulfill({ json: [] }),
+      ])
       await page.getByRole('alert').getByText('删除结果未确认。请刷新后核对这段对话。').waitFor()
-      await page.waitForFunction(() => {
-        const title = document.querySelector('.cor-entry:last-child .lec-entry-title')
-        const strike = title.querySelector('.cor-strike mask path')
-        return parseFloat(getComputedStyle(strike).strokeDashoffset) === 1 && !title.getAnimations({ subtree: true }).length
-      })
+      await conflict.locator('.cor-strike').waitFor({ state: 'detached' })
+      assert.deepEqual(await conflict.evaluate(colors), originalColors)
       assert.equal(await conflict.getByRole('link').getAttribute('aria-disabled'), null)
       assert.equal(await list.getByRole('button').count(), 0)
 
@@ -391,6 +402,7 @@ try {
       if (size === 'mobile') await page.emulateMedia({ reducedMotion: 'reduce' })
       const observed = await row.evaluateHandle((element) => {
         const properties = []
+        element.addEventListener('animationstart', (event) => properties.push(event.animationName))
         element.addEventListener('transitionrun', (event) => properties.push(event.propertyName))
         return properties
       })
@@ -403,7 +415,7 @@ try {
         assert.deepEqual(transitions, [], '减少动态效果时直接移除')
         await page.emulateMedia({ reducedMotion: null })
       } else {
-        assert.ok(transitions.includes('stroke-dashoffset') && transitions.includes('grid-template-rows'), '划线后收起行高')
+        assert.ok(transitions.includes('cor-strike-draw') && transitions.includes('grid-template-rows'), '划线后收起行高')
       }
       await page.reload()
       await rendered(page, '.cor-entry')
@@ -532,7 +544,10 @@ try {
       await noHorizontalOverflow(page)
     })
   }
+  await scenario('webkit-iphone-assistant-strike', devices['iPhone 13'],
+    page => checkSafariStrike(page, baseUrl, join(output, 'comparisons/strike-safari')))
 } finally {
+  await webkitBrowser?.close()
   await browser?.close()
   if (server) await new Promise((resolve) => server.httpServer.close(resolve))
   await writeFile(healthPath, originalHealth)
