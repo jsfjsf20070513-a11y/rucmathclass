@@ -493,7 +493,10 @@
     grid-auto-flow: row;
   }
   .mag-biblio-row:nth-child(3) { border-bottom: 0; }
-  .mag-biblio-row { gap: 6px; }
+  .mag-biblio-row {
+    justify-content: center;
+    gap: 6px;
+  }
   .mag-biblio-roman { width: 19px; }
   .mag-biblio-zh { margin-bottom: 24px; }
   .mag-connexion-box { width: min(320px, 86vw); }
