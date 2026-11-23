@@ -493,11 +493,15 @@
     grid-auto-flow: row;
   }
   .mag-biblio-row:nth-child(3) { border-bottom: 0; }
+  /* 罗马数字在最左对齐成一列，书架名对准中轴。两侧列等宽，保证居中。 */
   .mag-biblio-row {
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 19px minmax(0, 1fr) 19px;
+    align-items: baseline;
     gap: 6px;
   }
   .mag-biblio-roman { width: 19px; }
+  .mag-biblio-label { text-align: center; }
   .mag-biblio-zh { margin-bottom: 24px; }
   .mag-connexion-box { width: min(320px, 86vw); }
 }
