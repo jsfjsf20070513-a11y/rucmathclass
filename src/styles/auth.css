@@ -318,3 +318,20 @@
   gap: var(--field-gap);
   padding-bottom: var(--field-gap);
 }
+
+/* 窄屏时外层留有页边距，纸面要向两侧铺满，留白改由纸面自己给出。 */
+@media (max-width: 980px) {
+  .lgn {
+    margin-inline: calc(-1 * var(--page-gutter));
+    padding-inline: calc(24px + var(--page-gutter));
+  }
+  .lgn > .page-nav { inset-inline: var(--page-gutter); }
+  /* 页面上下滚过头时露出的底色也用纸色。 */
+  html:has(.paper-current > .lgn),
+  body:has(.paper-current > .lgn) { background-color: var(--boot-paper); }
+}
+
+/* 手机上页眉固定在顶部下方。键盘弹出时可用高度变小，若仍按高度居中，整块表单会被往上推。 */
+@media (max-width: 720px) {
+  .lgn-modes { padding-top: 80px; }
+}
