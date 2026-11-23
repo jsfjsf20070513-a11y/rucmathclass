@@ -87,15 +87,17 @@
   fill: var(--cor-strike-ink);
   pointer-events: none;
 }
-.cor-strike mask path { stroke-dasharray: 1; stroke-dashoffset: 1; }
-.cor-entry.is-pending .cor-strike mask path { stroke-dashoffset: 0; }
+@keyframes cor-strike-draw {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
 .cor-entry.is-pending .lec-entry :is(.lec-entry-title, .lec-entry-date) { color: var(--cor-deleted-text); }
 .cor-entry.is-pending .cor-delete { visibility: hidden; }
 
 @media (prefers-reduced-motion: no-preference) {
   .cor-delete { transition: visibility 0s var(--cor-strike-duration); }
   .cor-entry.is-pending .cor-delete { transition-delay: 0s; }
-  .cor-strike mask path { transition: stroke-dashoffset var(--cor-strike-duration) cubic-bezier(.25,.8,.3,1); }
+  .cor-strike { animation: cor-strike-draw var(--cor-strike-duration) cubic-bezier(.25,.8,.3,1) both; }
   .cor-entry .lec-entry-date { transition: color .15s ease; }
   .cor-entry { transition: grid-template-rows var(--cor-collapse-duration) var(--cor-collapse-ease); }
   .cor-entry-content {

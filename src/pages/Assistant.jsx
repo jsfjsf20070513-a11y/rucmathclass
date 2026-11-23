@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, useSyncExternalStore } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AuthStatus from '../components/AuthStatus'
 import PageNav from '../components/PageNav'
@@ -28,8 +28,36 @@ async function collapseRow(row, started) {
   await Promise.allSettled(row.getAnimations({ subtree: true }).map((animation) => animation.finished))
 }
 
+function ConversationStrike({ pending }) {
+  const svg = useRef(null)
+  const [keepUntilRetracted, setKeepUntilRetracted] = useState(false)
+  useLayoutEffect(() => {
+    const animation = svg.current?.getAnimations()[0]
+    if (pending) {
+      setKeepUntilRetracted(true)
+      if (animation?.playbackRate < 0) animation.reverse()
+      return
+    }
+    if (!animation) {
+      setKeepUntilRetracted(false)
+      return
+    }
+    // 删除失败时，从笔尖当前位置收回细线。
+    animation.reverse()
+    let active = true
+    const hide = () => { if (active) setKeepUntilRetracted(false) }
+    animation.finished.then(hide, hide)
+    return () => { active = false }
+  }, [pending])
+  if (!pending && !keepUntilRetracted) return null
+  return (
+    <svg ref={svg} className="cor-strike" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path transform="matrix(1 -.026 0 1 0 3.3)" d="M0 -.08 Q40 -1.25 100 0 Q40 1.25 0 .08Z" />
+    </svg>
+  )
+}
+
 function ConversationRow({ entry, managing, pending, archive }) {
-  const maskId = useId()
   const thread = archive.cachedThread(entry.id)
   const busy = useSyncExternalStore(thread?.subscribe || noThreadSubscription, () => thread?.getSnapshot().busy || false)
   return (
@@ -43,16 +71,7 @@ function ConversationRow({ entry, managing, pending, archive }) {
             <time className="lec-entry-date" dateTime={entry.updated_at} lang="fr">{archiveDate(entry.updated_at)}</time>
             <span className="lec-entry-title">
               <span className="cor-title-text">{entry.title}</span>
-              <svg className="cor-strike" viewBox="0 0 100 4" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-                <g transform="matrix(1 -.026 0 1 0 3.3)">
-                  <defs>
-                    <mask id={maskId} maskUnits="userSpaceOnUse" x="-1" y="-2" width="102" height="4">
-                      <path d="M0 0H100" pathLength="1" stroke="white" strokeWidth="4" />
-                    </mask>
-                  </defs>
-                  <path d="M0 -.08 Q40 -1.25 100 0 Q40 1.25 0 .08Z" mask={`url(#${maskId})`} />
-                </g>
-              </svg>
+              <ConversationStrike pending={pending} />
             </span>
           </Link>
           {(pending || managing) && (

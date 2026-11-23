@@ -62,19 +62,19 @@ jobs:
         id: playwright
         run: echo "version=$(node -p "require('playwright/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Chromium headless shell
+      - name: Cache Chromium headless shell and WebKit
         id: browser-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: chromium-shell-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
+          key: chromium-shell-webkit-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}
 
       - name: Install browser system dependencies
-        run: npx playwright install-deps chromium
+        run: npx playwright install-deps chromium webkit
 
-      - name: Install Chromium headless shell
+      - name: Install Chromium headless shell and WebKit
         if: steps.browser-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --only-shell chromium
+        run: npx playwright install --only-shell chromium webkit
 
       - name: Check mobile and desktop flows
         run: npm run browser:check -- ${{ matrix.shard }}/${{ strategy.job-total }}
