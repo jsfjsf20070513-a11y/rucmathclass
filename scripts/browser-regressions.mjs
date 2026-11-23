@@ -126,7 +126,8 @@ export async function checkRegressions({ scenario, baseUrl, rendered, assistantT
     assert.equal(await page.getByRole('alert').count(), 0)
     await page.locator('.cor-input').fill('接着上一问')
     await page.locator('.cor-input').press('Enter')
-    await page.waitForFunction(() => document.querySelector('.cor-input')?.value === '')
+    // 输入框发出即清空；等回答出来、保存结束、输入框重新可用，再刷新。
+    await page.waitForFunction(() => document.querySelectorAll('.cor-turn').length === 8 && !document.querySelector('.cor-input')?.disabled)
     await page.reload()
     await rendered(page, '.cor-input')
     await page.getByText('接着上一问', { exact: true }).waitFor()

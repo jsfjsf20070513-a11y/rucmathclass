@@ -470,9 +470,22 @@ try {
       assert.equal(await question.inputValue(), '解释一下导数。')
       assert.equal(await page.locator('.cor-turn').count(), 0)
       fault.chatStatus = 200
+      // 先扣住回答，确认输入框在回答出来之前就已清空。
+      const gate = Promise.withResolvers()
+      const posted = Promise.withResolvers()
+      const chatRoute = /\/api\/chat$/
+      await page.route(chatRoute, async (route) => {
+        if (route.request().method() === 'POST') { posted.resolve(); await gate.promise }
+        await route.fallback()
+      })
       await send.click()
+      await posted.promise
+      assert.equal(await question.inputValue(), '', '发出后、回答之前输入框应已清空')
+      await page.locator('.cor-question').filter({ hasText: '解释一下导数。' }).waitFor()
+      gate.resolve()
       await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
-      await page.waitForFunction(() => document.querySelector('.cor-input')?.value === '')
+      await page.unroute(chatRoute)
+      assert.equal(await question.inputValue(), '')
       await page.reload()
       await page.getByText('导数描述函数在某一点的变化率。', { exact: true }).waitFor()
       await noHorizontalOverflow(page)
